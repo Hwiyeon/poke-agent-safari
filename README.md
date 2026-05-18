@@ -22,6 +22,7 @@ Every active session gets assigned a Pokemon and dropped onto a tiny island map 
 
 ## Recent Updates
 
+- **Codex compatibility.** Agent Safari now understands Codex session transcripts, watches Claude Code and Codex together by default, keeps Codex turns in `Waiting` instead of boxing them immediately, and separates Claude/Codex budget meters in the header.
 - **HP bar respects the context compression threshold.** When `CLAUDE_AUTOCOMPACT_PCT_OVERRIDE` is set in your Claude Code settings or environment, HP now hits 0 at that auto-compaction threshold instead of the raw model context limit — so HP tracks the context actually usable before Claude Code auto-compacts.
 
 ## Table of Contents
@@ -96,7 +97,7 @@ node tools/setup_poke_assets.js
 ```
 
 - No external npm dependencies.
-- Watches Claude Code transcripts under `~/.claude/projects` by default, or Codex sessions under `~/.codex/sessions` with `--source codex`.
+- Watches Claude Code transcripts under `~/.claude/projects` and Codex sessions under `~/.codex/sessions` by default. Use `--source claude` or `--source codex` to narrow the dashboard.
 - `setup_poke_assets.js` pulls the sprite set from the [PokeAPI sprites repository](https://github.com/PokeAPI/sprites) into `public/vendor/pokeapi-sprites`.
 
 ## Quick Start
@@ -108,13 +109,13 @@ node cli.js watch
 
 Open `http://127.0.0.1:8123`.
 
-To watch Codex sessions instead:
+To watch only Codex sessions:
 
 ```bash
 node cli.js watch --source codex
 ```
 
-To watch both providers in one dashboard:
+Watching both providers is the default, and can also be requested explicitly:
 
 ```bash
 node cli.js watch --source all

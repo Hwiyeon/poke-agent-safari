@@ -31,6 +31,26 @@ const DEFAULT_COUNTERS = Object.freeze({
   spawns: 0
 });
 
+function normalizeProvider(provider) {
+  const value = String(provider || '').toLowerCase();
+  return value === 'codex' ? 'codex' : 'claude';
+}
+
+function cloneRateLimitsByProvider(rateLimitsByProvider) {
+  const out = {};
+  if (!rateLimitsByProvider || typeof rateLimitsByProvider !== 'object') {
+    return out;
+  }
+
+  for (const provider of ['claude', 'codex']) {
+    const rateLimits = rateLimitsByProvider[provider];
+    if (rateLimits && typeof rateLimits === 'object') {
+      out[provider] = rateLimits;
+    }
+  }
+  return out;
+}
+
 function cloneCounters(counters) {
   return {
     seen: counters && typeof counters.seen === 'number' ? counters.seen : 0,
@@ -135,6 +155,7 @@ class AgentState extends EventEmitter {
     this.recentEvents = [];
     this.lastUpdate = 0;
     this.rateLimits = null;
+    this.rateLimitsByProvider = {};
     this.seenPokemonIds = new Set();
     this.firstDiscoveryByPokemon = {};
     this.confirmedSessionIds = new Set(); // sessionIds confirmed alive via PID check
@@ -424,7 +445,9 @@ class AgentState extends EventEmitter {
     const ts = typeof event.ts === 'number' ? event.ts : Date.now();
     const meta = event.meta || {};
     if (meta.rateLimits) {
+      const provider = normalizeProvider(meta.provider);
       this.rateLimits = meta.rateLimits;
+      this.rateLimitsByProvider[provider] = meta.rateLimits;
     }
 
     // Suppress sessions that were active before a hard reset / startup cleanup.
@@ -908,6 +931,7 @@ class AgentState extends EventEmitter {
       activeAgentCount: agents.filter((agent) => agent.isActive).length,
       pokedex: this.pokedexSnapshot(),
       rateLimits: this.rateLimits,
+      rateLimitsByProvider: cloneRateLimitsByProvider(this.rateLimitsByProvider),
       agents,
       recentEvents: this.recentEvents.slice(-80),
       boxedAgents: this.boxedAgents.slice(),
@@ -950,6 +974,7 @@ class AgentState extends EventEmitter {
       seenPokemonIds: Array.from(this.seenPokemonIds).sort((a, b) => a - b),
       firstDiscoveryByPokemon: { ...this.firstDiscoveryByPokemon },
       rateLimits: this.rateLimits,
+      rateLimitsByProvider: cloneRateLimitsByProvider(this.rateLimitsByProvider),
       agents,
       boxedAgents: this.boxedAgents.slice(),
       subagentHistory: this.subagentHistory.slice()
@@ -961,6 +986,10 @@ class AgentState extends EventEmitter {
 
     this.mergeSeenPokemonIds(data.seenPokemonIds, data.firstDiscoveryByPokemon);
     this.rateLimits = data.rateLimits || null;
+    this.rateLimitsByProvider = cloneRateLimitsByProvider(data.rateLimitsByProvider);
+    if (this.rateLimits && Object.keys(this.rateLimitsByProvider).length === 0) {
+      this.rateLimitsByProvider.codex = this.rateLimits;
+    }
     this.boxedAgents = Array.isArray(data.boxedAgents)
       ? data.boxedAgents.map((b) => (b.lifecycle ? b : { ...b, lifecycle: LIFECYCLE.BOXED }))
       : [];

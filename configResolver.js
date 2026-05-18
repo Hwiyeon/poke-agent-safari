@@ -7,7 +7,7 @@ const path = require('path');
 const DEFAULTS = {
   port: 8123,
   host: '127.0.0.1',
-  source: 'claude',
+  source: 'all',
   claudeProjectsPath: path.join(os.homedir(), '.claude', 'projects'),
   codexSessionsPath: path.join(os.homedir(), '.codex', 'sessions'),
   activeTimeoutSec: 600,

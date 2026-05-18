@@ -46,11 +46,12 @@ test('Codex user messages and token counts normalize into agent events', () => {
         type: 'token_count',
         info: {
           total_token_usage: {
-            input_tokens: 26603,
+            input_tokens: 577026,
             output_tokens: 437,
             total_tokens: 27040
           },
           last_token_usage: {
+            input_tokens: 83985,
             total_tokens: 27040
           },
           model_context_window: 258400
@@ -65,10 +66,25 @@ test('Codex user messages and token counts normalize into agent events', () => {
   );
 
   assert.deepEqual(tokenEvents.map((event) => event.type), [EVENT_TYPES.AGENT_SEEN, EVENT_TYPES.ASSISTANT_OUTPUT]);
-  assert.equal(tokenEvents[1].meta.contextUsed, 26603);
+  assert.equal(tokenEvents[1].meta.contextUsed, 83985);
   assert.equal(tokenEvents[1].meta.contextMax, 258400);
   assert.equal(tokenEvents[1].meta.totalTokens, 27040);
   assert.equal(tokenEvents[1].meta.rateLimits.five_hour.used_percentage, 7);
+});
+
+test('Codex turn completion keeps the session waiting instead of boxing it', () => {
+  const events = normalizeCodexLine(
+    JSON.stringify({
+      timestamp: '2026-05-16T15:09:42.000Z',
+      type: 'event_msg',
+      payload: {
+        type: 'task_complete'
+      }
+    }),
+    contextFor('/tmp/codex/sessions/2026/05/17/rollout-abc.jsonl', '/tmp/codex/sessions')
+  );
+
+  assert.deepEqual(events.map((event) => event.type), [EVENT_TYPES.AGENT_SEEN, EVENT_TYPES.WAITING]);
 });
 
 test('Codex tool calls capture command text', () => {
@@ -171,6 +187,13 @@ test('Codex watcher and state process a transcript stream end to end', async () 
           secondary: { used_percent: 2, resets_at: 1779541423 }
         }
       }
+    },
+    {
+      timestamp: '2026-05-16T15:09:32.000Z',
+      type: 'event_msg',
+      payload: {
+        type: 'task_complete'
+      }
     }
   ];
 
@@ -187,7 +210,10 @@ test('Codex watcher and state process a transcript stream end to end', async () 
   assert.equal(agent.contextUsed, 1000);
   assert.equal(agent.contextMax, 258400);
   assert.equal(agent.totalTokens, 1200);
+  assert.equal(agent.status, 'Waiting');
+  assert.deepEqual(state.snapshot().boxedAgents, []);
   assert.equal(state.snapshot().rateLimits.five_hour.used_percentage, 5);
+  assert.equal(state.snapshot().rateLimitsByProvider.codex.five_hour.used_percentage, 5);
 });
 
 test('Codex source config and persistence are separate from Claude watch state', () => {

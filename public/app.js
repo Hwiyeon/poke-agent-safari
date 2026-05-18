@@ -325,7 +325,6 @@
   const lastUpdateEl = document.getElementById('last-update');
   const tokenTotalEl = document.getElementById('token-total');
   const projectFilterEl = document.getElementById('project-filter');
-  const sessionFilterEl = document.getElementById('session-filter');
   const agentListEl = document.getElementById('agent-list');
   const boxListEl = document.getElementById('box-list');
   const boxCountEl = document.getElementById('box-count');
@@ -361,14 +360,9 @@
   const pokedexLangEnEl = document.getElementById('pokedex-lang-en');
   const pokedexLangKoEl = document.getElementById('pokedex-lang-ko');
   const rateLimitsWrapEl = document.getElementById('rate-limits-wrap');
-  const rate5hFillEl = document.getElementById('rate-5h-fill');
-  const rate5hPctEl = document.getElementById('rate-5h-pct');
-  const rate7dFillEl = document.getElementById('rate-7d-fill');
-  const rate7dPctEl = document.getElementById('rate-7d-pct');
 
   const uiState = {
     projectFilter: 'all',
-    sessionFilter: 'all',
     pokedexOpen: false,
     boxHistoryOpen: false,
     subhistoryOpen: false,
@@ -398,8 +392,7 @@
     entityById: new Map(),
     subhistoryEntryByKey: new Map(),
     roomAssignments: new Map(),
-    projects: [],
-    sessions: []
+    projects: []
   };
 
   var exportImageCache = new Map();
@@ -1170,6 +1163,51 @@
     return String(value).replace(/\s+/g, ' ').trim();
   }
 
+  function snapshotSource() {
+    var config = (appState.snapshot && appState.snapshot.config) || {};
+    return String(config.source || '').toLowerCase();
+  }
+
+  function agentProvider(agent) {
+    var provider = String((agent && agent.provider) || '').toLowerCase();
+    if (provider) return provider;
+    var source = snapshotSource();
+    if (source === 'codex') return 'codex';
+    if (source === 'claude') return 'claude';
+    return '';
+  }
+
+  function defaultAgentTypeLabel(agent) {
+    var provider = agentProvider(agent);
+    if (provider === 'codex') return 'Codex';
+    if (provider === 'claude') return 'Opus 4.6 (1M context)';
+    return provider ? provider.charAt(0).toUpperCase() + provider.slice(1) : 'Agent';
+  }
+
+  function agentTypeLabel(agent, contextMax) {
+    return formatModelName(agent && agent.model, contextMax) || defaultAgentTypeLabel(agent);
+  }
+
+  function agentContextStats(agent, fallbackMax) {
+    var rawMax = Number(agent && agent.contextMax);
+    var rawUsed = Number(agent && agent.contextUsed);
+    var contextMax = Number.isFinite(rawMax) && rawMax > 0
+      ? rawMax
+      : (fallbackMax || 200000);
+    var contextUsed = Number.isFinite(rawUsed) && rawUsed > 0 ? rawUsed : 0;
+    var contextRemaining = Math.max(0, contextMax - contextUsed);
+    var hpRatio = contextMax > 0 ? (contextRemaining / contextMax) : 0;
+
+    return {
+      contextMax: contextMax,
+      contextUsed: contextUsed,
+      contextRemaining: contextRemaining,
+      hpRatio: hpRatio,
+      hpPct: Math.max(0, Math.min(100, hpRatio * 100)),
+      hpColor: hpBarColor(hpRatio)
+    };
+  }
+
   function summarizeCommand(value, maxLen) {
     var text = commandText(value);
     var limit = typeof maxLen === 'number' ? maxLen : 48;
@@ -1881,16 +1919,13 @@
   function filteredAgents() {
     return appState.snapshot.agents.filter(function (agent) {
       if (uiState.projectFilter !== 'all' && agent.projectId !== uiState.projectFilter) return false;
-      if (uiState.sessionFilter !== 'all' && agent.sessionId !== uiState.sessionFilter) return false;
       return true;
     });
   }
 
   function updateFilterOptions() {
     const projects = Array.from(new Set(appState.snapshot.agents.map(function (a) { return a.projectId; }))).sort();
-    const sessions = Array.from(new Set(appState.snapshot.agents.map(function (a) { return a.sessionId; }))).sort();
     appState.projects = projects;
-    appState.sessions = sessions;
 
     projectFilterEl.innerHTML = '<option value="all">All</option>';
     for (const p of projects) {
@@ -1901,23 +1936,11 @@
     }
     if (!projects.includes(uiState.projectFilter)) uiState.projectFilter = 'all';
     projectFilterEl.value = uiState.projectFilter;
-
-    sessionFilterEl.innerHTML = '<option value="all">All</option>';
-    for (const s of sessions) {
-      const opt = document.createElement('option');
-      opt.value = s; opt.textContent = s;
-      if (s === uiState.sessionFilter) opt.selected = true;
-      sessionFilterEl.appendChild(opt);
-    }
-    if (!sessions.includes(uiState.sessionFilter)) uiState.sessionFilter = 'all';
-    sessionFilterEl.value = uiState.sessionFilter;
   }
 
   function resetFilters() {
     uiState.projectFilter = 'all';
-    uiState.sessionFilter = 'all';
     projectFilterEl.value = 'all';
-    sessionFilterEl.value = 'all';
   }
 
   function buildAgentTree(agents) {
@@ -1940,12 +1963,11 @@
   }
 
   function renderAgentCard(agent, depth, tree, expandedIds, collapsedIds) {
-    var contextMax = agent.contextMax || 200000;
-    var contextUsed = agent.contextUsed || 0;
-    var contextRemaining = contextMax - contextUsed;
-    var hpRatio = contextRemaining / contextMax;
-    var barColor = hpBarColor(hpRatio);
-    var barPct = Math.max(0, Math.min(100, hpRatio * 100));
+    var contextStats = agentContextStats(agent);
+    var contextMax = contextStats.contextMax;
+    var contextRemaining = contextStats.contextRemaining;
+    var barColor = contextStats.hpColor;
+    var barPct = contextStats.hpPct;
     var childCount = agent._children ? agent._children.length : 0;
 
     var activeClass = agent.isActive ? ' active' : (agent.isSleeping ? ' sleeping' : ' idle');
@@ -2326,17 +2348,14 @@
 
   function historyStatSnapshot(agent) {
     var xp = agentLevelProgress(agent);
-    var contextMax = agent.contextMax || 200000;
-    var contextUsed = agent.contextUsed || 0;
-    var contextRemaining = Math.max(0, contextMax - contextUsed);
-    var hpRatio = contextMax > 0 ? (contextRemaining / contextMax) : 0;
+    var contextStats = agentContextStats(agent);
 
     return {
       xp: xp,
-      contextMax: contextMax,
-      contextRemaining: contextRemaining,
-      hpPct: Math.max(0, Math.min(100, hpRatio * 100)),
-      hpColor: hpBarColor(hpRatio)
+      contextMax: contextStats.contextMax,
+      contextRemaining: contextStats.contextRemaining,
+      hpPct: contextStats.hpPct,
+      hpColor: contextStats.hpColor
     };
   }
 
@@ -2558,34 +2577,91 @@
     return mo + ' ' + day + ' ' + hh + ':' + mm;
   }
 
-  function updateRateLimits(rateLimits) {
-    if (!rateLimits) {
+  function rateLimitProviderLabel(provider) {
+    if (provider === 'codex') return 'Codex Budget';
+    if (provider === 'claude') return 'Claude Budget';
+    return 'Budget';
+  }
+
+  function rateLimitProviderOrder(snapshot) {
+    var source = String((snapshot.config && snapshot.config.source) || '').toLowerCase();
+    if (source === 'codex') return ['codex'];
+    if (source === 'claude') return ['claude'];
+    return ['claude', 'codex'];
+  }
+
+  function rateLimitEntries(snapshot) {
+    var byProvider = (snapshot && snapshot.rateLimitsByProvider) || {};
+    var order = rateLimitProviderOrder(snapshot || {});
+    var entries = [];
+
+    for (var i = 0; i < order.length; i++) {
+      var provider = order[i];
+      if (byProvider[provider]) {
+        entries.push({ provider: provider, rateLimits: byProvider[provider] });
+      }
+    }
+
+    if (entries.length === 0 && snapshot && snapshot.rateLimits) {
+      var source = String((snapshot.config && snapshot.config.source) || '').toLowerCase();
+      var fallbackProvider = source === 'codex' || source === 'claude' ? source : 'budget';
+      entries.push({ provider: fallbackProvider, rateLimits: snapshot.rateLimits });
+    }
+
+    return entries;
+  }
+
+  function rateLimitBarHtml(providerLabel, periodLabel, rateLimit, resetKind) {
+    var hasValue = rateLimit && typeof rateLimit.used_percentage === 'number';
+    var remain = hasValue
+      ? 100 - Math.min(100, Math.max(0, rateLimit.used_percentage))
+      : 0;
+    var color = hasValue ? hpBarColor(remain / 100) : '#777';
+    var pctText = hasValue ? remain.toFixed(1) + '%' : '-';
+    var tooltip = providerLabel + ' ' + periodLabel + ': no data';
+
+    if (hasValue) {
+      tooltip = providerLabel + ' ' + periodLabel + ': ' + remain.toFixed(1) + '% remaining';
+      if (resetKind === 'remaining') {
+        tooltip += '\n' + formatRemainingShort(rateLimit.resets_at) + ' left';
+      } else {
+        tooltip += '\nresets ' + formatResetAtShort(rateLimit.resets_at);
+      }
+    }
+
+    return [
+      '<div class="rate-limit-bar" data-tooltip="' + escapeHtml(tooltip) + '">',
+      '<span class="rate-limit-label">' + periodLabel + '</span>',
+      '<div class="rate-limit-track"><div class="rate-limit-fill" style="width:' + remain.toFixed(1) + '%;background:' + color + '"></div></div>',
+      '<span class="rate-limit-pct" style="color:' + color + '">' + pctText + '</span>',
+      '</div>'
+    ].join('');
+  }
+
+  function rateLimitProviderHtml(entry) {
+    var providerLabel = rateLimitProviderLabel(entry.provider);
+    var rateLimits = entry.rateLimits || {};
+    return [
+      '<div class="rate-limit-provider">',
+      '<span class="rate-limit-provider-name">' + escapeHtml(providerLabel) + '</span>',
+      '<div class="rate-limit-provider-bars">',
+      rateLimitBarHtml(providerLabel, '5H', rateLimits.five_hour, 'remaining'),
+      rateLimitBarHtml(providerLabel, '7D', rateLimits.seven_day, 'date'),
+      '</div>',
+      '</div>'
+    ].join('');
+  }
+
+  function updateRateLimits(snapshot) {
+    var entries = rateLimitEntries(snapshot);
+    if (entries.length === 0) {
       rateLimitsWrapEl.hidden = true;
+      rateLimitsWrapEl.innerHTML = '';
       return;
     }
+
     rateLimitsWrapEl.hidden = false;
-    var fh = rateLimits.five_hour;
-    var sd = rateLimits.seven_day;
-    if (fh && typeof fh.used_percentage === 'number') {
-      var used5 = Math.min(100, Math.max(0, fh.used_percentage));
-      var remain5 = 100 - used5;
-      var color5 = hpBarColor(remain5 / 100);
-      rate5hFillEl.style.width = remain5.toFixed(1) + '%';
-      rate5hFillEl.style.background = color5;
-      rate5hPctEl.textContent = remain5.toFixed(1) + '%';
-      rate5hPctEl.style.color = color5;
-      rate5hFillEl.parentElement.parentElement.setAttribute('data-tooltip', '5H: ' + remain5.toFixed(1) + '% remaining\n' + formatRemainingShort(fh.resets_at) + ' left');
-    }
-    if (sd && typeof sd.used_percentage === 'number') {
-      var used7 = Math.min(100, Math.max(0, sd.used_percentage));
-      var remain7 = 100 - used7;
-      var color7 = hpBarColor(remain7 / 100);
-      rate7dFillEl.style.width = remain7.toFixed(1) + '%';
-      rate7dFillEl.style.background = color7;
-      rate7dPctEl.textContent = remain7.toFixed(1) + '%';
-      rate7dPctEl.style.color = color7;
-      rate7dFillEl.parentElement.parentElement.setAttribute('data-tooltip', '7D: ' + remain7.toFixed(1) + '% remaining\nresets ' + formatResetAtShort(sd.resets_at));
-    }
+    rateLimitsWrapEl.innerHTML = entries.map(rateLimitProviderHtml).join('');
   }
 
   function formatModelName(model, contextMax) {
@@ -2963,7 +3039,7 @@
     activeCountEl.textContent = String(snapshot.activeAgentCount || 0);
     lastUpdateEl.textContent = new Date(snapshot.lastUpdate || Date.now()).toLocaleTimeString();
     tokenTotalEl.textContent = formatTokenCount(filteredTokenTotal(agents));
-    updateRateLimits(snapshot.rateLimits);
+    updateRateLimits(snapshot);
   }
 
   function syncVisibleSnapshot() {
@@ -3370,12 +3446,11 @@
     var fullLabel = agentLabel(agent);
     var lastCommand = commandText(agent.lastCommand);
     var xp = agentLevelProgress(agent);
-    var contextMax = agent.contextMax || 200000;
-    var contextUsed = agent.contextUsed || 0;
-    var contextRemaining = contextMax - contextUsed;
-    var hpRatio = contextRemaining / contextMax;
-    var barColor = hpBarColor(hpRatio);
-    var barPct = Math.max(0, Math.min(100, hpRatio * 100));
+    var contextStats = agentContextStats(agent);
+    var contextMax = contextStats.contextMax;
+    var contextRemaining = contextStats.contextRemaining;
+    var barColor = contextStats.hpColor;
+    var barPct = contextStats.hpPct;
 
     var html = '';
     html += '<div class="map-tooltip-title">' + escapeHtml(fullLabel) + '</div>';
@@ -3452,12 +3527,11 @@
     var name = agent.displayName || agent.subagentType || toShortId(agent.agentId);
     var lastCommand = commandText(agent.lastCommand);
     var xp = agentLevelProgress(agent);
-    var contextMax = agent.contextMax || 200000;
-    var contextUsed = agent.contextUsed || 0;
-    var contextRemaining = contextMax - contextUsed;
-    var hpRatio = contextRemaining / contextMax;
-    var barColor = hpBarColor(hpRatio);
-    var barPct = Math.max(0, Math.min(100, hpRatio * 100));
+    var contextStats = agentContextStats(agent);
+    var contextMax = contextStats.contextMax;
+    var contextRemaining = contextStats.contextRemaining;
+    var barColor = contextStats.hpColor;
+    var barPct = contextStats.hpPct;
     var duration = formatDuration(agent.createdAt, agent.doneAt);
 
     var html = '';
@@ -3568,18 +3642,17 @@
     var fullLabel = agentLabel(agent);
     var statusText = archived ? 'Boxed' : (agent.status || 'Idle');
     var projName = shortProjectName(agent.projectId || 'unknown');
-    var modelLabel = formatModelName(agent.model, agent.contextMax || 1000000) || 'Opus 4.6 (1M context)';
     var metAtText = formatSummaryDateTime(agent.createdAt);
     var lastActivity = commandText(agent.activity || statusText || 'Idle');
     var lastCommand = commandText(agent.lastCommand);
     var noteText = summarizeCommand(lastCommand || 'No command yet', 116);
     var activityText = summarizeCommand(lastActivity, 96);
-    var contextMax = agent.contextMax || 200000;
-    var contextUsed = agent.contextUsed || 0;
-    var contextRemaining = Math.max(0, contextMax - contextUsed);
-    var hpRatio = contextMax > 0 ? (contextRemaining / contextMax) : 0;
-    var barColor = hpBarColor(hpRatio);
-    var barPct = Math.max(0, Math.min(100, hpRatio * 100));
+    var contextStats = agentContextStats(agent);
+    var contextMax = contextStats.contextMax;
+    var contextRemaining = contextStats.contextRemaining;
+    var barColor = contextStats.hpColor;
+    var barPct = contextStats.hpPct;
+    var modelLabel = agentTypeLabel(agent, contextMax);
     var memoLines = [];
     var lastSeenText = '-';
     var lastSeenLabel = 'Last seen';
@@ -4742,11 +4815,6 @@
 
     projectFilterEl.addEventListener('change', function () {
       uiState.projectFilter = projectFilterEl.value;
-      renderAgentList();
-      tokenTotalEl.textContent = formatTokenCount(filteredTokenTotal(filteredAgents()));
-    });
-    sessionFilterEl.addEventListener('change', function () {
-      uiState.sessionFilter = sessionFilterEl.value;
       renderAgentList();
       tokenTotalEl.textContent = formatTokenCount(filteredTokenTotal(filteredAgents()));
     });

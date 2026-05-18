@@ -119,6 +119,14 @@ function parseArguments(raw) {
   }
 }
 
+function firstFiniteNumber(...values) {
+  for (const value of values) {
+    const num = Number(value);
+    if (Number.isFinite(num)) return num;
+  }
+  return NaN;
+}
+
 function extractLastCommand(toolName, args) {
   const direct = normalizeInlineText(pick(args, [
     'cmd',
@@ -244,9 +252,9 @@ function normalizeCodexEntry(entry, context) {
     const info = payload.info || {};
     const totalUsage = info.total_token_usage || {};
     const lastUsage = info.last_token_usage || {};
-    const contextUsed = Number(totalUsage.input_tokens);
+    const contextUsed = firstFiniteNumber(lastUsage.input_tokens, totalUsage.input_tokens);
     const totalTokens = Number(lastUsage.total_tokens);
-    const contextMax = Number(info.model_context_window);
+    const contextMax = firstFiniteNumber(info.model_context_window, payload.model_context_window, meta.contextMax);
     const rateLimits = normalizeRateLimits(payload.rate_limits);
     const outputMeta = { ...meta };
 
@@ -330,7 +338,7 @@ function normalizeCodexEntry(entry, context) {
 
   if (payloadType === 'task_complete' || payloadType === 'turn_aborted') {
     events.push({
-      type: EVENT_TYPES.AGENT_DONE,
+      type: EVENT_TYPES.WAITING,
       agentId,
       ts,
       meta

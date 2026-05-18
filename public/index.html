@@ -23,39 +23,29 @@
             <span class="promo-studio-toggle-subtitle">Custom scene builder</span>
           </button>
           <button id="hard-reset-btn" class="hard-reset-btn" type="button" hidden>Hard Reset</button>
-          <div id="rate-limits-wrap" class="rate-limits-wrap" hidden>
-            <div class="rate-limit-bar">
-              <span class="rate-limit-label">5H</span>
-              <div class="rate-limit-track"><div id="rate-5h-fill" class="rate-limit-fill"></div></div>
-              <span id="rate-5h-pct" class="rate-limit-pct">-</span>
+          <div id="rate-limits-wrap" class="rate-limits-wrap" hidden></div>
+          <div class="header-info">
+            <button class="header-info-button" type="button" aria-label="Dashboard info">
+              <span aria-hidden="true">i</span>
+            </button>
+            <div class="header-info-popover" role="tooltip">
+              <div class="info-stat">
+                <span class="label">Active</span>
+                <span id="active-count" class="value">0</span>
+              </div>
+              <div class="info-stat">
+                <span class="label">Last Update</span>
+                <span id="last-update" class="value">-</span>
+              </div>
+              <div class="info-stat">
+                <span class="label">Tokens Used</span>
+                <span id="token-total" class="value">0</span>
+              </div>
             </div>
-            <div class="rate-limit-bar">
-              <span class="rate-limit-label">7D</span>
-              <div class="rate-limit-track"><div id="rate-7d-fill" class="rate-limit-fill"></div></div>
-              <span id="rate-7d-pct" class="rate-limit-pct">-</span>
-            </div>
-          </div>
-          <div class="stat">
-            <span class="label">Active</span>
-            <span id="active-count" class="value">0</span>
-          </div>
-          <div class="stat">
-            <span class="label">Last Update</span>
-            <span id="last-update" class="value">-</span>
-          </div>
-          <div class="stat">
-            <span class="label">Tokens Used</span>
-            <span id="token-total" class="value">0</span>
           </div>
           <label class="control">
             <span>Project</span>
             <select id="project-filter">
-              <option value="all">All</option>
-            </select>
-          </label>
-          <label class="control">
-            <span>Session</span>
-            <select id="session-filter">
               <option value="all">All</option>
             </select>
           </label>
@@ -99,13 +89,6 @@
               </div>
               <div id="promo-studio-list" class="promo-studio-list"></div>
             </aside>
-          </div>
-          <div class="legend">
-            <span><b>Idle</b></span>
-            <span><b>Thinking</b></span>
-            <span><b>Tool</b> ⚙</span>
-            <span><b>Output</b> ✍</span>
-            <span><b>Waiting</b> ⏳</span>
           </div>
         </section>
       </main>

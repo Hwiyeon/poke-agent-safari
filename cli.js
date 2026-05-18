@@ -28,10 +28,10 @@ function hasSource(source, target) {
 }
 
 function sourceList(source) {
-  return source === 'all' ? ['claude', 'codex'] : [source || 'claude'];
+  return source === 'all' ? ['claude', 'codex'] : [source || DEFAULTS.source];
 }
 
-function getPersistencePaths(mode, cwd = process.cwd(), source = 'claude') {
+function getPersistencePaths(mode, cwd = process.cwd(), source = DEFAULTS.source) {
   const normalizedSource = configResolver.normalizeSource(source, DEFAULTS.source);
   const watchBaseDir = normalizedSource === 'claude'
     ? path.join(cwd, 'data')

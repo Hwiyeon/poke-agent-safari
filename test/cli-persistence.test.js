@@ -45,7 +45,7 @@ function seedBoxedAgent(state, agentId, tsBase, meta) {
 
 test('persistence paths are scoped by mode', () => {
   const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'poke-agents-persist-'));
-  const watchPaths = getPersistencePaths('watch', tempRoot);
+  const watchPaths = getPersistencePaths('watch', tempRoot, 'claude');
   const mockPaths = getPersistencePaths('mock', tempRoot);
 
   assert.notEqual(watchPaths.baseDir, mockPaths.baseDir);
@@ -59,6 +59,12 @@ test('pokeapi sprites are enabled by default', () => {
   const { config } = resolveConfig(['watch']);
   assert.equal(DEFAULTS.enablePokeapiSprites, true);
   assert.equal(config.enablePokeapiSprites, true);
+});
+
+test('watch source defaults to all providers', () => {
+  const { config } = resolveConfig(['watch']);
+  assert.equal(DEFAULTS.source, 'all');
+  assert.equal(config.source, 'all');
 });
 
 test('no-pokeapi CLI flag disables pokeapi sprites', () => {
@@ -147,7 +153,7 @@ test('hard-reset command clears only the selected mode persisted files', () => {
   });
 
   assert.equal(result.status, 0);
-  assert.match(result.stdout, /\[hard-reset\] cleared persisted watch\/claude files/);
+  assert.match(result.stdout, /\[hard-reset\] cleared persisted watch\/all files/);
   assert.equal(result.stderr, '');
   assert.equal(fs.existsSync(watchPaths.stateFile), false);
   assert.equal(fs.existsSync(watchPaths.pokedexFile), false);

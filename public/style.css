@@ -152,18 +152,49 @@ body {
 .rate-limits-wrap {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 6px;
   border: 2px solid var(--line);
   background: #1a1a2e;
-  padding: 6px 10px;
-  min-width: 140px;
+  padding: 6px 8px;
+  min-width: 236px;
+}
+
+.rate-limits-wrap[hidden] {
+  display: none;
+}
+
+.rate-limit-provider {
+  display: grid;
+  grid-template-columns: 78px minmax(0, 1fr);
+  align-items: center;
+  gap: 7px;
+}
+
+.rate-limit-provider-name {
+  min-width: 0;
+  color: #f8f1c4;
+  font-size: 10px;
+  font-weight: 800;
+  line-height: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-shadow: 1px 1px 0 rgba(0,0,0,0.6);
+  white-space: nowrap;
+}
+
+.rate-limit-provider-bars {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
 }
 
 .rate-limit-bar {
   position: relative;
-  display: flex;
+  display: grid;
+  grid-template-columns: 22px minmax(58px, 1fr) 36px;
   align-items: center;
-  gap: 6px;
+  gap: 5px;
 }
 
 .rate-limit-bar[data-tooltip]:hover::after {
@@ -186,18 +217,15 @@ body {
 }
 
 .rate-limit-label {
-  width: 20px;
   font-size: 9px;
   font-weight: 700;
   color: #ffe060;
   text-shadow: 1px 1px 0 rgba(0,0,0,0.6);
-  flex-shrink: 0;
   text-align: right;
 }
 
 .rate-limit-track {
-  flex: 1;
-  min-width: 60px;
+  min-width: 58px;
   height: 7px;
   background: #303030;
   border-radius: 2px;
@@ -216,25 +244,78 @@ body {
   font-size: 10px;
   font-weight: 700;
   color: #c8c8c8;
-  min-width: 28px;
   text-align: right;
 }
 
-.stat {
-  border: 2px solid var(--line);
-  background: #f4f8f9;
-  padding: 4px 8px;
-  min-width: 102px;
+.header-info {
+  position: relative;
+  flex-shrink: 0;
 }
 
-.stat .label {
+.header-info-button {
+  width: 32px;
+  height: 32px;
+  border: 2px solid var(--line);
+  border-radius: 50%;
+  background: #141416;
+  color: #fffdf8;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.28), 2px 2px 0 #c8b89c;
+  font: inherit;
+  font-size: 18px;
+  font-weight: 900;
+  line-height: 1;
+  cursor: default;
+}
+
+.header-info-button:focus-visible {
+  outline: 2px solid #ffe060;
+  outline-offset: 2px;
+}
+
+.header-info-popover {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  width: 174px;
+  display: grid;
+  gap: 6px;
+  border: 2px solid var(--line);
+  background: #fffdf8;
+  box-shadow: 4px 4px 0 #c8b89c;
+  padding: 8px;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(-3px);
+  transition: opacity 0.16s ease, transform 0.16s ease;
+  z-index: 120;
+}
+
+.header-info:hover .header-info-popover,
+.header-info:focus-within .header-info-popover {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(0);
+}
+
+.info-stat {
+  border: 2px solid var(--line);
+  background: #f4f8f9;
+  padding: 5px 8px;
+  min-width: 0;
+}
+
+.info-stat .label {
   display: block;
   font-size: 10px;
   color: var(--muted);
 }
 
-.stat .value {
+.info-stat .value {
   display: block;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   font-size: 14px;
   font-weight: 700;
 }
@@ -2427,16 +2508,6 @@ body {
   min-width: 0;
   min-height: 0;
   display: block;
-}
-
-.legend {
-  border-top: 2px solid var(--line);
-  display: flex;
-  gap: 10px;
-  flex-wrap: wrap;
-  font-size: 11px;
-  padding: 6px 8px;
-  background: #fff;
 }
 
 .pokedex-modal[hidden] {

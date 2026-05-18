@@ -22,6 +22,7 @@
 
 ## Recent Updates
 
+- **Codex 호환 업데이트.** Agent Safari가 Codex session transcript를 이해하고, 기본적으로 Claude Code와 Codex를 함께 감시합니다. Codex turn은 바로 Box로 보내지 않고 `Waiting` 상태로 유지하며, 헤더의 budget meter도 Claude/Codex로 분리해서 보여줍니다.
 - **HP bar가 context compression threshold를 반영합니다.** Claude Code 설정 또는 환경 변수에 `CLAUDE_AUTOCOMPACT_PCT_OVERRIDE`가 지정되어 있으면, HP가 원본 모델 context 한계가 아니라 해당 auto-compaction threshold에서 0이 됩니다 — Claude Code가 auto-compact하기 전까지 실제로 사용 가능한 context를 HP가 추적합니다.
 
 ## 목차
@@ -96,7 +97,7 @@ node tools/setup_poke_assets.js
 ```
 
 - 외부 npm dependency가 없습니다.
-- 기본적으로 `~/.claude/projects` 아래의 Claude Code transcript를 감시합니다.
+- 기본적으로 `~/.claude/projects` 아래의 Claude Code transcript와 `~/.codex/sessions` 아래의 Codex session을 함께 감시합니다. 하나만 보려면 `--source claude` 또는 `--source codex`를 사용하세요.
 - `setup_poke_assets.js`는 [PokeAPI sprites repository](https://github.com/PokeAPI/sprites)에서 sprite를 내려받아 `public/vendor/pokeapi-sprites`에 저장합니다.
 
 ## 빠른 시작
