@@ -22,7 +22,7 @@ Every active session gets assigned a Pokemon and dropped onto a tiny island map 
 
 ## Recent Updates
 
-- **Codex compatibility.** Agent Safari now understands Codex session transcripts, watches Claude Code and Codex together by default, keeps Codex turns in `Waiting` instead of boxing them immediately, and separates Claude/Codex budget meters in the header.
+- **2026-05-18 - Codex compatibility.** Agent Safari now understands Codex session transcripts, watches Claude Code and Codex together by default, and separates Claude/Codex budget meters in the header.
 - **HP bar respects the context compression threshold.** When `CLAUDE_AUTOCOMPACT_PCT_OVERRIDE` is set in your Claude Code settings or environment, HP now hits 0 at that auto-compaction threshold instead of the raw model context limit — so HP tracks the context actually usable before Claude Code auto-compacts.
 
 ## Table of Contents
