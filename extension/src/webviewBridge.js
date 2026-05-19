@@ -69,6 +69,29 @@ function createWebviewBridge(options = {}) {
           case 'unbox':
             if (typeof message.id === 'string') state.manualUnbox(message.id);
             break;
+          case 'owned':
+            if (message.action === 'adopt') {
+              state.adoptOwnedPokemon(message.payload || {});
+            } else if (message.action === 'nickname' && message.payload) {
+              state.setOwnedPokemonNickname(message.payload.id, message.payload.nickname);
+            } else if (message.action === 'party' && message.payload) {
+              if (message.payload.inParty === false) {
+                state.removeOwnedPokemonFromParty(message.payload.id);
+              } else {
+                state.setOwnedPokemonParty(message.payload.id, message.payload.slot);
+              }
+            } else if (message.action === 'box' && message.payload) {
+              state.removeOwnedPokemonFromParty(message.payload.id);
+            } else if (message.action === 'assignProject' && message.payload) {
+              state.assignProjectTraining(message.payload.id, message.payload.projectId);
+            } else if (message.action === 'evolve' && message.payload) {
+              state.evolveOwnedPokemon(message.payload.id);
+            } else if (message.action === 'holdEvolution' && message.payload) {
+              state.setOwnedPokemonEvolutionHold(message.payload.id, message.payload.held);
+            } else if (message.action === 'release' && message.payload) {
+              state.releaseOwnedPokemon(message.payload.id);
+            }
+            break;
           case 'hardReset':
             if (typeof options.onHardReset === 'function') options.onHardReset();
             break;

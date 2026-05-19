@@ -2,6 +2,7 @@
 
 const EventEmitter = require('events');
 const { EVENT_TYPES } = require('./parser');
+const { POKEDEX_MIN, POKEDEX_MAX, getEvolutionPath, getNextEvolution } = require('./pokemon');
 
 const STATUS = Object.freeze({
   IDLE: 'Idle',
@@ -22,6 +23,10 @@ const LIFECYCLE = Object.freeze({
 const DEFAULT_RING_SIZE = 300;
 const DEFAULT_MAX_BOXED_AGENTS = 300;
 const DEFAULT_MAX_SUBAGENT_HISTORY = 1000;
+const DEFAULT_MAX_TRAINING_EVENTS = 500;
+const DEFAULT_POKEMON_BOX_ID = 'box-default';
+const PARTY_SIZE = 6;
+const TRAINING_TOKEN_DIVISOR = 1000;
 const DEFAULT_COUNTERS = Object.freeze({
   seen: 0,
   toolStarts: 0,
@@ -137,6 +142,119 @@ function pickBestAgentRecord(candidates, beforeTs) {
   return best;
 }
 
+function clampPokemonId(value) {
+  const pokemonId = Number(value);
+  if (!Number.isInteger(pokemonId) || pokemonId < POKEDEX_MIN || pokemonId > POKEDEX_MAX) {
+    return null;
+  }
+  return pokemonId;
+}
+
+function normalizeOwnedText(value, maxLength = 80) {
+  if (typeof value !== 'string') {
+    return null;
+  }
+  const trimmed = value.trim();
+  if (!trimmed) {
+    return null;
+  }
+  return trimmed.slice(0, maxLength);
+}
+
+function createOwnedPokemonId(now = Date.now()) {
+  return `owned-${now.toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+}
+
+function encounterIdForAgent(agent) {
+  if (!agent || !agent.agentId) {
+    return null;
+  }
+  return [
+    agent.provider || 'claude',
+    agent.agentId,
+    Number.isFinite(agent.createdAt) ? agent.createdAt : 0
+  ].join(':');
+}
+
+function ownedExpToNextLevel(level, growthRate = 1) {
+  const normalizedLevel = Math.max(1, Math.min(100, Number(level) || 1));
+  const normalizedGrowth = Number.isFinite(Number(growthRate)) && Number(growthRate) > 0
+    ? Number(growthRate)
+    : 1;
+  return Math.max(1, Math.round(normalizedGrowth * (20 + 8 * Math.pow(normalizedLevel, 1.8))));
+}
+
+function normalizeOwnedPokemon(raw, fallbackNow = Date.now()) {
+  if (!raw || typeof raw !== 'object') {
+    return null;
+  }
+
+  const speciesId = clampPokemonId(raw.speciesId);
+  if (!speciesId) {
+    return null;
+  }
+
+  const level = Math.max(1, Math.min(100, Math.floor(Number(raw.level) || 1)));
+  const nextNeeded = level >= 100 ? 0 : ownedExpToNextLevel(level, raw.growthRate || 1);
+  const exp = level >= 100
+    ? 0
+    : Math.max(0, Math.min(nextNeeded, Math.floor(Number(raw.exp) || 0)));
+  const partySlot = raw.partySlot !== null && raw.partySlot !== undefined && Number.isInteger(Number(raw.partySlot))
+    ? Math.max(0, Math.min(PARTY_SIZE - 1, Number(raw.partySlot)))
+    : null;
+
+  return {
+    id: typeof raw.id === 'string' && raw.id ? raw.id : createOwnedPokemonId(fallbackNow),
+    speciesId,
+    nickname: normalizeOwnedText(raw.nickname, 40),
+    level,
+    exp,
+    totalTrainingExp: Math.max(0, Math.floor(Number(raw.totalTrainingExp) || 0)),
+    growthRate: Number.isFinite(Number(raw.growthRate)) && Number(raw.growthRate) > 0 ? Number(raw.growthRate) : 1,
+    sourceEncounterId: normalizeOwnedText(raw.sourceEncounterId, 240),
+    sourceAgentId: normalizeOwnedText(raw.sourceAgentId, 240),
+    sourceProjectId: normalizeOwnedText(raw.sourceProjectId, 240),
+    sourceSessionId: normalizeOwnedText(raw.sourceSessionId, 240),
+    assignedProjectId: normalizeOwnedText(raw.assignedProjectId, 240),
+    partySlot,
+    boxId: normalizeOwnedText(raw.boxId, 80) || DEFAULT_POKEMON_BOX_ID,
+    evolutionHeld: !!raw.evolutionHeld,
+    createdAt: Number.isFinite(Number(raw.createdAt)) ? Number(raw.createdAt) : fallbackNow,
+    updatedAt: Number.isFinite(Number(raw.updatedAt)) ? Number(raw.updatedAt) : fallbackNow
+  };
+}
+
+function normalizePokemonBox(raw, fallbackNow = Date.now()) {
+  if (!raw || typeof raw !== 'object') {
+    return null;
+  }
+  const id = normalizeOwnedText(raw.id, 80);
+  if (!id) {
+    return null;
+  }
+  return {
+    id,
+    name: normalizeOwnedText(raw.name, 60) || 'Pokemon Box',
+    createdAt: Number.isFinite(Number(raw.createdAt)) ? Number(raw.createdAt) : fallbackNow
+  };
+}
+
+function defaultPokemonBox(now = Date.now()) {
+  return {
+    id: DEFAULT_POKEMON_BOX_ID,
+    name: 'Pokemon Box',
+    createdAt: now
+  };
+}
+
+function trainingEventId(now = Date.now()) {
+  return `train-${now.toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+}
+
+function cloneOwnedPokemon(pokemon) {
+  return { ...pokemon };
+}
+
 class AgentState extends EventEmitter {
   constructor(options = {}) {
     super();
@@ -147,11 +265,16 @@ class AgentState extends EventEmitter {
     this.ringSize = options.ringSize || DEFAULT_RING_SIZE;
     this.maxBoxedAgents = Math.max(1, options.maxBoxedAgents || DEFAULT_MAX_BOXED_AGENTS);
     this.maxSubagentHistory = Math.max(1, options.maxSubagentHistory || DEFAULT_MAX_SUBAGENT_HISTORY);
+    this.maxTrainingEvents = Math.max(1, options.maxTrainingEvents || DEFAULT_MAX_TRAINING_EVENTS);
     this.resolvePokemonId = typeof options.resolvePokemonId === 'function' ? options.resolvePokemonId : null;
 
     this.agents = new Map();
     this.boxedAgents = [];
     this.subagentHistory = [];
+    this.ownedPokemon = [];
+    this.pokemonBoxes = [defaultPokemonBox()];
+    this.projectTraining = {};
+    this.trainingEvents = [];
     this.recentEvents = [];
     this.lastUpdate = 0;
     this.rateLimits = null;
@@ -168,6 +291,9 @@ class AgentState extends EventEmitter {
     }
     if (this.subagentHistory.length > this.maxSubagentHistory) {
       this.subagentHistory.splice(0, this.subagentHistory.length - this.maxSubagentHistory);
+    }
+    if (this.trainingEvents.length > this.maxTrainingEvents) {
+      this.trainingEvents.splice(0, this.trainingEvents.length - this.maxTrainingEvents);
     }
   }
 
@@ -202,7 +328,7 @@ class AgentState extends EventEmitter {
       agent,
       getAgentById: (id, lookupOptions = {}) => this.lookupAgentById(id, lookupOptions)
     });
-    if (!Number.isInteger(pokemonId) || pokemonId < 1 || pokemonId > 251) {
+    if (!Number.isInteger(pokemonId) || pokemonId < POKEDEX_MIN || pokemonId > POKEDEX_MAX) {
       return false;
     }
 
@@ -221,7 +347,7 @@ class AgentState extends EventEmitter {
     const seenIds = Array.isArray(ids) ? ids : [];
     for (const rawId of seenIds) {
       const pokemonId = Number(rawId);
-      if (!Number.isInteger(pokemonId) || pokemonId < 1 || pokemonId > 251 || this.seenPokemonIds.has(pokemonId)) {
+      if (!Number.isInteger(pokemonId) || pokemonId < POKEDEX_MIN || pokemonId > POKEDEX_MAX || this.seenPokemonIds.has(pokemonId)) {
         continue;
       }
       this.seenPokemonIds.add(pokemonId);
@@ -319,8 +445,409 @@ class AgentState extends EventEmitter {
       seenPokemonIds,
       firstDiscoveryByPokemon,
       discoveredCount: seenPokemonIds.length,
-      totalCount: 251
+      totalCount: POKEDEX_MAX - POKEDEX_MIN + 1
     };
+  }
+
+  getPokemonIdForAgentRecord(agent) {
+    if (!this.resolvePokemonId || !agent || !agent.agentId) {
+      return null;
+    }
+
+    const pokemonId = this.resolvePokemonId(agent.agentId, {
+      agent,
+      getAgentById: (id, lookupOptions = {}) => this.lookupAgentById(id, lookupOptions),
+      ts: agent.createdAt || Date.now()
+    });
+    return clampPokemonId(pokemonId);
+  }
+
+  ownedPokemonById(id) {
+    return this.ownedPokemon.find((pokemon) => pokemon && pokemon.id === id) || null;
+  }
+
+  partyPokemon() {
+    return this.ownedPokemon
+      .filter((pokemon) => Number.isInteger(pokemon.partySlot))
+      .sort((a, b) => a.partySlot - b.partySlot);
+  }
+
+  firstOpenPartySlot() {
+    const used = new Set(this.partyPokemon().map((pokemon) => pokemon.partySlot));
+    for (let slot = 0; slot < PARTY_SIZE; slot += 1) {
+      if (!used.has(slot)) {
+        return slot;
+      }
+    }
+    return null;
+  }
+
+  compactPartySlots() {
+    this.partyPokemon().forEach((pokemon, index) => {
+      pokemon.partySlot = index < PARTY_SIZE ? index : null;
+    });
+  }
+
+  adoptOwnedPokemon(options = {}) {
+    const now = Date.now();
+    const rawAgentId = normalizeOwnedText(options.agentId, 240);
+    let sourceAgent = rawAgentId ? this.lookupAgentById(rawAgentId) : null;
+    let speciesId = null;
+
+    if (sourceAgent) {
+      speciesId = this.getPokemonIdForAgentRecord(sourceAgent);
+    } else {
+      speciesId = clampPokemonId(options.speciesId);
+    }
+
+    if (!speciesId || !this.seenPokemonIds.has(speciesId)) {
+      return { ok: false, error: 'Pokemon has not been discovered yet.' };
+    }
+
+    const shouldJoinParty = options.inParty !== false && options.boxOnly !== true && options.toBox !== true;
+    const openSlot = shouldJoinParty ? this.firstOpenPartySlot() : null;
+    const owned = normalizeOwnedPokemon({
+      id: createOwnedPokemonId(now),
+      speciesId,
+      nickname: normalizeOwnedText(options.nickname, 40),
+      level: 1,
+      exp: 0,
+      totalTrainingExp: 0,
+      sourceEncounterId: sourceAgent ? encounterIdForAgent(sourceAgent) : null,
+      sourceAgentId: sourceAgent ? sourceAgent.agentId : null,
+      sourceProjectId: sourceAgent ? sourceAgent.projectId : null,
+      sourceSessionId: sourceAgent ? sourceAgent.sessionId : null,
+      partySlot: openSlot,
+      boxId: DEFAULT_POKEMON_BOX_ID,
+      createdAt: now,
+      updatedAt: now
+    }, now);
+
+    this.ownedPokemon.push(owned);
+    this.compactPartySlots();
+    this.ensurePokemonBoxes();
+    this.lastUpdate = now;
+    this.emit('update', this.snapshot());
+    return { ok: true, pokemon: cloneOwnedPokemon(owned) };
+  }
+
+  ensurePokemonBoxes() {
+    if (!Array.isArray(this.pokemonBoxes) || this.pokemonBoxes.length === 0) {
+      this.pokemonBoxes = [defaultPokemonBox()];
+      return;
+    }
+
+    if (!this.pokemonBoxes.some((box) => box.id === DEFAULT_POKEMON_BOX_ID)) {
+      this.pokemonBoxes.unshift(defaultPokemonBox());
+    }
+  }
+
+  setOwnedPokemonNickname(id, nickname) {
+    const pokemon = this.ownedPokemonById(id);
+    if (!pokemon) {
+      return { ok: false, error: 'Owned Pokemon not found.' };
+    }
+    pokemon.nickname = normalizeOwnedText(nickname, 40);
+    pokemon.updatedAt = Date.now();
+    this.lastUpdate = pokemon.updatedAt;
+    this.emit('update', this.snapshot());
+    return { ok: true, pokemon: cloneOwnedPokemon(pokemon) };
+  }
+
+  setOwnedPokemonParty(id, slot = null) {
+    const pokemon = this.ownedPokemonById(id);
+    if (!pokemon) {
+      return { ok: false, error: 'Owned Pokemon not found.' };
+    }
+
+    let nextSlot = slot;
+    if (nextSlot === null || nextSlot === undefined || nextSlot === '') {
+      nextSlot = this.firstOpenPartySlot();
+      if (nextSlot === null && !Number.isInteger(pokemon.partySlot)) {
+        return { ok: false, error: 'Party is full.' };
+      }
+      if (nextSlot === null) {
+        nextSlot = pokemon.partySlot;
+      }
+    }
+
+    nextSlot = Number(nextSlot);
+    if (!Number.isInteger(nextSlot) || nextSlot < 0 || nextSlot >= PARTY_SIZE) {
+      return { ok: false, error: 'Invalid party slot.' };
+    }
+
+    const now = Date.now();
+    const party = this.partyPokemon().filter((candidate) => candidate.id !== pokemon.id);
+    if (party.length >= PARTY_SIZE && !Number.isInteger(pokemon.partySlot)) {
+      return { ok: false, error: 'Party is full.' };
+    }
+    const insertAt = Math.max(0, Math.min(nextSlot, party.length));
+    party.splice(insertAt, 0, pokemon);
+    party.forEach((candidate, index) => {
+      candidate.partySlot = index < PARTY_SIZE ? index : null;
+      candidate.updatedAt = now;
+      candidate.boxId = DEFAULT_POKEMON_BOX_ID;
+    });
+
+    this.compactPartySlots();
+    this.lastUpdate = now;
+    this.emit('update', this.snapshot());
+    return { ok: true, pokemon: cloneOwnedPokemon(pokemon) };
+  }
+
+  removeOwnedPokemonFromParty(id) {
+    const pokemon = this.ownedPokemonById(id);
+    if (!pokemon) {
+      return { ok: false, error: 'Owned Pokemon not found.' };
+    }
+    pokemon.partySlot = null;
+    pokemon.boxId = DEFAULT_POKEMON_BOX_ID;
+    pokemon.updatedAt = Date.now();
+    this.compactPartySlots();
+    this.lastUpdate = pokemon.updatedAt;
+    this.emit('update', this.snapshot());
+    return { ok: true, pokemon: cloneOwnedPokemon(pokemon) };
+  }
+
+  releaseOwnedPokemon(id) {
+    const index = this.ownedPokemon.findIndex((pokemon) => pokemon && pokemon.id === id);
+    if (index < 0) {
+      return { ok: false, error: 'Owned Pokemon not found.' };
+    }
+
+    const [released] = this.ownedPokemon.splice(index, 1);
+    if (released.assignedProjectId && this.projectTraining[released.assignedProjectId] === released.id) {
+      delete this.projectTraining[released.assignedProjectId];
+    }
+    for (const projectId of Object.keys(this.projectTraining)) {
+      if (this.projectTraining[projectId] === released.id) {
+        delete this.projectTraining[projectId];
+      }
+    }
+    this.trainingEvents = this.trainingEvents.filter((event) => event.ownedPokemonId !== released.id);
+    this.compactPartySlots();
+    this.lastUpdate = Date.now();
+    this.emit('update', this.snapshot());
+    return { ok: true, pokemon: cloneOwnedPokemon(released) };
+  }
+
+  assignProjectTraining(id, projectId) {
+    const pokemon = this.ownedPokemonById(id);
+    if (!pokemon) {
+      return { ok: false, error: 'Owned Pokemon not found.' };
+    }
+
+    const normalizedProjectId = normalizeOwnedText(projectId, 240);
+    if (pokemon.assignedProjectId && this.projectTraining[pokemon.assignedProjectId] === pokemon.id) {
+      delete this.projectTraining[pokemon.assignedProjectId];
+    }
+
+    if (normalizedProjectId) {
+      const previousPokemonId = this.projectTraining[normalizedProjectId];
+      if (previousPokemonId && previousPokemonId !== pokemon.id) {
+        const previousPokemon = this.ownedPokemonById(previousPokemonId);
+        if (previousPokemon) {
+          previousPokemon.assignedProjectId = null;
+          previousPokemon.updatedAt = Date.now();
+        }
+      }
+      this.projectTraining[normalizedProjectId] = pokemon.id;
+      pokemon.assignedProjectId = normalizedProjectId;
+    } else {
+      pokemon.assignedProjectId = null;
+    }
+
+    pokemon.updatedAt = Date.now();
+    this.lastUpdate = pokemon.updatedAt;
+    this.emit('update', this.snapshot());
+    return { ok: true, pokemon: cloneOwnedPokemon(pokemon) };
+  }
+
+  setOwnedPokemonEvolutionHold(id, held) {
+    const pokemon = this.ownedPokemonById(id);
+    if (!pokemon) {
+      return { ok: false, error: 'Owned Pokemon not found.' };
+    }
+    pokemon.evolutionHeld = !!held;
+    pokemon.updatedAt = Date.now();
+    this.lastUpdate = pokemon.updatedAt;
+    this.emit('update', this.snapshot());
+    return { ok: true, pokemon: cloneOwnedPokemon(pokemon) };
+  }
+
+  evolutionRequirementForPokemon(pokemon) {
+    if (!pokemon) {
+      return null;
+    }
+    const nextSpeciesId = getNextEvolution(pokemon.speciesId);
+    if (!nextSpeciesId) {
+      return null;
+    }
+    const nextPath = getEvolutionPath(nextSpeciesId);
+    const stageIndex = nextPath.indexOf(pokemon.speciesId);
+    const requiredLevel = stageIndex <= 0 ? 16 : 36;
+    return {
+      nextSpeciesId,
+      requiredLevel,
+      canEvolve: pokemon.level >= requiredLevel && !pokemon.evolutionHeld
+    };
+  }
+
+  evolveOwnedPokemon(id) {
+    const pokemon = this.ownedPokemonById(id);
+    if (!pokemon) {
+      return { ok: false, error: 'Owned Pokemon not found.' };
+    }
+
+    const requirement = this.evolutionRequirementForPokemon(pokemon);
+    if (!requirement || !requirement.canEvolve) {
+      return { ok: false, error: 'Evolution requirements are not met.' };
+    }
+
+    pokemon.speciesId = requirement.nextSpeciesId;
+    pokemon.evolutionHeld = false;
+    pokemon.updatedAt = Date.now();
+    this.lastUpdate = pokemon.updatedAt;
+    this.emit('update', this.snapshot());
+    return { ok: true, pokemon: cloneOwnedPokemon(pokemon) };
+  }
+
+  addOwnedExperience(id, amount, context = {}) {
+    const pokemon = this.ownedPokemonById(id);
+    const expAmount = Math.floor(Number(amount) || 0);
+    if (!pokemon || expAmount <= 0) {
+      return null;
+    }
+
+    pokemon.totalTrainingExp = (pokemon.totalTrainingExp || 0) + expAmount;
+    pokemon.exp = (pokemon.exp || 0) + expAmount;
+
+    while (pokemon.level < 100) {
+      const needed = ownedExpToNextLevel(pokemon.level, pokemon.growthRate || 1);
+      if (pokemon.exp < needed) {
+        break;
+      }
+      pokemon.exp -= needed;
+      pokemon.level += 1;
+    }
+
+    if (pokemon.level >= 100) {
+      pokemon.level = 100;
+      pokemon.exp = 0;
+    }
+
+    pokemon.updatedAt = Date.now();
+    if (context.record !== false) {
+      this.trainingEvents.push({
+        id: trainingEventId(pokemon.updatedAt),
+        ownedPokemonId: pokemon.id,
+        projectId: context.projectId || null,
+        agentId: context.agentId || null,
+        sessionId: context.sessionId || null,
+        exp: expAmount,
+        sourceTokens: Math.max(0, Math.floor(Number(context.sourceTokens) || 0)),
+        reason: context.reason || 'usage',
+        createdAt: pokemon.updatedAt
+      });
+      this.trimHistoryBuffers();
+    }
+
+    return pokemon;
+  }
+
+  distributeTrainingExperience(agent, tokenDelta) {
+    if (!agent || !agent.projectId) {
+      return false;
+    }
+
+    const baseExp = Math.floor((Number(tokenDelta) || 0) / TRAINING_TOKEN_DIVISOR);
+    if (baseExp <= 0 || this.ownedPokemon.length === 0) {
+      return false;
+    }
+
+    const weights = new Map();
+    const addWeight = (id, weight) => {
+      if (!id || weight <= 0 || !this.ownedPokemonById(id)) return;
+      weights.set(id, (weights.get(id) || 0) + weight);
+    };
+
+    const assignedId = this.projectTraining[agent.projectId] || null;
+    const party = this.partyPokemon();
+    const leader = party.length > 0 ? party[0] : null;
+    const rest = leader ? party.filter((pokemon) => pokemon.id !== leader.id) : [];
+
+    if (assignedId) {
+      addWeight(assignedId, 0.6);
+      if (leader) addWeight(leader.id, 0.25);
+      for (const member of rest) {
+        addWeight(member.id, 0.15 / rest.length);
+      }
+    } else if (leader) {
+      addWeight(leader.id, rest.length > 0 ? 0.5 : 1);
+      for (const member of rest) {
+        addWeight(member.id, 0.5 / rest.length);
+      }
+    }
+
+    if (weights.size === 0) {
+      return false;
+    }
+
+    const totalWeight = Array.from(weights.values()).reduce((sum, weight) => sum + weight, 0);
+    const allocations = Array.from(weights.entries()).map(([id, weight]) => {
+      const raw = baseExp * (weight / totalWeight);
+      return {
+        id,
+        exp: Math.floor(raw),
+        fraction: raw - Math.floor(raw)
+      };
+    });
+
+    let remaining = baseExp - allocations.reduce((sum, item) => sum + item.exp, 0);
+    allocations
+      .slice()
+      .sort((a, b) => b.fraction - a.fraction)
+      .forEach((item) => {
+        if (remaining <= 0) return;
+        item.exp += 1;
+        remaining -= 1;
+      });
+
+    let changed = false;
+    for (const allocation of allocations) {
+      if (allocation.exp <= 0) continue;
+      const updated = this.addOwnedExperience(allocation.id, allocation.exp, {
+        projectId: agent.projectId,
+        agentId: agent.agentId,
+        sessionId: agent.sessionId,
+        sourceTokens: tokenDelta,
+        reason: 'usage-share'
+      });
+      changed = !!updated || changed;
+    }
+
+    if (changed) {
+      this.lastUpdate = Date.now();
+    }
+    return changed;
+  }
+
+  ownedPokemonSnapshot() {
+    return this.ownedPokemon
+      .map((pokemon) => {
+        const requirement = this.evolutionRequirementForPokemon(pokemon);
+        return {
+          ...cloneOwnedPokemon(pokemon),
+          expToNextLevel: pokemon.level >= 100 ? 0 : ownedExpToNextLevel(pokemon.level, pokemon.growthRate || 1),
+          evolution: requirement
+        };
+      })
+      .sort((a, b) => {
+        const aSlot = Number.isInteger(a.partySlot) ? a.partySlot : 99;
+        const bSlot = Number.isInteger(b.partySlot) ? b.partySlot : 99;
+        if (aSlot !== bSlot) return aSlot - bSlot;
+        return (a.createdAt || 0) - (b.createdAt || 0);
+      });
   }
 
   upsertAgent(agentId, ts, meta = {}) {
@@ -403,6 +930,7 @@ class AgentState extends EventEmitter {
     }
 
     agent.selfTokens = (agent.selfTokens || 0) + amount;
+    const trainingChanged = this.distributeTrainingExperience(agent, amount);
 
     let current = agent;
     let guard = 0;
@@ -413,6 +941,10 @@ class AgentState extends EventEmitter {
       }
       current = this.agents.get(current.parentId) || null;
       guard += 1;
+    }
+
+    if (trainingChanged) {
+      this.emit('update', this.snapshot());
     }
   }
 
@@ -935,7 +1467,11 @@ class AgentState extends EventEmitter {
       agents,
       recentEvents: this.recentEvents.slice(-80),
       boxedAgents: this.boxedAgents.slice(),
-      subagentHistory: this.subagentHistory.slice()
+      subagentHistory: this.subagentHistory.slice(),
+      ownedPokemon: this.ownedPokemonSnapshot(),
+      pokemonBoxes: this.pokemonBoxes.map((box) => ({ ...box })),
+      projectTraining: { ...this.projectTraining },
+      trainingEvents: this.trainingEvents.slice(-80)
     };
   }
 
@@ -977,7 +1513,11 @@ class AgentState extends EventEmitter {
       rateLimitsByProvider: cloneRateLimitsByProvider(this.rateLimitsByProvider),
       agents,
       boxedAgents: this.boxedAgents.slice(),
-      subagentHistory: this.subagentHistory.slice()
+      subagentHistory: this.subagentHistory.slice(),
+      ownedPokemon: this.ownedPokemon.map((pokemon) => cloneOwnedPokemon(pokemon)),
+      pokemonBoxes: this.pokemonBoxes.map((box) => ({ ...box })),
+      projectTraining: { ...this.projectTraining },
+      trainingEvents: this.trainingEvents.slice()
     };
   }
 
@@ -995,6 +1535,33 @@ class AgentState extends EventEmitter {
       : [];
     this.subagentHistory = Array.isArray(data.subagentHistory)
       ? data.subagentHistory.map((h) => (h.lifecycle ? h : { ...h, lifecycle: LIFECYCLE.DONE }))
+      : [];
+    const now = Date.now();
+    this.ownedPokemon = Array.isArray(data.ownedPokemon)
+      ? data.ownedPokemon.map((entry) => normalizeOwnedPokemon(entry, now)).filter(Boolean)
+      : [];
+    this.pokemonBoxes = Array.isArray(data.pokemonBoxes)
+      ? data.pokemonBoxes.map((entry) => normalizePokemonBox(entry, now)).filter(Boolean)
+      : [defaultPokemonBox(now)];
+    this.ensurePokemonBoxes();
+    this.projectTraining = {};
+    if (data.projectTraining && typeof data.projectTraining === 'object') {
+      for (const [projectId, ownedPokemonId] of Object.entries(data.projectTraining)) {
+        const normalizedProjectId = normalizeOwnedText(projectId, 240);
+        const pokemon = this.ownedPokemonById(ownedPokemonId);
+        if (normalizedProjectId && pokemon) {
+          this.projectTraining[normalizedProjectId] = pokemon.id;
+          pokemon.assignedProjectId = normalizedProjectId;
+        }
+      }
+    }
+    for (const pokemon of this.ownedPokemon) {
+      if (pokemon.assignedProjectId && this.projectTraining[pokemon.assignedProjectId] !== pokemon.id) {
+        this.projectTraining[pokemon.assignedProjectId] = pokemon.id;
+      }
+    }
+    this.trainingEvents = Array.isArray(data.trainingEvents)
+      ? data.trainingEvents.filter((event) => event && typeof event === 'object').map((event) => ({ ...event }))
       : [];
     this.trimHistoryBuffers();
 
@@ -1053,6 +1620,10 @@ class AgentState extends EventEmitter {
     this.agents.clear();
     this.boxedAgents = [];
     this.subagentHistory = [];
+    this.ownedPokemon = [];
+    this.pokemonBoxes = [defaultPokemonBox(now)];
+    this.projectTraining = {};
+    this.trainingEvents = [];
     this.recentEvents = [];
     this.seenPokemonIds = new Set();
     this.firstDiscoveryByPokemon = {};

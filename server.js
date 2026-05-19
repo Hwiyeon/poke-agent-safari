@@ -141,6 +141,44 @@ class DashboardServer extends EventEmitter {
       return;
     }
 
+    if (pathname === '/api/owned/adopt' && req.method === 'POST') {
+      const body = await this.readJsonBody(req);
+      const result = this.state.adoptOwnedPokemon(body);
+      this.sendJson(res, result.ok ? 200 : 400, result);
+      return;
+    }
+
+    if (pathname.startsWith('/api/owned/') && req.method === 'POST') {
+      const parts = pathname.slice('/api/owned/'.length).split('/').map((part) => decodeURIComponent(part));
+      const ownedPokemonId = parts[0];
+      const action = parts[1];
+      const body = await this.readJsonBody(req);
+      let result = { ok: false, error: 'Unknown owned Pokemon action' };
+
+      if (action === 'nickname') {
+        result = this.state.setOwnedPokemonNickname(ownedPokemonId, body.nickname);
+      } else if (action === 'party') {
+        if (body.inParty === false) {
+          result = this.state.removeOwnedPokemonFromParty(ownedPokemonId);
+        } else {
+          result = this.state.setOwnedPokemonParty(ownedPokemonId, body.slot);
+        }
+      } else if (action === 'box') {
+        result = this.state.removeOwnedPokemonFromParty(ownedPokemonId);
+      } else if (action === 'assign-project') {
+        result = this.state.assignProjectTraining(ownedPokemonId, body.projectId);
+      } else if (action === 'evolve') {
+        result = this.state.evolveOwnedPokemon(ownedPokemonId);
+      } else if (action === 'evolution-hold') {
+        result = this.state.setOwnedPokemonEvolutionHold(ownedPokemonId, body.held);
+      } else if (action === 'release') {
+        result = this.state.releaseOwnedPokemon(ownedPokemonId);
+      }
+
+      this.sendJson(res, result.ok ? 200 : 400, result);
+      return;
+    }
+
     if (pathname === '/api/hard-reset' && req.method === 'POST') {
       if (!this.onHardReset) {
         this.sendJson(res, 404, { error: 'Hard reset unavailable' });
@@ -208,6 +246,25 @@ class DashboardServer extends EventEmitter {
     res.statusCode = statusCode;
     res.setHeader('Content-Type', 'application/json; charset=utf-8');
     res.end(JSON.stringify(obj));
+  }
+
+  async readJsonBody(req) {
+    const chunks = [];
+    for await (const chunk of req) {
+      chunks.push(chunk);
+    }
+    if (chunks.length === 0) {
+      return {};
+    }
+    const raw = Buffer.concat(chunks).toString('utf8').trim();
+    if (!raw) {
+      return {};
+    }
+    try {
+      return JSON.parse(raw);
+    } catch (_) {
+      return {};
+    }
   }
 
   async serveStatic(requestPath, res) {

@@ -108,6 +108,22 @@ function getEvolutionPath(pokemonId) {
   return EVOLUTION_PATHS[pokemonId] || [pokemonId];
 }
 
+function getNextEvolution(pokemonId) {
+  const normalizedId = Number(pokemonId);
+  if (!Number.isInteger(normalizedId)) {
+    return null;
+  }
+
+  for (const path of Object.values(EVOLUTION_PATHS)) {
+    const index = path.indexOf(normalizedId);
+    if (index >= 0 && index < path.length - 1) {
+      return path[index + 1];
+    }
+  }
+
+  return null;
+}
+
 function resolveRenderedPokemonIdForAgent(agentId, options = {}) {
   if (!agentId) {
     return POKEDEX_MIN;
@@ -148,5 +164,6 @@ module.exports = {
   POKEDEX_MAX,
   getPokemonIdForAgent,
   getEvolutionPath,
+  getNextEvolution,
   resolveRenderedPokemonIdForAgent
 };

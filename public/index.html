@@ -54,11 +54,19 @@
 
       <main class="main-grid">
         <aside class="side-panel">
+          <div class="side-party-panel">
+            <div class="side-party-title-row">
+              <h2>My Pokemon</h2>
+              <button id="owned-toggle" class="side-party-detail" type="button" aria-label="Open My Pokemon details">i</button>
+            </div>
+            <div id="owned-strip-grid" class="owned-strip-grid" aria-label="My Pokemon party"></div>
+            <span id="owned-progress" class="owned-progress-text">0 owned</span>
+          </div>
           <h2>Agents</h2>
           <div id="agent-list" class="agent-list"></div>
           <div class="box-panel">
             <div class="box-panel-head">
-              <h3 class="box-title">Box <span id="box-count">0</span></h3>
+              <h3 class="box-title">Safari Log <span id="box-count">0</span></h3>
               <button id="box-history-toggle" class="box-history-toggle" type="button">View All</button>
             </div>
             <div id="box-list" class="box-list"></div>
@@ -119,12 +127,60 @@
       <section class="pokedex-panel box-history-panel" role="dialog" aria-modal="true" aria-labelledby="box-history-title">
         <div class="pokedex-panel-head">
           <div>
-            <h2 id="box-history-title">Box History</h2>
-            <p id="box-history-summary" class="pokedex-summary">0 boxed sessions</p>
+            <h2 id="box-history-title">Safari Log</h2>
+            <p id="box-history-summary" class="pokedex-summary">0 safari records</p>
           </div>
           <button id="box-history-close" class="pokedex-close" type="button" aria-label="Close Box History">Close</button>
         </div>
         <div id="box-history-grid" class="box-history-grid"></div>
+      </section>
+    </div>
+
+    <div id="owned-modal" class="pokedex-modal" hidden>
+      <div id="owned-backdrop" class="pokedex-backdrop"></div>
+      <section class="pokedex-panel owned-panel" role="dialog" aria-modal="true" aria-labelledby="owned-title">
+        <div class="pokedex-panel-head">
+          <div>
+            <h2 id="owned-title">My Pokemon</h2>
+            <p id="owned-summary" class="pokedex-summary">0 owned</p>
+          </div>
+          <div class="owned-head-actions">
+            <button id="owned-recruit-toggle" class="owned-recruit-toggle" type="button">Recruit</button>
+            <button id="owned-close" class="pokedex-close" type="button" aria-label="Close My Pokemon">Close</button>
+          </div>
+        </div>
+        <div class="owned-content">
+          <section class="owned-section">
+            <div class="owned-section-head">
+              <h3>Party</h3>
+              <span id="owned-party-count">0 / 6</span>
+            </div>
+            <div id="owned-party-grid" class="owned-party-grid"></div>
+          </section>
+          <section class="owned-section">
+            <div class="owned-section-head">
+              <h3>Pokemon Box</h3>
+              <span id="owned-box-count">0 boxed</span>
+            </div>
+            <div id="owned-box-grid" class="owned-box-grid"></div>
+          </section>
+        </div>
+        <div id="owned-recruit-panel" class="owned-recruit-panel" hidden>
+          <div class="owned-recruit-head">
+            <div>
+              <h3>Recruit Pokemon</h3>
+              <p id="owned-recruit-summary" class="pokedex-summary">0 available</p>
+            </div>
+            <div class="owned-recruit-controls">
+              <div class="owned-recruit-mode" role="group" aria-label="Recruit view">
+                <button id="owned-recruit-available" class="active" type="button">Available</button>
+                <button id="owned-recruit-pokedex" type="button">Pokedex</button>
+              </div>
+              <button id="owned-recruit-close" class="pokedex-close" type="button" aria-label="Close Recruit Pokemon">Back</button>
+            </div>
+          </div>
+          <div id="owned-recruit-grid" class="owned-recruit-grid"></div>
+        </div>
       </section>
     </div>
 

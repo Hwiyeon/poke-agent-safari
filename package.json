@@ -116,7 +116,7 @@
     "setup:assets": "node tools/setup_poke_assets.js",
     "watch": "node cli.js watch",
     "mock": "node cli.js mock",
-    "test": "node test/claude-code-transcripts.test.js && node test/codex-transcripts.test.js && node test/review-fixes.test.js && node test/pokedex.test.js && node test/setup-scripts.test.js && node test/cli-persistence.test.js && node test/extension-webview-bridge.test.js && node test/extension-html-template.test.js && node test/extension-asset-manager.test.js && node test/shared-snapshot.test.js",
+    "test": "node test/claude-code-transcripts.test.js && node test/codex-transcripts.test.js && node test/review-fixes.test.js && node test/pokedex.test.js && node test/owned-pokemon.test.js && node test/setup-scripts.test.js && node test/cli-persistence.test.js && node test/extension-webview-bridge.test.js && node test/extension-html-template.test.js && node test/extension-asset-manager.test.js && node test/shared-snapshot.test.js",
     "package:vsix": "vsce package --no-dependencies",
     "publish:vsce": "vsce publish",
     "publish:ovsx": "ovsx publish"

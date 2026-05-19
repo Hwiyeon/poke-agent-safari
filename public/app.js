@@ -41,6 +41,10 @@
       __vscode.postMessage({ type: 'unbox', id: id });
       return Promise.resolve({ ok: true });
     },
+    owned(action, payload) {
+      __vscode.postMessage({ type: 'owned', action: action, payload: payload || {} });
+      return Promise.resolve({ ok: true });
+    },
     hardReset() {
       __vscode.postMessage({ type: 'hardReset' });
       return Promise.resolve({ ok: true });
@@ -68,6 +72,33 @@
     unbox(id) {
       return fetch('/api/unbox/' + encodeURIComponent(id), { method: 'POST' });
     },
+    owned(action, payload) {
+      payload = payload || {};
+      var path = null;
+      if (action === 'adopt') {
+        path = '/api/owned/adopt';
+      } else if (action === 'nickname') {
+        path = '/api/owned/' + encodeURIComponent(payload.id) + '/nickname';
+      } else if (action === 'party') {
+        path = '/api/owned/' + encodeURIComponent(payload.id) + '/party';
+      } else if (action === 'box') {
+        path = '/api/owned/' + encodeURIComponent(payload.id) + '/box';
+      } else if (action === 'assignProject') {
+        path = '/api/owned/' + encodeURIComponent(payload.id) + '/assign-project';
+      } else if (action === 'evolve') {
+        path = '/api/owned/' + encodeURIComponent(payload.id) + '/evolve';
+      } else if (action === 'holdEvolution') {
+        path = '/api/owned/' + encodeURIComponent(payload.id) + '/evolution-hold';
+      } else if (action === 'release') {
+        path = '/api/owned/' + encodeURIComponent(payload.id) + '/release';
+      }
+      if (!path) return Promise.resolve({ ok: false, status: 400 });
+      return fetch(path, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+    },
     hardReset() {
       return fetch('/api/hard-reset', { method: 'POST' });
     }
@@ -83,6 +114,7 @@
   const POKEDEX_MIN = 1;
   const POKEDEX_MAX = 251;
   const POKEDEX_TOTAL = POKEDEX_MAX - POKEDEX_MIN + 1;
+  const OWNED_PARTY_SIZE = 6;
   const RING_SLOTS = 6;
   const RING_BASE_RADIUS = 30;
   const RING_STEP = 22;
@@ -341,6 +373,24 @@
   const subhistorySummaryEl = document.getElementById('subhistory-summary');
   const subhistoryGridEl = document.getElementById('subhistory-grid');
   const pokedexToggleEl = document.getElementById('pokedex-toggle');
+  const ownedToggleEl = document.getElementById('owned-toggle');
+  const ownedRecruitToggleEl = document.getElementById('owned-recruit-toggle');
+  const ownedRecruitPanelEl = document.getElementById('owned-recruit-panel');
+  const ownedRecruitCloseEl = document.getElementById('owned-recruit-close');
+  const ownedRecruitAvailableEl = document.getElementById('owned-recruit-available');
+  const ownedRecruitPokedexEl = document.getElementById('owned-recruit-pokedex');
+  const ownedRecruitSummaryEl = document.getElementById('owned-recruit-summary');
+  const ownedRecruitGridEl = document.getElementById('owned-recruit-grid');
+  const ownedProgressEl = document.getElementById('owned-progress');
+  const ownedModalEl = document.getElementById('owned-modal');
+  const ownedBackdropEl = document.getElementById('owned-backdrop');
+  const ownedCloseEl = document.getElementById('owned-close');
+  const ownedSummaryEl = document.getElementById('owned-summary');
+  const ownedPartyCountEl = document.getElementById('owned-party-count');
+  const ownedBoxCountEl = document.getElementById('owned-box-count');
+  const ownedStripGridEl = document.getElementById('owned-strip-grid');
+  const ownedPartyGridEl = document.getElementById('owned-party-grid');
+  const ownedBoxGridEl = document.getElementById('owned-box-grid');
   const hardResetBtnEl = document.getElementById('hard-reset-btn');
   const promoStudioToggleEl = document.getElementById('promo-studio-toggle');
   const promoStudioPanelEl = document.getElementById('promo-studio-panel');
@@ -364,6 +414,11 @@
   const uiState = {
     projectFilter: 'all',
     pokedexOpen: false,
+    ownedOpen: false,
+    ownedRecruitOpen: false,
+    ownedRecruitMode: 'available',
+    draggedOwnedId: null,
+    ownedBoxPopoverTimer: null,
     boxHistoryOpen: false,
     subhistoryOpen: false,
     subhistoryParentId: null,
@@ -386,7 +441,11 @@
       agents: [],
       activeAgentCount: 0,
       config: { enablePokeapiSprites: true },
-      pokedex: { seenPokemonIds: [], firstDiscoveryByPokemon: {}, discoveredCount: 0, totalCount: POKEDEX_TOTAL }
+      pokedex: { seenPokemonIds: [], firstDiscoveryByPokemon: {}, discoveredCount: 0, totalCount: POKEDEX_TOTAL },
+      ownedPokemon: [],
+      pokemonBoxes: [],
+      projectTraining: {},
+      trainingEvents: []
     },
     liveSnapshot: null,
     entityById: new Map(),
@@ -861,6 +920,82 @@
 
   function getEvolutionPath(pokemonId) {
     return EVOLUTION_PATHS[pokemonId] || [pokemonId];
+  }
+
+  function getNextEvolution(pokemonId) {
+    pokemonId = Number(pokemonId);
+    if (!Number.isInteger(pokemonId)) return null;
+    for (var key in EVOLUTION_PATHS) {
+      if (!Object.prototype.hasOwnProperty.call(EVOLUTION_PATHS, key)) continue;
+      var path = EVOLUTION_PATHS[key] || [];
+      var index = path.indexOf(pokemonId);
+      if (index >= 0 && index < path.length - 1) {
+        return path[index + 1];
+      }
+    }
+    return null;
+  }
+
+  function ownedExpToNextLevel(level, growthRate) {
+    var normalizedLevel = Math.max(1, Math.min(100, Number(level) || 1));
+    var normalizedGrowth = Number.isFinite(Number(growthRate)) && Number(growthRate) > 0 ? Number(growthRate) : 1;
+    return Math.max(1, Math.round(normalizedGrowth * (20 + 8 * Math.pow(normalizedLevel, 1.8))));
+  }
+
+  function ownedEvolutionInfo(pokemon) {
+    if (!pokemon) return null;
+    if (pokemon.evolution) return pokemon.evolution;
+    var nextSpeciesId = getNextEvolution(pokemon.speciesId);
+    if (!nextSpeciesId) return null;
+    var nextPath = getEvolutionPath(nextSpeciesId);
+    var stageIndex = nextPath.indexOf(pokemon.speciesId);
+    var requiredLevel = stageIndex <= 0 ? 16 : 36;
+    return {
+      nextSpeciesId: nextSpeciesId,
+      requiredLevel: requiredLevel,
+      canEvolve: (pokemon.level || 1) >= requiredLevel && !pokemon.evolutionHeld
+    };
+  }
+
+  function encounterIdForAgent(agent) {
+    if (!agent || !agent.agentId) return null;
+    return [
+      agent.provider || 'claude',
+      agent.agentId,
+      Number.isFinite(agent.createdAt) ? agent.createdAt : 0
+    ].join(':');
+  }
+
+  function ownedPokemonForEncounter(agent) {
+    var encounterId = encounterIdForAgent(agent);
+    if (!encounterId) return null;
+    var owned = (appState.snapshot && appState.snapshot.ownedPokemon) || [];
+    for (var i = 0; i < owned.length; i++) {
+      if (owned[i] && owned[i].sourceEncounterId === encounterId) return owned[i];
+    }
+    return null;
+  }
+
+  function ownedProjectOptions(selectedProjectId) {
+    var seen = {};
+    var projects = [];
+    function add(projectId) {
+      if (!projectId || seen[projectId]) return;
+      seen[projectId] = true;
+      projects.push(projectId);
+    }
+    var agents = (appState.snapshot && appState.snapshot.agents) || [];
+    for (var i = 0; i < agents.length; i++) add(agents[i].projectId);
+    var boxed = (appState.snapshot && appState.snapshot.boxedAgents) || [];
+    for (var j = 0; j < boxed.length; j++) add(boxed[j].projectId);
+    var owned = (appState.snapshot && appState.snapshot.ownedPokemon) || [];
+    for (var k = 0; k < owned.length; k++) {
+      add(owned[k].assignedProjectId);
+      add(owned[k].sourceProjectId);
+    }
+    add(selectedProjectId);
+    projects.sort();
+    return projects;
   }
 
   function getRenderPokemonId(agent) {
@@ -1987,6 +2122,7 @@
     var secsAgo = Math.max(0, Math.floor((Date.now() - agent.lastSeen) / 1000));
     var visibleChildLabel = childCount + ' sub' + (childCount === 1 ? '' : 's');
     var isCollapsed = isSubtreeCollapsed(agent.agentId, depth, childCount, collapsedIds);
+    var adopted = ownedPokemonForEncounter(agent);
 
     var html = '';
     html += '<article class="poke-slot' + hierarchyClass + activeClass + isExpanded + branchHostClass + '" data-agent-id="' + escapeHtml(agent.agentId) + '" data-depth="' + depth + '">';
@@ -2084,7 +2220,10 @@
       html += '<div class="detail-row detail-query"><span class="detail-label">Last query</span><span class="detail-value">' + escapeHtml(agent.lastUserQuery) + '</span></div>';
     }
     if (!agent.isPromoCustom || !agent.parentId) {
-      html += '<button class="box-btn" data-action="box" data-agent-id="' + escapeHtml(agent.agentId) + '">Box</button>';
+      if (!adopted) {
+        html += '<button class="box-detail-btn" data-action="adopt-agent" data-agent-id="' + escapeHtml(agent.agentId) + '">Adopt</button>';
+      }
+      html += '<button class="box-btn" data-action="box" data-agent-id="' + escapeHtml(agent.agentId) + '">Archive</button>';
     }
     html += '</div>';
 
@@ -3005,6 +3144,10 @@
       recentEvents: [],
       boxedAgents: promoBoxSnapshot.boxedAgents,
       subagentHistory: promoBoxSnapshot.subagentHistory,
+      ownedPokemon: base.ownedPokemon || [],
+      pokemonBoxes: base.pokemonBoxes || [],
+      projectTraining: base.projectTraining || {},
+      trainingEvents: base.trainingEvents || [],
       config: {
         ...(base.config || {}),
         promoStudioActive: true
@@ -3028,8 +3171,12 @@
     updateFilterOptions();
     renderAgentList();
     renderBoxList();
+    renderOwnedPokemon();
     if (uiState.boxHistoryOpen) {
       renderBoxHistory();
+    }
+    if (uiState.ownedOpen) {
+      renderOwnedPokemon();
     }
     if (uiState.subhistoryOpen) {
       renderSubhistoryModal();
@@ -3489,7 +3636,7 @@
     if (agent.lastUserQuery) {
       html += '<div class="map-tooltip-query">' + escapeHtml(agent.lastUserQuery) + '</div>';
     }
-    html += '<button class="map-tooltip-box-btn" data-action="box" data-agent-id="' + escapeHtml(agent.agentId) + '">Box</button>';
+    html += '<button class="map-tooltip-box-btn" data-action="box" data-agent-id="' + escapeHtml(agent.agentId) + '">Archive</button>';
 
     mapTooltipEl.innerHTML = html;
     mapTooltipEl.style.display = 'block';
@@ -3747,7 +3894,7 @@
       html += '</div>';
     }
     if (allowBoxAction) {
-      html += '<button class="summary-tooltip-box-btn map-tooltip-box-btn" data-action="box" data-agent-id="' + escapeHtml(agent.agentId) + '">Box</button>';
+      html += '<button class="summary-tooltip-box-btn map-tooltip-box-btn" data-action="box" data-agent-id="' + escapeHtml(agent.agentId) + '">Archive</button>';
     }
     html += '</div>';
     html += '</div>';
@@ -4028,6 +4175,7 @@
       var label = agent.displayName || agent.subagentType || shortProjectName(agent.projectId);
       var duration = formatDuration(agent.createdAt, agent.doneAt);
       var lastCommand = commandText(agent.lastCommand);
+      var adopted = ownedPokemonForEncounter(agent);
 
       var manualClass = agent.manuallyBoxed ? ' manually-boxed' : '';
       html += '<div class="box-item' + (compact ? ' compact' : ' detailed') + manualClass + '" data-box-index="' + i + '" data-agent-id="' + escapeHtml(agent.agentId) + '">';
@@ -4040,7 +4188,10 @@
         html += '<div class="box-item-name-row">';
         html += '<span class="box-item-name" title="' + escapeHtml(agentLabel(agent)) + '">' + escapeHtml(label) + '</span>';
         if (agent.manuallyBoxed) {
-          html += '<span class="box-item-manual-badge" title="Manually boxed — unboxes on next query">HOLD</span>';
+          html += '<span class="box-item-manual-badge" title="Manually archived - restores on next query">HOLD</span>';
+        }
+        if (adopted) {
+          html += '<span class="box-item-manual-badge adopted" title="Already adopted into My Pokemon">ADOPTED</span>';
         }
         html += '</div>';
         html += '</div>';
@@ -4061,11 +4212,14 @@
           } else {
             html += '<span class="box-item-action-spacer" aria-hidden="true"></span>';
           }
+          if (!adopted) {
+            html += '<button class="box-detail-btn" data-action="adopt-agent" data-agent-id="' + escapeHtml(agent.agentId) + '">Adopt</button>';
+          }
           html += '</div>';
         }
         html += '</div>';
       }
-      html += '<button class="unbox-btn" data-action="unbox" data-agent-id="' + escapeHtml(agent.agentId) + '" title="Unbox">&#x2191;</button>';
+      html += '<button class="unbox-btn" data-action="unbox" data-agent-id="' + escapeHtml(agent.agentId) + '" title="Restore">&#x2191;</button>';
       html += '</div>';
     }
 
@@ -4080,7 +4234,7 @@
     boxCountEl.textContent = String(boxed.length);
     boxListEl.innerHTML = renderBoxItems(boxed.slice(-60), {
       compact: true,
-      emptyMessage: 'No boxed sessions yet.'
+      emptyMessage: 'No safari log records yet.'
     });
   }
 
@@ -4101,12 +4255,326 @@
   function renderBoxHistory() {
     if (!uiState.boxHistoryOpen) return;
     var boxed = appState.snapshot.boxedAgents || [];
-    boxHistorySummaryEl.textContent = boxed.length + ' boxed sessions';
+    boxHistorySummaryEl.textContent = boxed.length + ' safari records';
     boxHistoryGridEl.innerHTML = renderBoxItems(boxed, {
       compact: false,
       withDetails: true,
-      emptyMessage: 'No boxed session history yet.'
+      emptyMessage: 'No safari log records yet.'
     });
+  }
+
+  function ownedDisplayName(pokemon) {
+    if (!pokemon) return 'Pokemon';
+    return pokemon.nickname || pokemonDisplayName(pokemon.speciesId);
+  }
+
+  function ownedLevelDetails(pokemon) {
+    var level = Math.max(1, Math.min(100, Number(pokemon && pokemon.level) || 1));
+    var needed = pokemon && typeof pokemon.expToNextLevel === 'number'
+      ? pokemon.expToNextLevel
+      : (level >= 100 ? 0 : ownedExpToNextLevel(level, pokemon && pokemon.growthRate));
+    var exp = level >= 100 ? needed : Math.max(0, Number(pokemon && pokemon.exp) || 0);
+    var progress = level >= 100 ? 100 : Math.max(0, Math.min(100, needed > 0 ? (exp / needed) * 100 : 0));
+    return {
+      level: level,
+      exp: exp,
+      needed: needed,
+      progress: progress
+    };
+  }
+
+  function renderOwnedProjectSelect(pokemon) {
+    var selected = pokemon.assignedProjectId || '';
+    var projects = ownedProjectOptions(selected);
+    var html = '<select class="owned-project-select" data-owned-field="project" data-owned-id="' + escapeHtml(pokemon.id) + '">';
+    html += '<option value="">No project</option>';
+    for (var i = 0; i < projects.length; i++) {
+      html += '<option value="' + escapeHtml(projects[i]) + '"' + (projects[i] === selected ? ' selected' : '') + '>';
+      html += escapeHtml(shortProjectName(projects[i]));
+      html += '</option>';
+    }
+    html += '</select>';
+    return html;
+  }
+
+  function renderOwnedTrainingLabel(pokemon) {
+    return pokemon && pokemon.assignedProjectId ? shortProjectName(pokemon.assignedProjectId) : 'No project';
+  }
+
+  function renderOwnedInfoDetails(pokemon, options) {
+    options = options || {};
+    var stats = ownedLevelDetails(pokemon);
+    var speciesName = pokemonDisplayName(pokemon.speciesId);
+    var evolution = ownedEvolutionInfo(pokemon);
+    var isParty = Number.isInteger(pokemon.partySlot);
+    var html = '';
+    html += '<div class="owned-card-body">';
+    html += '<div class="owned-card-top">';
+    html += '<div class="owned-card-title">';
+    html += '<span class="owned-card-name">' + escapeHtml(ownedDisplayName(pokemon)) + '</span>';
+    html += '<span class="owned-card-species">#' + String(pokemon.speciesId).padStart(3, '0') + ' ' + escapeHtml(speciesName) + '</span>';
+    html += '</div>';
+    html += '<span class="owned-card-level">Lv.' + stats.level + '</span>';
+    html += '</div>';
+    html += '<div class="owned-exp-row">';
+    html += '<span>EXP</span>';
+    html += '<div class="owned-exp-track"><div class="owned-exp-fill" style="width:' + stats.progress.toFixed(1) + '%"></div></div>';
+    html += '<span>' + stats.exp + '/' + stats.needed + '</span>';
+    html += '</div>';
+    html += '<div class="owned-card-meta">';
+    html += '<span>' + (isParty ? 'Party' : 'Boxed') + '</span>';
+    if (pokemon.sourceProjectId) {
+      html += '<span>From ' + escapeHtml(shortProjectName(pokemon.sourceProjectId)) + '</span>';
+    }
+    if (evolution) {
+      html += '<span>' + (evolution.canEvolve ? 'Can evolve' : 'Evolves at Lv.' + evolution.requiredLevel) + '</span>';
+    }
+    html += '</div>';
+    html += '<div class="owned-project-row">';
+    html += '<span>Training</span>' + renderOwnedProjectSelect(pokemon);
+    html += '</div>';
+    if (options.actions !== false) {
+      html += '<div class="owned-card-actions">';
+      html += '<button type="button" data-owned-action="nickname" data-owned-id="' + escapeHtml(pokemon.id) + '">Name</button>';
+      if (isParty) {
+        html += '<button type="button" data-owned-action="box" data-owned-id="' + escapeHtml(pokemon.id) + '">Box</button>';
+      } else {
+        html += '<button type="button" data-owned-action="party" data-owned-id="' + escapeHtml(pokemon.id) + '">Party</button>';
+        if (options.release !== false) {
+          html += '<button type="button" class="owned-release-btn" data-owned-action="release" data-owned-id="' + escapeHtml(pokemon.id) + '">Release</button>';
+        }
+      }
+      if (evolution) {
+        html += '<button type="button" data-owned-action="holdEvolution" data-owned-id="' + escapeHtml(pokemon.id) + '" data-held="' + (pokemon.evolutionHeld ? 'false' : 'true') + '">';
+        html += pokemon.evolutionHeld ? 'Allow Evo' : 'Hold Evo';
+        html += '</button>';
+        html += '<button type="button" data-owned-action="evolve" data-owned-id="' + escapeHtml(pokemon.id) + '"' + (evolution.canEvolve ? '' : ' disabled') + '>';
+        html += 'Evolve';
+        html += '</button>';
+      }
+      html += '</div>';
+    }
+    html += '</div>';
+    return html;
+  }
+
+  function renderOwnedPokemonCard(pokemon, location) {
+    var sprite = spriteUrl('animated', pokemon.speciesId, 'gif');
+    var html = '';
+    html += '<article class="owned-card" data-owned-id="' + escapeHtml(pokemon.id) + '">';
+    html += '<div class="owned-card-main">';
+    html += '<img class="owned-card-sprite" src="' + escapeHtml(sprite) + '" alt="" loading="lazy" />';
+    html += renderOwnedInfoDetails(pokemon, { release: location === 'box' });
+    html += '</div>';
+    html += '</article>';
+    return html;
+  }
+
+  function renderOwnedPartyCard(pokemon, index) {
+    var stats = ownedLevelDetails(pokemon);
+    var displayName = ownedDisplayName(pokemon);
+    var speciesName = pokemonDisplayName(pokemon.speciesId);
+    var evolution = ownedEvolutionInfo(pokemon);
+    var html = '';
+    html += '<article class="owned-party-card" draggable="true" data-owned-id="' + escapeHtml(pokemon.id) + '" data-owned-drop-slot="' + index + '">';
+    html += '<img class="owned-party-sprite" src="' + escapeHtml(spriteUrl('animated', pokemon.speciesId, 'gif')) + '" alt="" loading="lazy" />';
+    html += '<div class="owned-party-body">';
+    html += '<div class="owned-party-top">';
+    html += '<div class="owned-party-title">';
+    html += '<span class="owned-party-name" title="' + escapeHtml(displayName + ' - ' + speciesName) + '">' + escapeHtml(displayName) + '</span>';
+    html += '<span class="owned-party-species">#' + String(pokemon.speciesId).padStart(3, '0') + ' ' + escapeHtml(speciesName) + '</span>';
+    html += '</div>';
+    html += '<span class="owned-party-level">Lv.' + stats.level + '</span>';
+    html += '</div>';
+    html += '<div class="owned-exp-row owned-party-exp-row">';
+    html += '<span>EXP</span>';
+    html += '<div class="owned-exp-track owned-party-exp"><div class="owned-exp-fill" style="width:' + stats.progress.toFixed(1) + '%"></div></div>';
+    html += '<span>' + stats.exp + '/' + stats.needed + '</span>';
+    html += '</div>';
+    html += '<div class="owned-party-meta">';
+    html += '<span>Training: ' + escapeHtml(renderOwnedTrainingLabel(pokemon)) + '</span>';
+    if (evolution) {
+      html += '<span>' + (evolution.canEvolve ? 'Can evolve' : 'Evolves at Lv.' + evolution.requiredLevel) + '</span>';
+    }
+    html += '</div>';
+    html += '<div class="owned-project-row owned-party-project-row">';
+    html += '<span>Project</span>' + renderOwnedProjectSelect(pokemon);
+    html += '</div>';
+    html += '</div>';
+    html += '<button class="owned-party-box-btn" type="button" data-owned-action="box" data-owned-id="' + escapeHtml(pokemon.id) + '">Box</button>';
+    html += '</article>';
+    return html;
+  }
+
+  function renderOwnedBoxTile(pokemon) {
+    var stats = ownedLevelDetails(pokemon);
+    var title = ownedDisplayName(pokemon) + ' - Lv.' + stats.level + ' ' + pokemonDisplayName(pokemon.speciesId);
+    var html = '';
+    html += '<article class="owned-box-tile" tabindex="0" data-owned-id="' + escapeHtml(pokemon.id) + '" title="' + escapeHtml(title) + '">';
+    html += '<div class="owned-box-tile-face">';
+    html += '<img class="owned-box-icon" src="' + escapeHtml(spriteUrl('icon', pokemon.speciesId, 'png')) + '" alt="" loading="lazy" />';
+    html += '<span class="owned-box-level">Lv.' + stats.level + '</span>';
+    html += '</div>';
+    html += '<div class="owned-box-popover">';
+    html += '<div class="owned-card-main">';
+    html += '<img class="owned-card-sprite" src="' + escapeHtml(spriteUrl('animated', pokemon.speciesId, 'gif')) + '" alt="" loading="lazy" />';
+    html += renderOwnedInfoDetails(pokemon, { release: true });
+    html += '</div>';
+    html += '</div>';
+    html += '</article>';
+    return html;
+  }
+
+  function setOwnedOpen(isOpen) {
+    uiState.ownedOpen = !!isOpen;
+    ownedModalEl.hidden = !uiState.ownedOpen;
+    if (!uiState.ownedOpen) {
+      setOwnedRecruitOpen(false);
+    }
+    if (uiState.ownedOpen) {
+      renderOwnedPokemon();
+    }
+  }
+
+  function setOwnedRecruitOpen(isOpen) {
+    uiState.ownedRecruitOpen = !!isOpen;
+    if (!ownedRecruitPanelEl) return;
+    ownedRecruitPanelEl.hidden = !uiState.ownedRecruitOpen;
+    if (uiState.ownedRecruitOpen) {
+      renderOwnedRecruitGrid();
+    }
+  }
+
+  function recruitablePokemonIds() {
+    var pokedex = appState.snapshot.pokedex || {};
+    var seenIds = Array.isArray(pokedex.seenPokemonIds) ? pokedex.seenPokemonIds.slice() : [];
+    return seenIds
+      .map(function (id) { return parseInt(id, 10); })
+      .filter(function (id) { return Number.isInteger(id) && id >= POKEDEX_MIN && id <= POKEDEX_MAX; })
+      .sort(function (a, b) { return a - b; });
+  }
+
+  function setOwnedRecruitMode(mode) {
+    uiState.ownedRecruitMode = mode === 'pokedex' ? 'pokedex' : 'available';
+    renderOwnedRecruitGrid();
+  }
+
+  function syncOwnedRecruitModeButtons() {
+    if (!ownedRecruitAvailableEl || !ownedRecruitPokedexEl) return;
+    var isPokedex = uiState.ownedRecruitMode === 'pokedex';
+    ownedRecruitAvailableEl.classList.toggle('active', !isPokedex);
+    ownedRecruitPokedexEl.classList.toggle('active', isPokedex);
+    ownedRecruitAvailableEl.setAttribute('aria-pressed', isPokedex ? 'false' : 'true');
+    ownedRecruitPokedexEl.setAttribute('aria-pressed', isPokedex ? 'true' : 'false');
+  }
+
+  function renderOwnedRecruitGrid() {
+    if (!ownedRecruitGridEl) return;
+    var availableIds = recruitablePokemonIds();
+    var availableLookup = {};
+    for (var i = 0; i < availableIds.length; i++) availableLookup[availableIds[i]] = true;
+    var showPokedex = uiState.ownedRecruitMode === 'pokedex';
+    var ids = showPokedex ? [] : availableIds;
+    if (showPokedex) {
+      for (var fullId = POKEDEX_MIN; fullId <= POKEDEX_MAX; fullId++) ids.push(fullId);
+    }
+    if (ownedRecruitSummaryEl) {
+      ownedRecruitSummaryEl.textContent = showPokedex
+        ? availableIds.length + ' / ' + POKEDEX_TOTAL + ' available'
+        : availableIds.length + ' available';
+    }
+    syncOwnedRecruitModeButtons();
+    var html = '';
+    for (var j = 0; j < ids.length; j++) {
+      var pokemonId = ids[j];
+      var seen = !!availableLookup[pokemonId];
+      var cellClass = 'owned-recruit-cell' + (seen ? ' seen' : ' locked');
+      html += '<button class="' + cellClass + '" type="button"' + (seen ? ' data-owned-action="recruit-species"' : ' disabled') + ' data-pokemon-id="' + pokemonId + '">';
+      html += '<span class="owned-recruit-number">#' + String(pokemonId).padStart(3, '0') + '</span>';
+      html += '<span class="owned-recruit-name">' + (seen ? escapeHtml(pokemonDisplayName(pokemonId)) : 'Unknown') + '</span>';
+      html += '<span class="owned-recruit-media">';
+      if (seen) {
+        html += '<img src="' + escapeHtml(spriteUrl('animated', pokemonId, 'gif')) + '" alt="" loading="lazy" />';
+      } else {
+        html += '<span class="owned-recruit-unknown">?</span>';
+      }
+      html += '</span>';
+      html += '</button>';
+    }
+    ownedRecruitGridEl.innerHTML = html || '<div class="owned-empty">No discovered Pokemon available yet.</div>';
+  }
+
+  function renderOwnedPartyStrip(owned) {
+    if (!ownedStripGridEl) return;
+    var party = owned.filter(function (pokemon) { return Number.isInteger(pokemon.partySlot); })
+      .sort(function (a, b) { return a.partySlot - b.partySlot; });
+
+    var html = '';
+    for (var slot = 0; slot < OWNED_PARTY_SIZE; slot++) {
+      var member = party[slot];
+      if (!member) {
+        html += '<button class="owned-strip-slot empty" type="button" data-owned-action="open-modal" title="Empty party slot">';
+        html += '</button>';
+        continue;
+      }
+
+      var stats = ownedLevelDetails(member);
+      var evolution = ownedEvolutionInfo(member);
+      var assigned = !!member.assignedProjectId;
+      var displayName = ownedDisplayName(member);
+      var nameClass = 'owned-strip-name';
+      if (displayName.length >= 11) {
+        nameClass += ' tiny';
+      } else if (displayName.length >= 8) {
+        nameClass += ' compact';
+      }
+      var title = displayName + ' - Lv.' + stats.level + ' ' + pokemonDisplayName(member.speciesId);
+      var className = 'owned-strip-slot filled' + (evolution && evolution.canEvolve ? ' can-evolve' : '') + (assigned ? ' assigned' : '');
+      html += '<button class="' + className + '" type="button" data-owned-action="open-modal" data-owned-id="' + escapeHtml(member.id) + '" title="' + escapeHtml(title) + '">';
+      html += '<span class="' + nameClass + '">' + escapeHtml(displayName) + '</span>';
+      html += '<img src="' + escapeHtml(spriteUrl('icon', member.speciesId, 'png')) + '" alt="" loading="lazy" />';
+      html += '<span class="owned-strip-level">Lv.' + stats.level + '</span>';
+      if (evolution && evolution.canEvolve) {
+        html += '<span class="owned-strip-badge" aria-hidden="true"></span>';
+      } else if (assigned) {
+        html += '<span class="owned-strip-link" aria-hidden="true"></span>';
+      }
+      html += '</button>';
+    }
+    ownedStripGridEl.innerHTML = html;
+  }
+
+  function renderOwnedPokemon() {
+    var owned = appState.snapshot.ownedPokemon || [];
+    var party = owned.filter(function (pokemon) { return Number.isInteger(pokemon.partySlot); })
+      .sort(function (a, b) { return a.partySlot - b.partySlot; });
+    var boxed = owned.filter(function (pokemon) { return !Number.isInteger(pokemon.partySlot); });
+    if (ownedProgressEl) ownedProgressEl.textContent = owned.length + ' owned';
+    renderOwnedPartyStrip(owned);
+    if (!ownedModalEl) return;
+    ownedSummaryEl.textContent = owned.length + ' owned Pokemon';
+    ownedPartyCountEl.textContent = 'Drag to arrange';
+    ownedBoxCountEl.textContent = boxed.length + ' boxed';
+
+    var partyHtml = '';
+    for (var slot = 0; slot < OWNED_PARTY_SIZE; slot++) {
+      var member = party[slot];
+      if (member) {
+        partyHtml += renderOwnedPartyCard(member, slot);
+      } else {
+        partyHtml += '<div class="owned-party-empty" data-owned-drop-slot="' + slot + '" aria-label="Empty party spot"></div>';
+      }
+    }
+    ownedPartyGridEl.innerHTML = partyHtml;
+
+    var boxHtml = '';
+    for (var j = 0; j < boxed.length; j++) {
+      boxHtml += renderOwnedBoxTile(boxed[j]);
+    }
+    ownedBoxGridEl.innerHTML = boxHtml || '<div class="owned-empty">No boxed Pokemon yet.</div>';
+    if (uiState.ownedRecruitOpen) {
+      renderOwnedRecruitGrid();
+    }
   }
 
   function setPokedexOpen(isOpen) {
@@ -4223,6 +4691,19 @@
     return Math.max(18, drawSize * 0.42);
   }
 
+  function drawSpriteFooting(ctx, x, y, size) {
+    ctx.save();
+    ctx.fillStyle = 'rgba(255, 250, 218, 0.28)';
+    ctx.beginPath();
+    ctx.ellipse(x + size * 0.5, y + size * 0.56, size * 0.34, size * 0.32, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = 'rgba(14, 18, 18, 0.28)';
+    ctx.beginPath();
+    ctx.ellipse(x + size * 0.5, y + size * 0.84, size * 0.28, size * 0.1, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+  }
+
   function drawAgents(agents, now) {
     var usePokeSprites = appState.snapshot.config && appState.snapshot.config.enablePokeapiSprites;
     if (usePokeSprites) return;
@@ -4258,7 +4739,10 @@
         : Math.floor(now / 200 + hashCode(agent.agentId)) % 3;
       const sprite = provider.getSprite(agent, frame, agent.status);
 
-      worldCtx.drawImage(sprite, Math.round(entity.x), Math.round(entity.y), DRAW_SIZE, DRAW_SIZE);
+      const spriteX = Math.round(entity.x);
+      const spriteY = Math.round(entity.y);
+      drawSpriteFooting(worldCtx, spriteX, spriteY, DRAW_SIZE);
+      worldCtx.drawImage(sprite, spriteX, spriteY, DRAW_SIZE, DRAW_SIZE);
     }
 
     worldCtx.restore();
@@ -4454,14 +4938,14 @@
       if (isSubagent) {
         var subagentSpriteUrl = isSleep ? pokemonStaticIconUrl(agent) : pokemonIconUrl(agent);
         var subagentSleepClass = isSleep ? ' agent-sprite-sleeping' : '';
-        html += '<span class="agent-sprite agent-sprite-subagent' + subagentSleepClass + '" data-agent-id="' + escapeHtml(agent.agentId) + '" style="left:' + sx + 'px;top:' + sy + 'px;width:' + drawSizeCss + 'px;height:' + drawSizeCss + 'px' + sleepScaleStyle + '">';
+        html += '<span class="agent-sprite agent-sprite-rendered agent-sprite-subagent' + subagentSleepClass + '" data-agent-id="' + escapeHtml(agent.agentId) + '" style="left:' + sx + 'px;top:' + sy + 'px;width:' + drawSizeCss + 'px;height:' + drawSizeCss + 'px' + sleepScaleStyle + '">';
         html += '<img class="agent-sprite-image" src="' + escapeHtml(subagentSpriteUrl) + '" />';
         html += '</span>';
       } else if (usePokeSprites) {
         var spriteUrl = pokeProvider.getSpriteUrl(agent, isSleep);
         if (spriteUrl) {
           var sleepClass = isSleep ? ' agent-sprite-sleeping' : '';
-          html += '<span class="agent-sprite' + sleepClass + '" data-agent-id="' + escapeHtml(agent.agentId) + '" style="left:' + sx + 'px;top:' + sy + 'px;width:' + drawSizeCss + 'px;height:' + drawSizeCss + 'px' + sleepScaleStyle + '">';
+          html += '<span class="agent-sprite agent-sprite-rendered' + sleepClass + '" data-agent-id="' + escapeHtml(agent.agentId) + '" style="left:' + sx + 'px;top:' + sy + 'px;width:' + drawSizeCss + 'px;height:' + drawSizeCss + 'px' + sleepScaleStyle + '">';
           html += '<img class="agent-sprite-image" src="' + escapeHtml(spriteUrl) + '" />';
           html += '</span>';
         }
@@ -4824,7 +5308,7 @@
         if (!config.supportsHardReset) return;
         var mode = config.mode || (config.isMockMode ? 'mock' : 'watch');
         var source = config.source && config.source !== mode ? '/' + config.source : '';
-        if (!window.confirm('Reset ' + mode + source + ' state, boxed agents, and discovered Pokedex progress?')) return;
+        if (!window.confirm('Reset ' + mode + source + ' state, safari log, My Pokemon, and discovered Pokedex progress?')) return;
         hardResetBtnEl.disabled = true;
         try {
           var res = await transport.hardReset();
@@ -4884,6 +5368,12 @@
         renderSubhistoryModal();
         return;
       }
+      btn = e.target.closest('[data-action="adopt-agent"]');
+      if (btn) {
+        e.stopPropagation();
+        transport.owned('adopt', { agentId: btn.getAttribute('data-agent-id') });
+        return;
+      }
       var card = e.target.closest('.poke-slot');
       if (card) card.classList.toggle('expanded');
     });
@@ -4898,6 +5388,12 @@
           return;
         }
         transport.unbox(agentId);
+        return;
+      }
+      btn = e.target.closest('[data-action="adopt-agent"]');
+      if (btn) {
+        e.stopPropagation();
+        transport.owned('adopt', { agentId: btn.getAttribute('data-agent-id') });
         return;
       }
       btn = e.target.closest('[data-action="open-subhistory"]');
@@ -4985,6 +5481,167 @@
     pokedexToggleEl.addEventListener('click', function () {
       setPokedexOpen(true);
     });
+    ownedToggleEl.addEventListener('click', function () {
+      setOwnedOpen(true);
+    });
+    ownedRecruitToggleEl.addEventListener('click', function () {
+      setOwnedRecruitOpen(true);
+    });
+    ownedRecruitCloseEl.addEventListener('click', function () {
+      setOwnedRecruitOpen(false);
+    });
+    ownedRecruitAvailableEl.addEventListener('click', function () {
+      setOwnedRecruitMode('available');
+    });
+    ownedRecruitPokedexEl.addEventListener('click', function () {
+      setOwnedRecruitMode('pokedex');
+    });
+    ownedCloseEl.addEventListener('click', function () {
+      setOwnedOpen(false);
+    });
+    ownedBackdropEl.addEventListener('click', function () {
+      setOwnedOpen(false);
+    });
+    function handleOwnedClick(e) {
+      var btn = e.target.closest('[data-owned-action]');
+      if (!btn) return;
+      e.stopPropagation();
+      var action = btn.getAttribute('data-owned-action');
+      var id = btn.getAttribute('data-owned-id');
+      if (!id) return;
+      if (action === 'nickname') {
+        var current = '';
+        var owned = appState.snapshot.ownedPokemon || [];
+        for (var i = 0; i < owned.length; i++) {
+          if (owned[i].id === id) {
+            current = owned[i].nickname || '';
+            break;
+          }
+        }
+        var nickname = window.prompt('Pokemon nickname', current);
+        if (nickname === null) return;
+        transport.owned('nickname', { id: id, nickname: nickname });
+      } else if (action === 'party') {
+        transport.owned('party', { id: id });
+      } else if (action === 'box') {
+        transport.owned('box', { id: id });
+      } else if (action === 'evolve') {
+        transport.owned('evolve', { id: id });
+      } else if (action === 'holdEvolution') {
+        transport.owned('holdEvolution', { id: id, held: btn.getAttribute('data-held') === 'true' });
+      } else if (action === 'release') {
+        var target = null;
+        var releasedOwned = appState.snapshot.ownedPokemon || [];
+        for (var j = 0; j < releasedOwned.length; j++) {
+          if (releasedOwned[j].id === id) {
+            target = releasedOwned[j];
+            break;
+          }
+        }
+        var label = target ? ownedDisplayName(target) : 'this Pokemon';
+        if (!window.confirm('Release ' + label + ' from My Pokemon?')) return;
+        transport.owned('release', { id: id });
+      }
+    }
+    ownedPartyGridEl.addEventListener('click', handleOwnedClick);
+    ownedBoxGridEl.addEventListener('click', handleOwnedClick);
+    ownedBoxGridEl.addEventListener('click', function (e) {
+      if (e.target.closest('button, select, input, textarea, a')) return;
+      var tile = e.target.closest('.owned-box-tile');
+      if (!tile || !ownedBoxGridEl.contains(tile)) return;
+      e.stopPropagation();
+      var willOpen = !tile.classList.contains('popover-open');
+      ownedBoxGridEl.querySelectorAll('.owned-box-tile.popover-open').forEach(function (el) {
+        el.classList.remove('popover-open');
+      });
+      tile.classList.toggle('popover-open', willOpen);
+    });
+    ownedBoxGridEl.addEventListener('mouseover', function (e) {
+      var tile = e.target.closest('.owned-box-tile');
+      if (!tile || !ownedBoxGridEl.contains(tile)) return;
+      if (uiState.ownedBoxPopoverTimer) {
+        clearTimeout(uiState.ownedBoxPopoverTimer);
+        uiState.ownedBoxPopoverTimer = null;
+      }
+      ownedBoxGridEl.querySelectorAll('.owned-box-tile.popover-open').forEach(function (el) {
+        if (el !== tile) el.classList.remove('popover-open');
+      });
+      tile.classList.add('popover-open');
+    });
+    ownedBoxGridEl.addEventListener('mouseout', function (e) {
+      var tile = e.target.closest('.owned-box-tile');
+      if (!tile || !ownedBoxGridEl.contains(tile)) return;
+      var related = e.relatedTarget;
+      if (related && tile.contains(related)) return;
+      if (uiState.ownedBoxPopoverTimer) clearTimeout(uiState.ownedBoxPopoverTimer);
+      uiState.ownedBoxPopoverTimer = setTimeout(function () {
+        tile.classList.remove('popover-open');
+        uiState.ownedBoxPopoverTimer = null;
+      }, 260);
+    });
+    ownedRecruitGridEl.addEventListener('click', function (e) {
+      var btn = e.target.closest('[data-owned-action="recruit-species"]');
+      if (!btn) return;
+      e.stopPropagation();
+      var pokemonId = parseInt(btn.getAttribute('data-pokemon-id'), 10);
+      if (!pokemonId) return;
+      Promise.resolve(transport.owned('adopt', { speciesId: pokemonId, inParty: false }))
+        .then(function () {
+          setOwnedRecruitOpen(false);
+        });
+    });
+    function handleOwnedChange(e) {
+      var field = e.target.closest('[data-owned-field]');
+      if (!field) return;
+      var id = field.getAttribute('data-owned-id');
+      if (field.getAttribute('data-owned-field') === 'project') {
+        transport.owned('assignProject', { id: id, projectId: field.value });
+      }
+    }
+    ownedPartyGridEl.addEventListener('change', handleOwnedChange);
+    ownedBoxGridEl.addEventListener('change', handleOwnedChange);
+    ownedPartyGridEl.addEventListener('dragstart', function (e) {
+      var card = e.target.closest('.owned-party-card[data-owned-id]');
+      if (!card) return;
+      uiState.draggedOwnedId = card.getAttribute('data-owned-id');
+      card.classList.add('dragging');
+      if (e.dataTransfer) {
+        e.dataTransfer.effectAllowed = 'move';
+        e.dataTransfer.setData('text/plain', uiState.draggedOwnedId);
+      }
+    });
+    ownedPartyGridEl.addEventListener('dragover', function (e) {
+      var target = e.target.closest('[data-owned-drop-slot]');
+      if (!target || !uiState.draggedOwnedId) return;
+      e.preventDefault();
+      target.classList.add('drag-over');
+      if (e.dataTransfer) e.dataTransfer.dropEffect = 'move';
+    });
+    ownedPartyGridEl.addEventListener('dragleave', function (e) {
+      var target = e.target.closest('[data-owned-drop-slot]');
+      if (target) target.classList.remove('drag-over');
+    });
+    ownedPartyGridEl.addEventListener('drop', function (e) {
+      var target = e.target.closest('[data-owned-drop-slot]');
+      if (!target || !uiState.draggedOwnedId) return;
+      e.preventDefault();
+      var slot = parseInt(target.getAttribute('data-owned-drop-slot'), 10);
+      if (Number.isInteger(slot)) {
+        transport.owned('party', { id: uiState.draggedOwnedId, slot: slot });
+      }
+      ownedPartyGridEl.querySelectorAll('.drag-over').forEach(function (el) { el.classList.remove('drag-over'); });
+    });
+    ownedPartyGridEl.addEventListener('dragend', function () {
+      uiState.draggedOwnedId = null;
+      ownedPartyGridEl.querySelectorAll('.dragging, .drag-over').forEach(function (el) {
+        el.classList.remove('dragging', 'drag-over');
+      });
+    });
+    if (ownedStripGridEl) {
+      ownedStripGridEl.addEventListener('click', function () {
+        setOwnedOpen(true);
+      });
+    }
     pokedexCloseEl.addEventListener('click', function () {
       setPokedexOpen(false);
     });
@@ -5030,6 +5687,10 @@
     });
     window.addEventListener('keydown', function (e) {
       if (e.key !== 'Escape') return;
+      if (uiState.ownedRecruitOpen) {
+        setOwnedRecruitOpen(false);
+        return;
+      }
       if (uiState.boxHistoryOpen) {
         setBoxHistoryOpen(false);
         return;
@@ -5041,6 +5702,10 @@
       }
       if (uiState.pokedexOpen) {
         setPokedexOpen(false);
+        return;
+      }
+      if (uiState.ownedOpen) {
+        setOwnedOpen(false);
         return;
       }
       if (uiState.promoStudioOpen) {
