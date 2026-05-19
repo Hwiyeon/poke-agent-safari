@@ -137,12 +137,45 @@ test('project training grants usage exp to assigned pokemon and party', () => {
 
   const byId = new Map(state.snapshot().ownedPokemon.map((pokemon) => [pokemon.id, pokemon]));
   assert.ok(byId.get(wooper.id).totalTrainingExp > byId.get(pikachu.id).totalTrainingExp);
-  assert.equal(byId.get(pikachu.id).totalTrainingExp, 25);
+  assert.equal(byId.get(pikachu.id).totalTrainingExp, 500);
   assert.equal(
     byId.get(wooper.id).totalTrainingExp + byId.get(pikachu.id).totalTrainingExp + byId.get(eevee.id).totalTrainingExp,
-    100
+    2000
   );
   assert.equal(state.snapshot().trainingEvents.length, 3);
+});
+
+test('project training weights assigned pokemon above unassigned pokemon', () => {
+  const state = createState({ worker: 25 });
+  state.mergeSeenPokemonIds([1, 4, 7, 25]);
+
+  const bulbasaur = state.adoptOwnedPokemon({ speciesId: 1 }).pokemon;
+  const charmander = state.adoptOwnedPokemon({ speciesId: 4 }).pokemon;
+  const squirtle = state.adoptOwnedPokemon({ speciesId: 7 }).pokemon;
+  const pikachu = state.adoptOwnedPokemon({ speciesId: 25 }).pokemon;
+
+  state.assignProjectTraining(bulbasaur.id, 'project-a');
+  state.assignProjectTraining(charmander.id, 'project-a');
+  state.assignProjectTraining(squirtle.id, 'project-b');
+  state.applyEvent({
+    type: EVENT_TYPES.AGENT_SEEN,
+    agentId: 'worker',
+    ts: 20,
+    meta: { projectId: 'project-a', sessionId: 'session-a' }
+  });
+  state.applyEvent({
+    type: EVENT_TYPES.ASSISTANT_OUTPUT,
+    agentId: 'worker',
+    ts: 21,
+    meta: { totalTokens: 100000 }
+  });
+
+  const byId = new Map(state.snapshot().ownedPokemon.map((pokemon) => [pokemon.id, pokemon]));
+  assert.equal(byId.get(bulbasaur.id).totalTrainingExp, 800);
+  assert.equal(byId.get(charmander.id).totalTrainingExp, 800);
+  assert.equal(byId.get(pikachu.id).totalTrainingExp, 400);
+  assert.equal(byId.get(squirtle.id).totalTrainingExp, 0);
+  assert.deepEqual(state.snapshot().projectTraining['project-a'].sort(), [bulbasaur.id, charmander.id].sort());
 });
 
 test('owned pokemon can hold and perform level evolution', () => {
@@ -150,7 +183,7 @@ test('owned pokemon can hold and perform level evolution', () => {
   state.mergeSeenPokemonIds([1]);
   const bulbasaur = state.adoptOwnedPokemon({ speciesId: 1 }).pokemon;
 
-  state.addOwnedExperience(bulbasaur.id, 20000, { record: false });
+  state.addOwnedExperience(bulbasaur.id, 1539000, { record: false });
   let current = state.snapshot().ownedPokemon[0];
   assert.ok(current.level >= 16);
   assert.equal(current.evolution.nextSpeciesId, 2);

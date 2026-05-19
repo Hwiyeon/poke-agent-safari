@@ -26,7 +26,7 @@ const DEFAULT_MAX_SUBAGENT_HISTORY = 1000;
 const DEFAULT_MAX_TRAINING_EVENTS = 500;
 const DEFAULT_POKEMON_BOX_ID = 'box-default';
 const PARTY_SIZE = 6;
-const TRAINING_TOKEN_DIVISOR = 1000;
+const TRAINING_TOKEN_DIVISOR = 50;
 const DEFAULT_COUNTERS = Object.freeze({
   seen: 0,
   toolStarts: 0,
@@ -181,7 +181,7 @@ function ownedExpToNextLevel(level, growthRate = 1) {
   const normalizedGrowth = Number.isFinite(Number(growthRate)) && Number(growthRate) > 0
     ? Number(growthRate)
     : 1;
-  return Math.max(1, Math.round(normalizedGrowth * (20 + 8 * Math.pow(normalizedLevel, 1.8))));
+  return Math.max(1, Math.round(normalizedGrowth * (69000 + (normalizedLevel - 1) * 4800)));
 }
 
 function normalizeOwnedPokemon(raw, fallbackNow = Date.now()) {
@@ -472,6 +472,22 @@ class AgentState extends EventEmitter {
       .sort((a, b) => a.partySlot - b.partySlot);
   }
 
+  rebuildProjectTraining() {
+    const next = {};
+    for (const pokemon of this.ownedPokemon) {
+      const projectId = normalizeOwnedText(pokemon.assignedProjectId, 240);
+      pokemon.assignedProjectId = projectId || null;
+      if (!projectId) {
+        continue;
+      }
+      if (!next[projectId]) {
+        next[projectId] = [];
+      }
+      next[projectId].push(pokemon.id);
+    }
+    this.projectTraining = next;
+  }
+
   firstOpenPartySlot() {
     const used = new Set(this.partyPokemon().map((pokemon) => pokemon.partySlot));
     for (let slot = 0; slot < PARTY_SIZE; slot += 1) {
@@ -616,14 +632,7 @@ class AgentState extends EventEmitter {
     }
 
     const [released] = this.ownedPokemon.splice(index, 1);
-    if (released.assignedProjectId && this.projectTraining[released.assignedProjectId] === released.id) {
-      delete this.projectTraining[released.assignedProjectId];
-    }
-    for (const projectId of Object.keys(this.projectTraining)) {
-      if (this.projectTraining[projectId] === released.id) {
-        delete this.projectTraining[projectId];
-      }
-    }
+    this.rebuildProjectTraining();
     this.trainingEvents = this.trainingEvents.filter((event) => event.ownedPokemonId !== released.id);
     this.compactPartySlots();
     this.lastUpdate = Date.now();
@@ -638,26 +647,9 @@ class AgentState extends EventEmitter {
     }
 
     const normalizedProjectId = normalizeOwnedText(projectId, 240);
-    if (pokemon.assignedProjectId && this.projectTraining[pokemon.assignedProjectId] === pokemon.id) {
-      delete this.projectTraining[pokemon.assignedProjectId];
-    }
-
-    if (normalizedProjectId) {
-      const previousPokemonId = this.projectTraining[normalizedProjectId];
-      if (previousPokemonId && previousPokemonId !== pokemon.id) {
-        const previousPokemon = this.ownedPokemonById(previousPokemonId);
-        if (previousPokemon) {
-          previousPokemon.assignedProjectId = null;
-          previousPokemon.updatedAt = Date.now();
-        }
-      }
-      this.projectTraining[normalizedProjectId] = pokemon.id;
-      pokemon.assignedProjectId = normalizedProjectId;
-    } else {
-      pokemon.assignedProjectId = null;
-    }
-
+    pokemon.assignedProjectId = normalizedProjectId || null;
     pokemon.updatedAt = Date.now();
+    this.rebuildProjectTraining();
     this.lastUpdate = pokemon.updatedAt;
     this.emit('update', this.snapshot());
     return { ok: true, pokemon: cloneOwnedPokemon(pokemon) };
@@ -771,21 +763,11 @@ class AgentState extends EventEmitter {
       weights.set(id, (weights.get(id) || 0) + weight);
     };
 
-    const assignedId = this.projectTraining[agent.projectId] || null;
-    const party = this.partyPokemon();
-    const leader = party.length > 0 ? party[0] : null;
-    const rest = leader ? party.filter((pokemon) => pokemon.id !== leader.id) : [];
-
-    if (assignedId) {
-      addWeight(assignedId, 0.6);
-      if (leader) addWeight(leader.id, 0.25);
-      for (const member of rest) {
-        addWeight(member.id, 0.15 / rest.length);
-      }
-    } else if (leader) {
-      addWeight(leader.id, rest.length > 0 ? 0.5 : 1);
-      for (const member of rest) {
-        addWeight(member.id, 0.5 / rest.length);
+    for (const pokemon of this.ownedPokemon) {
+      if (pokemon.assignedProjectId === agent.projectId) {
+        addWeight(pokemon.id, 2);
+      } else if (!pokemon.assignedProjectId) {
+        addWeight(pokemon.id, 1);
       }
     }
 
@@ -1546,20 +1528,28 @@ class AgentState extends EventEmitter {
     this.ensurePokemonBoxes();
     this.projectTraining = {};
     if (data.projectTraining && typeof data.projectTraining === 'object') {
-      for (const [projectId, ownedPokemonId] of Object.entries(data.projectTraining)) {
+      for (const [projectId, ownedPokemonIds] of Object.entries(data.projectTraining)) {
         const normalizedProjectId = normalizeOwnedText(projectId, 240);
-        const pokemon = this.ownedPokemonById(ownedPokemonId);
-        if (normalizedProjectId && pokemon) {
-          this.projectTraining[normalizedProjectId] = pokemon.id;
-          pokemon.assignedProjectId = normalizedProjectId;
+        const ids = Array.isArray(ownedPokemonIds) ? ownedPokemonIds : [ownedPokemonIds];
+        for (const ownedPokemonId of ids) {
+          const pokemon = this.ownedPokemonById(ownedPokemonId);
+          if (normalizedProjectId && pokemon) {
+            pokemon.assignedProjectId = normalizedProjectId;
+          }
         }
       }
     }
     for (const pokemon of this.ownedPokemon) {
-      if (pokemon.assignedProjectId && this.projectTraining[pokemon.assignedProjectId] !== pokemon.id) {
-        this.projectTraining[pokemon.assignedProjectId] = pokemon.id;
+      if (pokemon.assignedProjectId) {
+        const normalizedProjectId = normalizeOwnedText(pokemon.assignedProjectId, 240);
+        if (normalizedProjectId) {
+          pokemon.assignedProjectId = normalizedProjectId;
+        } else {
+          pokemon.assignedProjectId = null;
+        }
       }
     }
+    this.rebuildProjectTraining();
     this.trainingEvents = Array.isArray(data.trainingEvents)
       ? data.trainingEvents.filter((event) => event && typeof event === 'object').map((event) => ({ ...event }))
       : [];

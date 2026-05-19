@@ -939,7 +939,7 @@
   function ownedExpToNextLevel(level, growthRate) {
     var normalizedLevel = Math.max(1, Math.min(100, Number(level) || 1));
     var normalizedGrowth = Number.isFinite(Number(growthRate)) && Number(growthRate) > 0 ? Number(growthRate) : 1;
-    return Math.max(1, Math.round(normalizedGrowth * (20 + 8 * Math.pow(normalizedLevel, 1.8))));
+    return Math.max(1, Math.round(normalizedGrowth * expToNextLevel(normalizedLevel)));
   }
 
   function ownedEvolutionInfo(pokemon) {
