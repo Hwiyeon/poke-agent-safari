@@ -31,15 +31,16 @@ function sourceList(source) {
   return source === 'all' ? ['claude', 'codex'] : [source || DEFAULTS.source];
 }
 
-function getPersistencePaths(mode, cwd = process.cwd(), source = DEFAULTS.source) {
-  const normalizedSource = configResolver.normalizeSource(source, DEFAULTS.source);
-  const watchBaseDir = normalizedSource === 'claude'
-    ? path.join(cwd, 'data')
-    : path.join(cwd, 'data', 'runtime', normalizedSource);
-
+function getPersistencePaths(mode, cwd = process.cwd(), _source = DEFAULTS.source) {
+  // Source intentionally ignored for persistence: a single SSoT lives at
+  // data/runtime/all/, and per-provider mirrors are written automatically on
+  // save. This keeps state coherent regardless of which --source the daemon
+  // was started with, and survives legacy layouts (data/state.json) via the
+  // migration baked into bootstrap.resolvePersistPaths.
   return bootstrap.resolvePersistPaths({
     mode,
-    watchBaseDir,
+    cwd,
+    ssotBaseDir: path.join(cwd, 'data', 'runtime', 'all'),
     mockBaseDir: path.join(cwd, 'data', 'runtime', 'mock')
   });
 }

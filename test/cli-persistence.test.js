@@ -49,9 +49,9 @@ test('persistence paths are scoped by mode', () => {
   const mockPaths = getPersistencePaths('mock', tempRoot);
 
   assert.notEqual(watchPaths.baseDir, mockPaths.baseDir);
-  assert.equal(watchPaths.stateFile, path.join(tempRoot, 'data', 'state.json'));
+  assert.equal(watchPaths.stateFile, path.join(tempRoot, 'data', 'runtime', 'all', 'state.json'));
   assert.equal(mockPaths.stateFile, path.join(tempRoot, 'data', 'runtime', 'mock', 'state.json'));
-  assert.equal(watchPaths.pokedexFile, path.join(tempRoot, 'data', 'pokedex.json'));
+  assert.equal(watchPaths.pokedexFile, path.join(tempRoot, 'data', 'runtime', 'all', 'pokedex.json'));
   assert.equal(mockPaths.pokedexFile, path.join(tempRoot, 'data', 'runtime', 'mock', 'pokedex.json'));
 });
 

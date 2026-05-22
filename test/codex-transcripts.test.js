@@ -216,7 +216,7 @@ test('Codex watcher and state process a transcript stream end to end', async () 
   assert.equal(state.snapshot().rateLimitsByProvider.codex.five_hour.used_percentage, 5);
 });
 
-test('Codex source config and persistence are separate from Claude watch state', () => {
+test('Codex source config resolves and shares the unified SSoT with provider mirrors', () => {
   const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'poke-agents-codex-persist-'));
   const claudePaths = getPersistencePaths('watch', tempRoot, 'claude');
   const codexPaths = getPersistencePaths('watch', tempRoot, 'codex');
@@ -224,8 +224,12 @@ test('Codex source config and persistence are separate from Claude watch state',
 
   assert.equal(config.source, 'codex');
   assert.equal(config.codexSessionsPath, path.resolve('/tmp/codex-sessions'));
-  assert.notEqual(claudePaths.baseDir, codexPaths.baseDir);
-  assert.equal(codexPaths.stateFile, path.join(tempRoot, 'data', 'runtime', 'codex', 'state.json'));
+  // SSoT is unified across sources.
+  assert.equal(claudePaths.baseDir, codexPaths.baseDir);
+  assert.equal(codexPaths.stateFile, path.join(tempRoot, 'data', 'runtime', 'all', 'state.json'));
+  // Provider mirror dirs are wired up for both sources so claude/codex views stay in sync.
+  assert.equal(codexPaths.providerMirrorDirs.claude, path.join(tempRoot, 'data', 'runtime', 'claude'));
+  assert.equal(codexPaths.providerMirrorDirs.codex, path.join(tempRoot, 'data', 'runtime', 'codex'));
 });
 
 run();
