@@ -237,6 +237,77 @@ test('boxed agent history keeps only the newest configured entries', () => {
   assert.deepEqual(state.boxedAgents.map((agent) => agent.agentId), ['agent-2', 'agent-3']);
 });
 
+test('shutdown boxing archives only matching root agents and waits for a fresh query to restore', () => {
+  const state = new AgentState();
+
+  state.applyEvent({
+    type: EVENT_TYPES.AGENT_SEEN,
+    agentId: 'codex-root',
+    ts: 100,
+    meta: {
+      provider: 'codex',
+      projectId: 'project-a',
+      sessionId: 'codex-session'
+    }
+  });
+  state.applyEvent({
+    type: EVENT_TYPES.AGENT_SEEN,
+    agentId: 'claude-root',
+    ts: 100,
+    meta: {
+      provider: 'claude',
+      projectId: 'project-a',
+      sessionId: 'claude-session'
+    }
+  });
+  state.applyEvent({
+    type: EVENT_TYPES.SUBAGENT_SPAWN,
+    agentId: 'codex-child',
+    ts: 101,
+    meta: {
+      provider: 'codex',
+      projectId: 'project-a',
+      sessionId: 'codex-child-session',
+      parentId: 'codex-root'
+    }
+  });
+
+  const boxedCount = state.boxActiveRootAgents({ provider: 'codex' });
+
+  assert.equal(boxedCount, 1);
+  assert.equal(state.agents.has('codex-root'), false);
+  assert.equal(state.agents.has('codex-child'), false);
+  assert.equal(state.agents.has('claude-root'), true);
+  assert.deepEqual(state.boxedAgents.map((agent) => agent.agentId), ['codex-root']);
+
+  const boxedAt = state.boxedAgents[0].doneAt;
+  state.applyEvent({
+    type: EVENT_TYPES.ASSISTANT_OUTPUT,
+    agentId: 'codex-root',
+    ts: boxedAt + 1,
+    meta: {
+      provider: 'codex',
+      projectId: 'project-a',
+      sessionId: 'codex-session'
+    }
+  });
+
+  assert.equal(state.agents.has('codex-root'), false);
+
+  state.applyEvent({
+    type: EVENT_TYPES.USER_QUERY,
+    agentId: 'codex-root',
+    ts: boxedAt + 1,
+    meta: {
+      provider: 'codex',
+      projectId: 'project-a',
+      sessionId: 'codex-session'
+    }
+  });
+
+  assert.equal(state.agents.has('codex-root'), true);
+});
+
 test('state restore trims oversized boxed and subagent history buffers', () => {
   const state = new AgentState({
     maxBoxedAgents: 2,

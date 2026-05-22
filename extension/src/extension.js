@@ -218,11 +218,15 @@ async function startRuntime(runtime) {
   runtime.active = true;
 }
 
-async function stopRuntime(runtime) {
+async function stopRuntime(runtime, options = {}) {
   if (!runtime || !runtime.active) return;
 
   bootstrap.stopAll(runtime.timers);
   runtime.timers = {};
+
+  if (options.boxCodexOnShutdown && runtime.mode === 'watch' && hasSource(runtime.source, 'codex')) {
+    runtime.state.boxActiveRootAgents({ provider: 'codex' });
+  }
 
   bootstrap.saveState(runtime.state, runtime.persistPaths);
   bootstrap.savePokedex(runtime.state, runtime.persistPaths);
@@ -387,7 +391,7 @@ async function activate(context) {
 
 async function deactivate() {
   for (const runtime of runtimes.values()) {
-    await stopRuntime(runtime);
+    await stopRuntime(runtime, { boxCodexOnShutdown: true });
     runtime.bridge.dispose();
     runtime.state.off('pokedex', runtime.pokedexListener);
   }

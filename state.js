@@ -1359,6 +1359,32 @@ class AgentState extends EventEmitter {
     }
   }
 
+  boxActiveRootAgents(options = {}) {
+    const provider = options.provider ? normalizeProvider(options.provider) : null;
+    const suppressSessions = options.suppressSessions !== false;
+    let boxedCount = 0;
+
+    for (const [agentId, agent] of [...this.agents.entries()]) {
+      if (!agent || agent.parentId) continue;
+      if (provider && normalizeProvider(agent.provider) !== provider) continue;
+
+      const sid = agent.sessionId;
+      this.boxAgent(agent);
+      this.removeAgent(agentId);
+      if (suppressSessions && sid && sid !== 'unknown-session') {
+        this.suppressedSessions.add(sid);
+      }
+      boxedCount += 1;
+    }
+
+    if (boxedCount > 0) {
+      this.lastUpdate = Date.now();
+      this.emit('update', this.snapshot());
+    }
+
+    return boxedCount;
+  }
+
   manualBox(agentId) {
     const agent = this.agents.get(agentId);
     if (!agent) return false;
