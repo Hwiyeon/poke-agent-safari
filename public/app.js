@@ -4326,8 +4326,10 @@
     var rowClass = 'owned-exp-row' + (extraClass ? ' ' + extraClass : '');
     return [
       '<div class="' + rowClass + '">',
+      '<div class="owned-exp-meter">',
       '<span class="poke-exp-label">EXP</span>',
       '<div class="poke-exp-track"><div class="poke-exp-fill" style="width:' + stats.progress.toFixed(1) + '%"></div></div>',
+      '</div>',
       '<span class="poke-exp-nums">' + formatTokenCount(stats.exp) + ' / ' + formatTokenCount(stats.needed) + '</span>',
       '</div>'
     ].join('');

@@ -3874,7 +3874,7 @@ body {
 }
 
 .owned-party-exp-row {
-  gap: 6px;
+  gap: 4px;
 }
 
 .owned-party-meta {
@@ -3989,9 +3989,18 @@ body {
 }
 
 .owned-exp-row {
+  display: grid;
+  gap: 3px;
   font-size: 10px;
   font-weight: 800;
   color: var(--muted);
+}
+
+.owned-exp-meter {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 7px;
 }
 
 .owned-exp-row .poke-exp-label {
@@ -4004,6 +4013,8 @@ body {
 }
 
 .owned-exp-row .poke-exp-nums {
+  justify-self: end;
+  margin-left: 0;
   color: var(--muted);
   text-shadow: none;
   font-size: 9px;
