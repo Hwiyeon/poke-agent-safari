@@ -3874,11 +3874,7 @@ body {
 }
 
 .owned-party-exp-row {
-  grid-template-columns: 28px minmax(0, 1fr) auto;
-}
-
-.owned-party-exp {
-  height: 7px;
+  gap: 6px;
 }
 
 .owned-party-meta {
@@ -3993,23 +3989,24 @@ body {
 }
 
 .owned-exp-row {
-  display: grid;
-  grid-template-columns: 28px minmax(0, 1fr) auto;
   font-size: 10px;
   font-weight: 800;
   color: var(--muted);
 }
 
-.owned-exp-track {
-  height: 8px;
-  border: 1px solid #141416;
-  background: #283044;
-  overflow: hidden;
+.owned-exp-row .poke-exp-label {
+  color: #806317;
+  text-shadow: none;
 }
 
-.owned-exp-fill {
-  height: 100%;
-  background: linear-gradient(90deg, #7fcf8b, #fff07a);
+.owned-exp-row .poke-exp-track {
+  height: 7px;
+}
+
+.owned-exp-row .poke-exp-nums {
+  color: var(--muted);
+  text-shadow: none;
+  font-size: 9px;
 }
 
 .owned-project-row {

@@ -4322,6 +4322,17 @@
     return pokemon && pokemon.assignedProjectId ? shortProjectName(pokemon.assignedProjectId) : 'No project';
   }
 
+  function renderOwnedExpRow(stats, extraClass) {
+    var rowClass = 'owned-exp-row' + (extraClass ? ' ' + extraClass : '');
+    return [
+      '<div class="' + rowClass + '">',
+      '<span class="poke-exp-label">EXP</span>',
+      '<div class="poke-exp-track"><div class="poke-exp-fill" style="width:' + stats.progress.toFixed(1) + '%"></div></div>',
+      '<span class="poke-exp-nums">' + formatTokenCount(stats.exp) + ' / ' + formatTokenCount(stats.needed) + '</span>',
+      '</div>'
+    ].join('');
+  }
+
   function renderOwnedInfoDetails(pokemon, options) {
     options = options || {};
     var stats = ownedLevelDetails(pokemon);
@@ -4337,11 +4348,7 @@
     html += '</div>';
     html += '<span class="owned-card-level">Lv.' + stats.level + '</span>';
     html += '</div>';
-    html += '<div class="owned-exp-row">';
-    html += '<span>EXP</span>';
-    html += '<div class="owned-exp-track"><div class="owned-exp-fill" style="width:' + stats.progress.toFixed(1) + '%"></div></div>';
-    html += '<span>' + stats.exp + '/' + stats.needed + '</span>';
-    html += '</div>';
+    html += renderOwnedExpRow(stats);
     html += '<div class="owned-card-meta">';
     html += '<span>' + (isParty ? 'Party' : 'Boxed') + '</span>';
     if (pokemon.sourceProjectId) {
@@ -4407,11 +4414,7 @@
     html += '</div>';
     html += '<span class="owned-party-level">Lv.' + stats.level + '</span>';
     html += '</div>';
-    html += '<div class="owned-exp-row owned-party-exp-row">';
-    html += '<span>EXP</span>';
-    html += '<div class="owned-exp-track owned-party-exp"><div class="owned-exp-fill" style="width:' + stats.progress.toFixed(1) + '%"></div></div>';
-    html += '<span>' + stats.exp + '/' + stats.needed + '</span>';
-    html += '</div>';
+    html += renderOwnedExpRow(stats, 'owned-party-exp-row');
     html += '<div class="owned-party-meta">';
     html += '<span>Training: ' + escapeHtml(renderOwnedTrainingLabel(pokemon)) + '</span>';
     if (evolution) {
