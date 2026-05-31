@@ -69,6 +69,7 @@ body {
   gap: 8px;
   flex-wrap: wrap;
   justify-content: flex-end;
+  max-width: 100%;
 }
 
 .pokedex-toggle {
@@ -2786,6 +2787,12 @@ body {
   border: 2px solid var(--line);
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.9);
+}
+
+.header-lang-tabs {
+  flex: 0 0 auto;
+  background: #fffdf8;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.75);
 }
 
 .pokedex-lang-tab {

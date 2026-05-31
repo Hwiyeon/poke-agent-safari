@@ -800,8 +800,7 @@
         pokemonPool = pool;
         areaPoolMap = areaPools;
         pokemonPoolReady = true;
-        renderPokedex();
-        renderPromoStudio();
+        renderLanguageDependentViews();
       } catch (e) {
         // Fallback: uniform 1-251
       }
@@ -820,8 +819,7 @@
           if (!Object.prototype.hasOwnProperty.call(data, id)) continue;
           pokemonKoNames[Number(id)] = data[id];
         }
-        renderPokedex();
-        renderPromoStudio();
+        renderLanguageDependentViews();
       } catch (_) {
         // Keep English fallback if the mapping file is unavailable or malformed.
       }
@@ -1051,11 +1049,34 @@
   }
 
   function syncPokedexLanguageTabs() {
+    if (!pokedexLangEnEl || !pokedexLangKoEl) return;
     var isKo = uiState.pokedexLanguage === 'ko';
     pokedexLangEnEl.classList.toggle('active', !isKo);
     pokedexLangKoEl.classList.toggle('active', isKo);
     pokedexLangEnEl.setAttribute('aria-selected', String(!isKo));
     pokedexLangKoEl.setAttribute('aria-selected', String(isKo));
+  }
+
+  function renderLanguageDependentViews() {
+    renderAgentList();
+    renderBoxList();
+    renderOwnedPokemon();
+    if (uiState.boxHistoryOpen) {
+      renderBoxHistory();
+    }
+    if (uiState.subhistoryOpen) {
+      renderSubhistoryModal();
+    }
+    renderPokedex();
+    renderPromoStudio();
+    hidePokedexTooltip();
+  }
+
+  function setPokedexLanguage(language) {
+    var nextLanguage = language === 'ko' ? 'ko' : 'en';
+    if (uiState.pokedexLanguage === nextLanguage) return;
+    uiState.pokedexLanguage = nextLanguage;
+    renderLanguageDependentViews();
   }
 
   function pokedexDiscoveryInfo(pokemonId) {
@@ -5648,20 +5669,16 @@
     pokedexBackdropEl.addEventListener('click', function () {
       setPokedexOpen(false);
     });
-    pokedexLangEnEl.addEventListener('click', function () {
-      if (uiState.pokedexLanguage === 'en') return;
-      uiState.pokedexLanguage = 'en';
-      renderPokedex();
-      renderPromoStudio();
-      hidePokedexTooltip();
-    });
-    pokedexLangKoEl.addEventListener('click', function () {
-      if (uiState.pokedexLanguage === 'ko') return;
-      uiState.pokedexLanguage = 'ko';
-      renderPokedex();
-      renderPromoStudio();
-      hidePokedexTooltip();
-    });
+    if (pokedexLangEnEl) {
+      pokedexLangEnEl.addEventListener('click', function () {
+        setPokedexLanguage('en');
+      });
+    }
+    if (pokedexLangKoEl) {
+      pokedexLangKoEl.addEventListener('click', function () {
+        setPokedexLanguage('ko');
+      });
+    }
     pokedexGridEl.addEventListener('mouseover', function (e) {
       var cell = e.target.closest('.pokedex-cell[data-pokemon-id]');
       if (!cell) return;

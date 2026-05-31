@@ -14,6 +14,10 @@
           <p>Live local activity from Claude Code and Codex transcripts</p>
         </div>
         <div class="stats-wrap">
+          <div class="pokedex-lang-tabs header-lang-tabs" role="tablist" aria-label="Pokemon name language">
+            <button id="pokedex-lang-en" class="pokedex-lang-tab active" type="button" role="tab" aria-selected="true">EN</button>
+            <button id="pokedex-lang-ko" class="pokedex-lang-tab" type="button" role="tab" aria-selected="false">KO</button>
+          </div>
           <button id="pokedex-toggle" class="pokedex-toggle" type="button">
             <span class="pokedex-toggle-title">Pokedex</span>
             <span id="pokedex-progress" class="pokedex-toggle-progress">0 / 251</span>
@@ -110,13 +114,7 @@
             <h2 id="pokedex-title">Safari Pokédex</h2>
             <p id="pokedex-summary" class="pokedex-summary">0 / 251 discovered</p>
           </div>
-          <div class="pokedex-toolbar">
-            <div class="pokedex-lang-tabs" role="tablist" aria-label="Pokedex language">
-              <button id="pokedex-lang-en" class="pokedex-lang-tab active" type="button" role="tab" aria-selected="true">EN</button>
-              <button id="pokedex-lang-ko" class="pokedex-lang-tab" type="button" role="tab" aria-selected="false">KO</button>
-            </div>
           <button id="pokedex-close" class="pokedex-close" type="button" aria-label="Close Pokedex">Close</button>
-          </div>
         </div>
         <div id="pokedex-grid" class="pokedex-grid"></div>
       </section>
