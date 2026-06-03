@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Agent Safari Sticker</title>
+    <link rel="stylesheet" href="/sticker.css" />
+  </head>
+  <body>
+    <div class="sticker-shell">
+      <header class="sticker-titlebar">
+        <div class="title-copy">
+          <span id="source-pill" class="source-pill">All</span>
+          <strong>Agent Safari</strong>
+        </div>
+        <div class="window-actions">
+          <button id="expand-btn" type="button" title="Open dashboard" aria-label="Open dashboard">↗</button>
+          <button id="minimize-btn" type="button" title="Minimize" aria-label="Minimize">_</button>
+          <button id="quit-btn" type="button" title="Quit" aria-label="Quit">×</button>
+        </div>
+      </header>
+
+      <main class="sticker-main">
+        <section class="summary-row">
+          <div class="active-metric">
+            <span id="active-count" class="active-count">0</span>
+            <span class="metric-label">active</span>
+          </div>
+          <div class="latest-agent">
+            <span class="section-label">Latest</span>
+            <strong id="latest-name">Waiting for activity</strong>
+            <span id="latest-meta">No sessions yet</span>
+          </div>
+        </section>
+
+        <section class="meters">
+          <div class="meter-row">
+            <span>HP</span>
+            <div class="meter-track"><div id="hp-fill" class="meter-fill hp-fill"></div></div>
+            <strong id="hp-value">--</strong>
+          </div>
+          <div class="meter-row">
+            <span>Tokens</span>
+            <div class="meter-track"><div id="token-fill" class="meter-fill token-fill"></div></div>
+            <strong id="token-value">0</strong>
+          </div>
+        </section>
+
+        <section class="status-grid" aria-label="Agent status counts">
+          <div><span id="thinking-count">0</span><small>thinking</small></div>
+          <div><span id="tool-count">0</span><small>tool</small></div>
+          <div><span id="waiting-count">0</span><small>waiting</small></div>
+          <div><span id="sleeping-count">0</span><small>sleeping</small></div>
+        </section>
+
+        <footer class="sticker-footer">
+          <span id="connection-state" class="connection-state">connecting</span>
+          <span id="last-update">--</span>
+        </footer>
+      </main>
+    </div>
+
+    <script src="/sticker.js"></script>
+  </body>
+</html>

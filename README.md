@@ -153,4 +153,4 @@ All mock data is local-only and never touches your real transcript files.
 ## Notes
 
 - Tested on Ubuntu and macOS. Should work on other Node.js platforms, but not guaranteed.
-- Current Pokedex covers the first `251` Pokemon. More updates are planned.
+- Current Pokedex covers the first `649` Pokemon (generations 1-5).

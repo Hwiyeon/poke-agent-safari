@@ -5,6 +5,12 @@ data/pokedex.json
 data/runtime/
 data/area_mask.backup.png
 node_modules/
+dev/.cache/
+dev/**/__pycache__/
+dev/**/*.pyc
+dev/data/generated/*
+!dev/data/generated/.gitkeep
+dev/data/**/*.backup.png
 *.log
 npm-debug.log*
 .DS_Store

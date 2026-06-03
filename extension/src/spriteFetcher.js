@@ -122,7 +122,7 @@ function buildPlans(mode, maxIds) {
 }
 
 async function fetchByMode(targetDir, mode, options = {}) {
-  const maxIds = Math.max(1, Number(options.maxIds) || 251);
+  const maxIds = Math.max(1, Number(options.maxIds) || 649);
   const maxConcurrency = Math.max(1, Number(options.maxConcurrency) || 8);
   const progress = typeof options.progress === 'function' ? options.progress : null;
   const plans = buildPlans(mode, maxIds);

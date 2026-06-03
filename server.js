@@ -19,11 +19,19 @@ const MIME_TYPES = {
   '.svg': 'image/svg+xml; charset=utf-8'
 };
 
+const PUBLIC_ENTRYPOINTS = new Set([
+  '/app.js',
+  '/style.css',
+  '/sticker.html',
+  '/sticker.js',
+  '/sticker.css'
+]);
+
 class DashboardServer extends EventEmitter {
   constructor(options = {}) {
     super();
     this.host = options.host || '127.0.0.1';
-    this.port = options.port || 8123;
+    this.port = options.port == null ? 8123 : options.port;
     this.publicDir = path.resolve(options.publicDir || path.join(process.cwd(), 'public'));
     this.state = options.state;
     this.publicConfig = options.publicConfig || {};
@@ -61,6 +69,7 @@ class DashboardServer extends EventEmitter {
     this.keepAliveTimer = setInterval(() => {
       this.broadcastComment('keep-alive');
     }, 20000);
+    this.port = this.server.address().port;
     this.keepAliveTimer.unref();
 
     this.emit('info', `dashboard listening on http://${this.host}:${this.port}`);
@@ -194,7 +203,7 @@ class DashboardServer extends EventEmitter {
       return;
     }
 
-    if (pathname === '/app.js' || pathname === '/style.css') {
+    if (PUBLIC_ENTRYPOINTS.has(pathname)) {
       await this.serveStatic(pathname, res);
       return;
     }

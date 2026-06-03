@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Area Mask Editor</title>
+    <link rel="stylesheet" href="/style.css" />
+  </head>
+  <body>
+    <div class="layout">
+      <aside class="sidebar">
+        <div class="panel">
+          <h1>Area Mask Editor</h1>
+          <p class="muted">Drag to paint `area_mask.png` directly on top of the current island map.</p>
+        </div>
+
+        <div class="panel controls">
+          <div class="control-row">
+            <button id="saveBtn" class="primary">Save Mask</button>
+            <button id="reloadBtn">Reload From Disk</button>
+          </div>
+          <div class="control-row">
+            <button id="undoBtn">Undo</button>
+            <button id="redoBtn">Redo</button>
+          </div>
+          <label>
+            Brush Size
+            <input id="brushSize" type="range" min="1" max="32" value="8" />
+            <span id="brushSizeValue">8 px</span>
+          </label>
+          <label>
+            Overlay Opacity
+            <input id="overlayOpacity" type="range" min="0" max="100" value="55" />
+            <span id="overlayOpacityValue">55%</span>
+          </label>
+          <label class="toggle">
+            <input id="showReferenceOverlay" type="checkbox" />
+            <span>Show `area_map` underlay</span>
+          </label>
+          <p id="statusText" class="status">Loading assets...</p>
+          <p id="cursorText" class="muted">Cursor: -</p>
+        </div>
+
+        <div class="panel">
+          <h2>Paint Region</h2>
+          <div id="palette" class="palette"></div>
+          <p class="muted small">Left drag paints. Right click picks the region under the cursor.</p>
+        </div>
+
+        <div class="panel">
+          <h2>Saved Preview</h2>
+          <img id="vizPreview" alt="Saved spawn region preview" />
+        </div>
+      </aside>
+
+      <main class="workspace">
+        <section class="panel canvas-panel">
+          <div class="canvas-header">
+            <h2>Editable Mask</h2>
+            <span class="muted">Pixel-perfect, 480x320</span>
+          </div>
+          <canvas id="editorCanvas" width="480" height="320"></canvas>
+        </section>
+
+        <section class="panel canvas-panel">
+          <div class="canvas-header">
+            <h2>Reference `area_map.png`</h2>
+            <span class="muted">Use this to align region intent while painting</span>
+          </div>
+          <canvas id="referenceCanvas" width="480" height="320"></canvas>
+        </section>
+      </main>
+    </div>
+
+    <script src="/app.js"></script>
+  </body>
+</html>
