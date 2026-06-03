@@ -3321,7 +3321,8 @@ body {
   color: #35532a;
 }
 
-.summary-status-boxed {
+.summary-status-boxed,
+.summary-status-archived {
   border-color: #9098ab;
   background: linear-gradient(180deg, #f4f6fb 0%, #d9ddea 100%);
   color: #485267;

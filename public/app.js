@@ -3789,7 +3789,7 @@
     var xp = agentLevelProgress(agent);
     var agentName = tooltipAgentName(agent);
     var fullLabel = agentLabel(agent);
-    var statusText = archived ? 'Boxed' : (agent.status || 'Idle');
+    var statusText = archived ? 'Archived' : (agent.status || 'Idle');
     var projName = shortProjectName(agent.projectId || 'unknown');
     var metAtText = formatSummaryDateTime(agent.createdAt);
     var lastActivity = commandText(agent.activity || statusText || 'Idle');

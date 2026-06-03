@@ -146,7 +146,7 @@ class DashboardServer extends EventEmitter {
     if (pathname.startsWith('/api/unbox/') && req.method === 'POST') {
       const agentId = decodeURIComponent(pathname.slice('/api/unbox/'.length));
       const ok = this.state.manualUnbox(agentId);
-      this.sendJson(res, ok ? 200 : 404, ok ? { ok: true } : { error: 'Boxed agent not found' });
+      this.sendJson(res, ok ? 200 : 404, ok ? { ok: true } : { error: 'Archived agent not found' });
       return;
     }
 
