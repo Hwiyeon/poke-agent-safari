@@ -14,9 +14,12 @@
           <p>Live local activity from Claude Code and Codex transcripts</p>
         </div>
         <div class="stats-wrap">
-          <div class="pokedex-lang-tabs header-lang-tabs" role="tablist" aria-label="Pokemon name language">
-            <button id="pokedex-lang-en" class="pokedex-lang-tab active" type="button" role="tab" aria-selected="true">EN</button>
-            <button id="pokedex-lang-ko" class="pokedex-lang-tab" type="button" role="tab" aria-selected="false">KO</button>
+          <div class="pokedex-lang-menu header-lang-menu">
+            <button id="pokedex-lang-button" class="pokedex-lang-button" type="button" aria-haspopup="true" aria-expanded="false" aria-label="Pokemon name language">EN</button>
+            <div id="pokedex-lang-options" class="pokedex-lang-options" role="menu" aria-label="Pokemon name language">
+              <button type="button" role="menuitemradio" data-pokedex-language="en" aria-checked="true">EN</button>
+              <button type="button" role="menuitemradio" data-pokedex-language="ko" aria-checked="false">KO</button>
+            </div>
           </div>
           <button id="pokedex-toggle" class="pokedex-toggle" type="button">
             <span class="pokedex-toggle-title">Pokedex</span>

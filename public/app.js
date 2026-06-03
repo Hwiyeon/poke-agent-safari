@@ -4,6 +4,8 @@
   const __vscode = typeof acquireVsCodeApi === 'function' ? acquireVsCodeApi() : null;
   const __assetBase = (typeof window !== 'undefined' && window.__PAS_ASSET_BASE__) || '';
   const __dataBase = (typeof window !== 'undefined' && window.__PAS_DATA_BASE__) || '';
+  const LANGUAGE_STORAGE_KEY = 'agent-safari-name-language';
+  const LEGACY_STICKER_LANGUAGE_STORAGE_KEY = 'agent-safari-sticker-name-language';
 
   function joinBase(base, leaf) {
     return String(base).replace(/\/+$/, '') + '/' + String(leaf).replace(/^\/+/, '');
@@ -16,6 +18,23 @@
 
   function dataUrl(name) {
     return __dataBase ? joinBase(__dataBase, name) : ('/data/' + name);
+  }
+
+  function readStoredLanguage() {
+    try {
+      var shared = localStorage.getItem(LANGUAGE_STORAGE_KEY);
+      if (shared === 'ko' || shared === 'en') return shared;
+      var legacy = localStorage.getItem(LEGACY_STICKER_LANGUAGE_STORAGE_KEY);
+      if (legacy === 'ko' || legacy === 'en') return legacy;
+    } catch (_) {}
+    return 'en';
+  }
+
+  function storeLanguage(language) {
+    try {
+      localStorage.setItem(LANGUAGE_STORAGE_KEY, language);
+      localStorage.setItem(LEGACY_STICKER_LANGUAGE_STORAGE_KEY, language);
+    } catch (_) {}
   }
 
   const transport = __vscode ? {
@@ -386,8 +405,8 @@
   const pokedexCloseEl = document.getElementById('pokedex-close');
   const pokedexSummaryEl = document.getElementById('pokedex-summary');
   const pokedexGridEl = document.getElementById('pokedex-grid');
-  const pokedexLangEnEl = document.getElementById('pokedex-lang-en');
-  const pokedexLangKoEl = document.getElementById('pokedex-lang-ko');
+  const pokedexLangButtonEl = document.getElementById('pokedex-lang-button');
+  const pokedexLangOptionsEl = document.getElementById('pokedex-lang-options');
   const rateLimitsWrapEl = document.getElementById('rate-limits-wrap');
 
   const uiState = {
@@ -401,7 +420,8 @@
     boxHistoryOpen: false,
     subhistoryOpen: false,
     subhistoryParentId: null,
-    pokedexLanguage: 'en',
+    pokedexLanguage: readStoredLanguage(),
+    pokedexLanguageMenuOpen: false,
     collapsedSubtrees: {},
     promoStudioOpen: false,
     promoStudioEnabled: false
@@ -1029,13 +1049,27 @@
     return getPokemonName(pokemonId);
   }
 
-  function syncPokedexLanguageTabs() {
-    if (!pokedexLangEnEl || !pokedexLangKoEl) return;
+  function syncPokedexLanguageMenu() {
+    if (!pokedexLangButtonEl) return;
     var isKo = uiState.pokedexLanguage === 'ko';
-    pokedexLangEnEl.classList.toggle('active', !isKo);
-    pokedexLangKoEl.classList.toggle('active', isKo);
-    pokedexLangEnEl.setAttribute('aria-selected', String(!isKo));
-    pokedexLangKoEl.setAttribute('aria-selected', String(isKo));
+    document.documentElement.lang = isKo ? 'ko' : 'en';
+    pokedexLangButtonEl.textContent = isKo ? 'KO' : 'EN';
+    pokedexLangButtonEl.setAttribute('aria-expanded', uiState.pokedexLanguageMenuOpen ? 'true' : 'false');
+    pokedexLangButtonEl.setAttribute('aria-label', isKo ? 'Pokemon names: Korean' : 'Pokemon names: English');
+    if (pokedexLangOptionsEl) {
+      pokedexLangOptionsEl.classList.toggle('open', uiState.pokedexLanguageMenuOpen);
+      var options = pokedexLangOptionsEl.querySelectorAll('[data-pokedex-language]');
+      Array.prototype.forEach.call(options, function (option) {
+        var selected = option.getAttribute('data-pokedex-language') === uiState.pokedexLanguage;
+        option.classList.toggle('selected', selected);
+        option.setAttribute('aria-checked', selected ? 'true' : 'false');
+      });
+    }
+  }
+
+  function setPokedexLanguageMenu(open) {
+    uiState.pokedexLanguageMenuOpen = !!open;
+    syncPokedexLanguageMenu();
   }
 
   function renderLanguageDependentViews() {
@@ -1055,8 +1089,14 @@
 
   function setPokedexLanguage(language) {
     var nextLanguage = language === 'ko' ? 'ko' : 'en';
-    if (uiState.pokedexLanguage === nextLanguage) return;
+    uiState.pokedexLanguageMenuOpen = false;
+    if (uiState.pokedexLanguage === nextLanguage) {
+      syncPokedexLanguageMenu();
+      return;
+    }
     uiState.pokedexLanguage = nextLanguage;
+    storeLanguage(nextLanguage);
+    syncPokedexLanguageMenu();
     renderLanguageDependentViews();
   }
 
@@ -4638,7 +4678,7 @@
         nextActiveCell.focus({ preventScroll: true });
       }
     }
-    syncPokedexLanguageTabs();
+    syncPokedexLanguageMenu();
   }
 
   function escapeHtml(value) {
@@ -5655,16 +5695,27 @@
     pokedexBackdropEl.addEventListener('click', function () {
       setPokedexOpen(false);
     });
-    if (pokedexLangEnEl) {
-      pokedexLangEnEl.addEventListener('click', function () {
-        setPokedexLanguage('en');
+    if (pokedexLangButtonEl) {
+      pokedexLangButtonEl.addEventListener('click', function (event) {
+        event.stopPropagation();
+        setPokedexLanguageMenu(!uiState.pokedexLanguageMenuOpen);
       });
     }
-    if (pokedexLangKoEl) {
-      pokedexLangKoEl.addEventListener('click', function () {
-        setPokedexLanguage('ko');
+    if (pokedexLangOptionsEl) {
+      pokedexLangOptionsEl.addEventListener('click', function (event) {
+        var option = event.target.closest('[data-pokedex-language]');
+        if (!option) return;
+        event.preventDefault();
+        event.stopPropagation();
+        setPokedexLanguage(option.getAttribute('data-pokedex-language'));
       });
     }
+    document.addEventListener('click', function () {
+      if (uiState.pokedexLanguageMenuOpen) setPokedexLanguageMenu(false);
+    });
+    document.addEventListener('keydown', function (event) {
+      if (event.key === 'Escape' && uiState.pokedexLanguageMenuOpen) setPokedexLanguageMenu(false);
+    });
     pokedexGridEl.addEventListener('mouseover', function (e) {
       var cell = e.target.closest('.pokedex-cell[data-pokemon-id]');
       if (!cell) return;

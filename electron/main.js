@@ -228,9 +228,9 @@ async function startRuntime(mode, config) {
 function createWindow() {
   const win = new BrowserWindow({
     width: 360,
-    height: 280,
+    height: 430,
     minWidth: 300,
-    minHeight: 260,
+    minHeight: 370,
     show: false,
     frame: false,
     resizable: true,
@@ -273,8 +273,8 @@ function showSticker() {
   mainWindow.setAlwaysOnTop(true, 'floating');
   setMacWorkspaceVisibility(mainWindow, true);
   mainWindow.setSkipTaskbar(true);
-  mainWindow.setMinimumSize(300, 260);
-  mainWindow.setSize(360, 280, true);
+  mainWindow.setMinimumSize(320, 370);
+  mainWindow.setSize(360, 430, true);
   mainWindow.loadURL(runtime.url('/sticker.html'));
 }
 
