@@ -211,9 +211,6 @@ async function startRuntime(mode, config) {
     },
     async stop() {
       bootstrap.stopAll(this.timers);
-      if (this.mode === 'watch' && hasSource(this.config.source, 'codex')) {
-        this.state.boxActiveRootAgents({ provider: 'codex' });
-      }
       bootstrap.saveState(this.state, this.persist);
       bootstrap.savePokedex(this.state, this.persist);
 

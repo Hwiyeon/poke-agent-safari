@@ -265,12 +265,6 @@ async function run() {
     process.stdout.write(`\n[shutdown] received ${signal}, stopping...\n`);
 
     bootstrap.stopAll([tickTimer, pidCheckTimer, saveTimer]);
-    if (command === 'watch' && hasSource(config.source, 'codex')) {
-      const boxedCount = state.boxActiveRootAgents({ provider: 'codex' });
-      if (boxedCount > 0) {
-        process.stdout.write(`[shutdown] boxed ${boxedCount} Codex agent(s)\n`);
-      }
-    }
     saveState(state, persist);
     savePokedex(state, persist);
     process.stdout.write('[persist] state saved to disk\n');

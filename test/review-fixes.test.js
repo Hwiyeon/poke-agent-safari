@@ -237,7 +237,7 @@ test('boxed agent history keeps only the newest configured entries', () => {
   assert.deepEqual(state.boxedAgents.map((agent) => agent.agentId), ['agent-2', 'agent-3']);
 });
 
-test('shutdown boxing archives only matching root agents and waits for a fresh query to restore', () => {
+test('explicit provider boxing archives only matching root agents and waits for a fresh query to restore', () => {
   const state = new AgentState();
 
   state.applyEvent({
