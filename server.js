@@ -136,6 +136,13 @@ class DashboardServer extends EventEmitter {
       return;
     }
 
+    if (pathname === '/api/exploration-area' && req.method === 'POST') {
+      const body = await this.readJsonBody(req);
+      const result = this.state.setExplorationArea(body.areaId);
+      this.sendJson(res, result.ok ? 200 : 400, result);
+      return;
+    }
+
     if (pathname.startsWith('/api/box/') && req.method === 'POST') {
       const agentId = decodeURIComponent(pathname.slice('/api/box/'.length));
       const ok = this.state.manualBox(agentId);
@@ -153,6 +160,25 @@ class DashboardServer extends EventEmitter {
     if (pathname === '/api/owned/adopt' && req.method === 'POST') {
       const body = await this.readJsonBody(req);
       const result = this.state.adoptOwnedPokemon(body);
+      this.sendJson(res, result.ok ? 200 : 400, result);
+      return;
+    }
+
+    if (pathname.startsWith('/api/items/') && req.method === 'POST') {
+      const action = pathname.slice('/api/items/'.length);
+      const body = await this.readJsonBody(req);
+      let result = { ok: false, error: 'Unknown item action' };
+
+      if (action === 'pickup') {
+        result = this.state.setEvolutionPickupItem(body.itemId || null);
+      } else if (action === 'pull') {
+        result = this.state.pullEvolutionItem({ source: body.source });
+      } else if (action === 'buy') {
+        result = this.state.buyEvolutionItem(body.itemId, body.currency);
+      } else if (action === 'sell') {
+        result = this.state.sellEvolutionItem(body.itemId);
+      }
+
       this.sendJson(res, result.ok ? 200 : 400, result);
       return;
     }
@@ -177,7 +203,7 @@ class DashboardServer extends EventEmitter {
       } else if (action === 'assign-project') {
         result = this.state.assignProjectTraining(ownedPokemonId, body.projectId);
       } else if (action === 'evolve') {
-        result = this.state.evolveOwnedPokemon(ownedPokemonId);
+        result = this.state.evolveOwnedPokemon(ownedPokemonId, body);
       } else if (action === 'evolution-hold') {
         result = this.state.setOwnedPokemonEvolutionHold(ownedPokemonId, body.held);
       } else if (action === 'release') {
@@ -209,20 +235,8 @@ class DashboardServer extends EventEmitter {
     }
 
     if (pathname.startsWith('/data/')) {
-      const safeName = path.basename(pathname);
-      const dataPath = path.join(process.cwd(), 'data', safeName);
-      try {
-        const buf = await fsp.readFile(dataPath);
-        const ext = path.extname(safeName).toLowerCase();
-        res.statusCode = 200;
-        res.setHeader('Content-Type', MIME_TYPES[ext] || 'application/octet-stream');
-        res.setHeader('Cache-Control', 'no-cache');
-        res.end(buf);
-        return;
-      } catch (_) {
-        this.sendJson(res, 404, { error: 'Not found' });
-        return;
-      }
+      await this.serveData(pathname, res);
+      return;
     }
 
     if (pathname.startsWith('/sprites/')) {
@@ -304,11 +318,69 @@ class DashboardServer extends EventEmitter {
     res.end(fileBuffer);
   }
 
+  async serveData(requestPath, res) {
+    let cleaned;
+    try {
+      cleaned = decodeURIComponent(requestPath.replace(/^\/data\/?/, ''));
+    } catch (_) {
+      this.sendJson(res, 400, { error: 'Bad request' });
+      return;
+    }
+
+    const normalizedPath = path.normalize(cleaned);
+    if (
+      !normalizedPath ||
+      normalizedPath === '..' ||
+      normalizedPath.startsWith(`..${path.sep}`) ||
+      path.isAbsolute(normalizedPath)
+    ) {
+      this.sendJson(res, 403, { error: 'Forbidden' });
+      return;
+    }
+
+    const dataDir = path.resolve(process.cwd(), 'data');
+    const absolutePath = path.resolve(dataDir, normalizedPath);
+    if (!(absolutePath === dataDir || absolutePath.startsWith(`${dataDir}${path.sep}`))) {
+      this.sendJson(res, 403, { error: 'Forbidden' });
+      return;
+    }
+
+    const relativePath = path.relative(dataDir, absolutePath);
+    const publicDataFiles = new Set([
+      'pokemon_data.json',
+      'evolution_paths.json',
+      'pokemon_names_ko.json'
+    ]);
+    const relativeParts = relativePath.split(path.sep);
+    const isMapAsset = relativeParts.length === 2 && relativeParts[0] === 'map_assets';
+    if (!publicDataFiles.has(relativePath) && !isMapAsset) {
+      this.sendJson(res, 404, { error: 'Not found' });
+      return;
+    }
+
+    let fileBuffer;
+    try {
+      fileBuffer = await fsp.readFile(absolutePath);
+    } catch (error) {
+      if (error.code === 'ENOENT' || error.code === 'EISDIR') {
+        this.sendJson(res, 404, { error: 'Not found' });
+        return;
+      }
+      throw error;
+    }
+
+    const ext = path.extname(absolutePath).toLowerCase();
+    res.statusCode = 200;
+    res.setHeader('Content-Type', MIME_TYPES[ext] || 'application/octet-stream');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.end(fileBuffer);
+  }
+
   async serveSprite(requestPath, res) {
     const cleaned = requestPath.replace(/^\/+/, '');
     const parts = cleaned.split('/');
 
-    if (parts.length === 3 && parts[0] === 'sprites' && (parts[1] === 'static' || parts[1] === 'animated' || parts[1] === 'icon' || parts[1] === 'icon-static')) {
+    if (parts.length === 3 && parts[0] === 'sprites' && (parts[1] === 'static' || parts[1] === 'animated' || parts[1] === 'icon' || parts[1] === 'icon-static' || parts[1] === 'items')) {
       const kind = parts[1];
       const safeName = path.basename(parts[2]);
           const candidates = spriteCandidatesIn(POKEAPI_SPRITES_DIR, kind, safeName);

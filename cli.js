@@ -166,6 +166,8 @@ async function run() {
       const meta = context.meta || {};
       return resolveRenderedPokemonIdForAgent(agentId, {
         parentId: (agent && agent.parentId) || meta.parentId || null,
+        assignedPokemonId: agent && agent.assignedPokemonId,
+        areaId: context.areaId,
         getAgentById: context.getAgentById,
         createdAt: (agent && agent.createdAt) || context.ts
       });

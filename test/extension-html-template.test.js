@@ -18,6 +18,7 @@ test('html template injects CSP, asset bases, and rewritten resource URLs', () =
     jsUri: 'vscode-resource:/app.js',
     assetBase: 'vscode-resource:/assets',
     dataBase: 'vscode-resource:/data',
+    itemBase: 'vscode-resource:/items',
     cspSource: 'vscode-webview://test'
   });
 
@@ -28,6 +29,7 @@ test('html template injects CSP, asset bases, and rewritten resource URLs', () =
   assert.match(html, /src="vscode-resource:\/app\.js"/);
   assert.match(html, /__PAS_ASSET_BASE__/);
   assert.match(html, /__PAS_DATA_BASE__/);
+  assert.match(html, /__PAS_ITEM_BASE__/);
 });
 
 run();

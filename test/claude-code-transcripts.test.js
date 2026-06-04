@@ -43,6 +43,8 @@ test('Claude Code assistant tool-use messages are normalized from transcript pat
   assert.equal(events[1].meta.toolName, 'Read');
   assert.equal(events[2].meta.contextUsed, 1400);
   assert.equal(events[2].meta.totalTokens, 1720);
+  assert.equal(events[2].meta.cachedInputTokens, 200);
+  assert.equal(events[2].meta.rewardTokens, 1520);
 });
 
 test('Claude Code bash tool-use messages capture the last command', () => {

@@ -6,11 +6,13 @@ const { EVENT_TYPES } = require('../parser');
 const { AgentState } = require('../state');
 
 function createState(pokemonByAgent) {
-  return new AgentState({
+  const state = new AgentState({
     resolvePokemonId(agentId) {
       return pokemonByAgent[agentId] || null;
     }
   });
+  state.evolutionItems.itemPoints = 100000;
+  return state;
 }
 
 function discover(state, agentId, pokemonId, projectId = 'project-a') {
@@ -195,6 +197,138 @@ test('owned pokemon can hold and perform level evolution', () => {
   assert.equal(state.snapshot().ownedPokemon[0].speciesId, 2);
 });
 
+test('total tokens accrue evolution item points', () => {
+  const state = createState({ worker: 25 });
+  state.evolutionItems.itemPoints = 0;
+  state.evolutionItems.rewardTokenRemainder = 0;
+  state.applyEvent({
+    type: EVENT_TYPES.AGENT_SEEN,
+    agentId: 'worker',
+    ts: 20,
+    meta: { projectId: 'project-a', sessionId: 'session-a' }
+  });
+  state.applyEvent({
+    type: EVENT_TYPES.ASSISTANT_OUTPUT,
+    agentId: 'worker',
+    ts: 21,
+    meta: { totalTokens: 700000, rewardTokens: 679999 }
+  });
+
+  const snapshot = state.snapshot();
+  assert.equal(snapshot.agents[0].totalTokens, 700000);
+  assert.equal(snapshot.evolutionItems.itemPoints, 70);
+  assert.equal(snapshot.evolutionItems.rewardTokenRemainder, 0);
+  assert.equal(snapshot.evolutionItems.tokenPerItemPoint, 10000);
+});
+
+test('evolution item pulls, ticket claims, and selling update the item wallet', () => {
+  const state = createState({});
+  state.evolutionItems.itemPoints = 250;
+
+  const failedPull = state.pullEvolutionItem({ rng: () => 0.99 });
+  assert.equal(failedPull.ok, true);
+  assert.equal(failedPull.success, false);
+  assert.equal(failedPull.source, 'points');
+  assert.equal(state.snapshot().evolutionItems.itemPoints, 0);
+
+  state.evolutionItems.itemPoints = 250;
+  state.evolutionItems.pickupItemId = 'thunder-stone';
+  const rolls = [0.1, 0.5, 0.0];
+  const missedTarget = state.pullEvolutionItem({ rng: () => rolls.shift() });
+  assert.equal(missedTarget.ok, true);
+  assert.equal(missedTarget.success, true);
+  assert.notEqual(missedTarget.itemId, 'thunder-stone');
+  assert.equal(state.snapshot().evolutionItems.targetTickets, 1);
+
+  state.evolutionItems.itemPoints = 35;
+  const bought = state.buyEvolutionItem('linking-cord', 'points');
+  assert.equal(bought.ok, false);
+  assert.equal(state.snapshot().evolutionItems.inventory['linking-cord'], undefined);
+
+  state.addEvolutionItem('linking-cord');
+
+  const sold = state.sellEvolutionItem('linking-cord');
+  assert.equal(sold.ok, true);
+  assert.equal(state.snapshot().evolutionItems.inventory['linking-cord'], undefined);
+  assert.equal(state.snapshot().evolutionItems.itemPoints, 45);
+
+  state.evolutionItems.targetTickets = 20;
+  const claimed = state.buyEvolutionItem('thunder-stone', 'ticket');
+  assert.equal(claimed.ok, true);
+  assert.equal(state.snapshot().evolutionItems.inventory['thunder-stone'], 1);
+  assert.equal(state.snapshot().evolutionItems.targetTickets, 0);
+});
+
+test('recruit pricing spends points and discovers unknown pokemon', () => {
+  const state = createState({});
+  state.evolutionItems.itemPoints = 800;
+  state.mergeSeenPokemonIds([10]);
+
+  const discovered = state.adoptOwnedPokemon({ speciesId: 10, inParty: false });
+  assert.equal(discovered.ok, true);
+  assert.deepEqual(discovered.recruitCost, { tier: 1, discovered: true, pointCost: 100 });
+  assert.equal(state.snapshot().evolutionItems.itemPoints, 700);
+
+  state.evolutionItems.itemPoints = 500;
+  const undiscovered = state.adoptOwnedPokemon({ speciesId: 13, inParty: false, skipRecruitCost: true });
+  assert.equal(undiscovered.ok, true);
+  assert.deepEqual(undiscovered.recruitCost, { tier: 1, discovered: false, pointCost: 500 });
+  let snapshot = state.snapshot();
+  assert.equal(snapshot.evolutionItems.itemPoints, 0);
+  assert.ok(snapshot.pokedex.seenPokemonIds.includes(13));
+
+  state.evolutionItems.itemPoints = 499;
+  const insufficient = state.adoptOwnedPokemon({ speciesId: 16, inParty: false });
+  assert.equal(insufficient.ok, false);
+  assert.deepEqual(insufficient.recruitCost, { tier: 1, discovered: false, pointCost: 500 });
+  snapshot = state.snapshot();
+  assert.equal(snapshot.evolutionItems.itemPoints, 499);
+  assert.equal(snapshot.recruitPricing.discovered[1], 100);
+  assert.equal(snapshot.recruitPricing.undiscovered[5], 10000);
+});
+
+test('item evolutions consume the required item', () => {
+  const state = createState({});
+  state.mergeSeenPokemonIds([25]);
+  const pikachu = state.adoptOwnedPokemon({ speciesId: 25 }).pokemon;
+
+  let current = state.snapshot().ownedPokemon[0];
+  assert.equal(current.evolution.method, 'item');
+  assert.equal(current.evolution.itemId, 'thunder-stone');
+  assert.equal(current.evolution.canEvolve, false);
+  assert.equal(state.evolveOwnedPokemon(pikachu.id).ok, false);
+
+  state.addEvolutionItem('thunder-stone');
+  current = state.snapshot().ownedPokemon[0];
+  assert.equal(current.evolution.canEvolve, true);
+  const evolved = state.evolveOwnedPokemon(pikachu.id);
+
+  assert.equal(evolved.ok, true);
+  assert.equal(state.snapshot().ownedPokemon[0].speciesId, 26);
+  assert.equal(state.snapshot().evolutionItems.inventory['thunder-stone'], undefined);
+});
+
+test('trade evolutions use linking cord and branched evolutions require a target', () => {
+  const state = createState({});
+  state.mergeSeenPokemonIds([64, 61]);
+  const kadabra = state.adoptOwnedPokemon({ speciesId: 64 }).pokemon;
+  const poliwhirl = state.adoptOwnedPokemon({ speciesId: 61 }).pokemon;
+
+  state.addEvolutionItem('linking-cord');
+  assert.equal(state.evolveOwnedPokemon(kadabra.id).ok, true);
+  assert.equal(state.snapshot().ownedPokemon.find((pokemon) => pokemon.id === kadabra.id).speciesId, 65);
+
+  state.addEvolutionItem('water-stone');
+  state.addEvolutionItem('kings-rock');
+  assert.equal(state.evolveOwnedPokemon(poliwhirl.id).ok, false);
+  assert.equal(state.evolveOwnedPokemon(poliwhirl.id, { targetSpeciesId: 186 }).ok, true);
+
+  const snapshot = state.snapshot();
+  assert.equal(snapshot.ownedPokemon.find((pokemon) => pokemon.id === poliwhirl.id).speciesId, 186);
+  assert.equal(snapshot.evolutionItems.inventory['kings-rock'], undefined);
+  assert.equal(snapshot.evolutionItems.inventory['water-stone'], 1);
+});
+
 test('hard reset clears owned pokemon and training state', () => {
   const state = createState({});
   state.mergeSeenPokemonIds([25]);
@@ -208,6 +342,7 @@ test('hard reset clears owned pokemon and training state', () => {
   assert.deepEqual(snapshot.ownedPokemon, []);
   assert.deepEqual(snapshot.projectTraining, {});
   assert.deepEqual(snapshot.trainingEvents, []);
+  assert.deepEqual(snapshot.evolutionItems.inventory, {});
 });
 
 test('released pokemon are removed from project training state', () => {

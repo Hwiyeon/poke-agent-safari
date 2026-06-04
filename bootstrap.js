@@ -329,28 +329,22 @@ function clearPersistedFiles(persist) {
 }
 
 function readLiveSessionIds(sessionsDir = path.join(os.homedir(), '.claude', 'sessions')) {
-  const liveSessionIds = new Set();
-  let files;
-  try {
-    files = fs.readdirSync(sessionsDir).filter((fileName) => fileName.endsWith('.json'));
-  } catch (_) {
-    return liveSessionIds;
+  const sessionPidMap = createSessionPidMap(sessionsDir);
+  if (!sessionPidMap) {
+    return new Set();
   }
+  return liveSessionIdsFromPidMap(sessionPidMap);
+}
 
-  for (const fileName of files) {
+function liveSessionIdsFromPidMap(sessionPidMap) {
+  const liveSessionIds = new Set();
+
+  for (const [sessionId, pid] of sessionPidMap.entries()) {
     try {
-      const raw = fs.readFileSync(path.join(sessionsDir, fileName), 'utf8');
-      const data = JSON.parse(raw);
-      if (!data.sessionId || !data.pid) continue;
-
-      try {
-        process.kill(data.pid, 0);
-        liveSessionIds.add(data.sessionId);
-      } catch (_) {
-        // Ignore dead processes.
-      }
+      process.kill(pid, 0);
+      liveSessionIds.add(sessionId);
     } catch (_) {
-      // Ignore malformed session files.
+      // Ignore dead processes.
     }
   }
 
@@ -358,22 +352,34 @@ function readLiveSessionIds(sessionsDir = path.join(os.homedir(), '.claude', 'se
 }
 
 function runStartupZombieBoxing(state, sessionsDir = path.join(os.homedir(), '.claude', 'sessions')) {
-  const liveSessionIds = readLiveSessionIds(sessionsDir);
+  const sessionPidMap = createSessionPidMap(sessionsDir);
+  if (!sessionPidMap) {
+    return {
+      boxedCount: 0,
+      liveSessionIds: new Set(),
+      dirReadable: false
+    };
+  }
+
+  const liveSessionIds = liveSessionIdsFromPidMap(sessionPidMap);
   let boxedCount = 0;
 
   for (const [agentId, agent] of [...state.agents.entries()]) {
     if (agent.parentId) continue;
-    if (liveSessionIds.has(agent.sessionId)) continue;
+    if (liveSessionIds.has(agent.sessionId)) {
+      state.confirmedSessionIds.add(agent.sessionId);
+      continue;
+    }
+    if (!state.confirmedSessionIds.has(agent.sessionId)) continue;
+
+    const sid = agent.sessionId;
     state.boxAgent(agent);
     state.removeAgent(agentId);
-    boxedCount += 1;
-  }
-
-  for (const [, agent] of state.agents.entries()) {
-    if (!agent.parentId && liveSessionIds.has(agent.sessionId)) continue;
-    if (agent.sessionId && agent.sessionId !== 'unknown-session') {
-      state.suppressedSessions.add(agent.sessionId);
+    state.confirmedSessionIds.delete(sid);
+    if (sid && sid !== 'unknown-session') {
+      state.suppressedSessions.add(sid);
     }
+    boxedCount += 1;
   }
 
   for (const entry of state.boxedAgents) {
@@ -384,7 +390,8 @@ function runStartupZombieBoxing(state, sessionsDir = path.join(os.homedir(), '.c
 
   return {
     boxedCount,
-    liveSessionIds
+    liveSessionIds,
+    dirReadable: true
   };
 }
 
@@ -415,7 +422,7 @@ function createSessionPidMap(sessionsDir = path.join(os.homedir(), '.claude', 's
 function runSessionPidCheck(state, sessionsDir = path.join(os.homedir(), '.claude', 'sessions')) {
   const sessionPidMap = createSessionPidMap(sessionsDir);
   if (!sessionPidMap) {
-    state.checkSessionPids(new Map(), true);
+    state.checkSessionPids(new Map(), false);
     return;
   }
   state.checkSessionPids(sessionPidMap, true);

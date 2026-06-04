@@ -52,6 +52,7 @@ test('Codex user messages and token counts normalize into agent events', () => {
           },
           last_token_usage: {
             input_tokens: 83985,
+            cached_input_tokens: 1000,
             total_tokens: 27040
           },
           model_context_window: 258400
@@ -69,6 +70,8 @@ test('Codex user messages and token counts normalize into agent events', () => {
   assert.equal(tokenEvents[1].meta.contextUsed, 83985);
   assert.equal(tokenEvents[1].meta.contextMax, 258400);
   assert.equal(tokenEvents[1].meta.totalTokens, 27040);
+  assert.equal(tokenEvents[1].meta.cachedInputTokens, 1000);
+  assert.equal(tokenEvents[1].meta.rewardTokens, 26040);
   assert.equal(tokenEvents[1].meta.rateLimits.five_hour.used_percentage, 7);
 });
 

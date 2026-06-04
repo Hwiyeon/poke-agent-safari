@@ -254,6 +254,16 @@ function normalizeCodexEntry(entry, context) {
     const lastUsage = info.last_token_usage || {};
     const contextUsed = firstFiniteNumber(lastUsage.input_tokens, totalUsage.input_tokens);
     const totalTokens = Number(lastUsage.total_tokens);
+    const cachedInputTokens = firstFiniteNumber(
+      lastUsage.cached_input_tokens,
+      lastUsage.cache_read_input_tokens,
+      totalUsage.cached_input_tokens,
+      totalUsage.cache_read_input_tokens,
+      0
+    );
+    const rewardTokens = Number.isFinite(totalTokens)
+      ? Math.max(0, totalTokens - (Number.isFinite(cachedInputTokens) ? cachedInputTokens : 0))
+      : NaN;
     const contextMax = firstFiniteNumber(info.model_context_window, payload.model_context_window, meta.contextMax);
     const rateLimits = normalizeRateLimits(payload.rate_limits);
     const outputMeta = { ...meta };
@@ -263,6 +273,12 @@ function normalizeCodexEntry(entry, context) {
     }
     if (Number.isFinite(totalTokens) && totalTokens > 0) {
       outputMeta.totalTokens = totalTokens;
+    }
+    if (Number.isFinite(cachedInputTokens) && cachedInputTokens > 0) {
+      outputMeta.cachedInputTokens = cachedInputTokens;
+    }
+    if (Number.isFinite(rewardTokens) && (rewardTokens > 0 || totalTokens > 0)) {
+      outputMeta.rewardTokens = rewardTokens;
     }
     if (Number.isFinite(contextMax) && contextMax > 0) {
       outputMeta.contextMax = contextMax;

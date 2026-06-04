@@ -1,0 +1,2560 @@
+{
+  "generated_at": "2026-06-03T15:05:16.342Z",
+  "source": "dev/.cache/pokeapi/evolution-chain",
+  "range": "1-649",
+  "special_rule_count": 96,
+  "total_from_species": 303,
+  "total_rules": 324,
+  "rules": {
+    "1": [
+      {
+        "toSpeciesId": 2,
+        "method": "level",
+        "source": "pokeapi-level",
+        "requiredLevel": 16
+      }
+    ],
+    "2": [
+      {
+        "toSpeciesId": 3,
+        "method": "level",
+        "source": "pokeapi-level",
+        "requiredLevel": 32
+      }
+    ],
+    "4": [
+      {
+        "toSpeciesId": 5,
+        "method": "level",
+        "source": "pokeapi-level",
+        "requiredLevel": 16
+      }
+    ],
+    "5": [
+      {
+        "toSpeciesId": 6,
+        "method": "level",
+        "source": "pokeapi-level",
+        "requiredLevel": 36
+      }
+    ],
+    "7": [
+      {
+        "toSpeciesId": 8,
+        "method": "level",
+        "source": "pokeapi-level",
+        "requiredLevel": 16
+      }
+    ],
+    "8": [
+      {
+        "toSpeciesId": 9,
+        "method": "level",
+        "source": "pokeapi-level",
+        "requiredLevel": 36
+      }
+    ],
+    "10": [
+      {
+        "toSpeciesId": 11,
+        "method": "level",
+        "source": "pokeapi-level",
+        "requiredLevel": 7
+      }
+    ],
+    "11": [
+      {
+        "toSpeciesId": 12,
+        "method": "level",
+        "source": "pokeapi-level",
+        "requiredLevel": 10
+      }
+    ],
+    "13": [
+      {
+        "toSpeciesId": 14,
+        "method": "level",
+        "source": "pokeapi-level",
+        "requiredLevel": 7
+      }
+    ],
+    "14": [
+      {
+        "toSpeciesId": 15,
+        "method": "level",
+        "source": "pokeapi-level",
+        "requiredLevel": 10
+      }
+    ],
+    "16": [
+      {
+        "toSpeciesId": 17,
+        "method": "level",
+        "source": "pokeapi-level",
+        "requiredLevel": 18
+      }
+    ],
+    "17": [
+      {
+        "toSpeciesId": 18,
+        "method": "level",
+        "source": "pokeapi-level",
+        "requiredLevel": 36
+      }
+    ],
+    "19": [
+      {
+        "toSpeciesId": 20,
+        "method": "level",
+        "source": "pokeapi-level",
+        "requiredLevel": 20
+      }
+    ],
+    "21": [
+      {
+        "toSpeciesId": 22,
+        "method": "level",
+        "source": "pokeapi-level",
+        "requiredLevel": 20
+      }
+    ],
+    "23": [
+      {
+        "toSpeciesId": 24,
+        "method": "level",
+        "source": "pokeapi-level",
+        "requiredLevel": 22
+      }
+    ],
+    "25": [
+      {
+        "toSpeciesId": 26,
+        "method": "item",
+        "source": "special-item",
+        "itemId": "thunder-stone"
+      }
+    ],
+    "27": [
+      {
+        "toSpeciesId": 28,
+        "method": "item",
+        "source": "pokeapi-use-item",
+        "itemId": "ice-stone"
+      },
+      {
+        "toSpeciesId": 28,
+        "method": "level",
+        "source": "pokeapi-level",
+        "requiredLevel": 22
+      }
+    ],
+    "29": [
+      {
+        "toSpeciesId": 30,
+        "method": "level",
+        "source": "pokeapi-level",
+        "requiredLevel": 16
+      }
+    ],
+    "30": [
+      {
+        "toSpeciesId": 31,
+        "method": "item",
+        "source": "special-item",
+        "itemId": "moon-stone"
+      }
+    ],
+    "32": [
+      {
+        "toSpeciesId": 33,
+        "method": "level",
+        "source": "pokeapi-level",
+        "requiredLevel": 16
+      }
+    ],
+    "33": [
+      {
+        "toSpeciesId": 34,
+        "method": "item",
+        "source": "special-item",
+        "itemId": "moon-stone"
+      }
+    ],
+    "35": [
+      {
+        "toSpeciesId": 36,
+        "method": "item",
+        "source": "special-item",
+        "itemId": "moon-stone"
+      }
+    ],
+    "37": [
+      {
+        "toSpeciesId": 38,
+        "method": "item",
+        "source": "special-item",
+        "itemId": "fire-stone"
+      }
+    ],
+    "39": [
+      {
+        "toSpeciesId": 40,
+        "method": "item",
+        "source": "special-item",
+        "itemId": "moon-stone"
+      }
+    ],
+    "41": [
+      {
+        "toSpeciesId": 42,
+        "method": "level",
+        "source": "pokeapi-level",
+        "requiredLevel": 22
+      }
+    ],
+    "42": [
+      {
+        "toSpeciesId": 169,
+        "method": "level",
+        "source": "special-level",
+        "requiredLevel": 36
+      }
+    ],
+    "43": [
+      {
+        "toSpeciesId": 44,
+        "method": "level",
+        "source": "pokeapi-level",
+        "requiredLevel": 21
+      }
+    ],
+    "44": [
+      {
+        "toSpeciesId": 45,
+        "method": "item",
+        "source": "special-item",
+        "itemId": "leaf-stone"
+      },
+      {
+        "toSpeciesId": 182,
+        "method": "item",
+        "source": "special-item",
+        "itemId": "sun-stone"
+      }
+    ],
+    "46": [
+      {
+        "toSpeciesId": 47,
+        "method": "level",
+        "source": "pokeapi-level",
+        "requiredLevel": 24
+      }
+    ],
+    "48": [
+      {
+        "toSpeciesId": 49,
+        "method": "level",
+        "source": "pokeapi-level",
+        "requiredLevel": 31
+      }
+    ],
+    "50": [
+      {
+        "toSpeciesId": 51,
+        "method": "level",
+        "source": "pokeapi-level",
+        "requiredLevel": 26
+      }
+    ],
+    "52": [
+      {
+        "toSpeciesId": 53,
+        "method": "level",
+        "source": "pokeapi-level",
+        "requiredLevel": 28
+      }
+    ],
+    "54": [
+      {
+        "toSpeciesId": 55,
+        "method": "level",
+        "source": "pokeapi-level",
+        "requiredLevel": 33
+      }
+    ],
+    "56": [
+      {
+        "toSpeciesId": 57,
+        "method": "level",
+        "source": "pokeapi-level",
+        "requiredLevel": 28
+      }
+    ],
+    "58": [
+      {
+        "toSpeciesId": 59,
+        "method": "item",
+        "source": "special-item",
+        "itemId": "fire-stone"
+      }
+    ],
+    "60": [
+      {
+        "toSpeciesId": 61,
+        "method": "level",
+        "source": "pokeapi-level",
+        "requiredLevel": 25
+      }
+    ],
+    "61": [
+      {
+        "toSpeciesId": 62,
+        "method": "item",
+        "source": "special-item",
+        "itemId": "water-stone"
+      },
+      {
+        "toSpeciesId": 186,
+        "method": "item",
+        "source": "special-held-item",
+        "itemId": "kings-rock"
+      }
+    ],
+    "63": [
+      {
+        "toSpeciesId": 64,
+        "method": "level",
+        "source": "pokeapi-level",
+        "requiredLevel": 16
+      }
+    ],
+    "64": [
+      {
+        "toSpeciesId": 65,
+        "method": "item",
+        "source": "special-trade",
+        "itemId": "linking-cord"
+      }
+    ],
+    "66": [
+      {
+        "toSpeciesId": 67,
+        "method": "level",
+        "source": "pokeapi-level",
+        "requiredLevel": 28
+      }
+    ],
+    "67": [
+      {
+        "toSpeciesId": 68,
+        "method": "item",
+        "source": "special-trade",
+        "itemId": "linking-cord"
+      }
+    ],
+    "69": [
+      {
+        "toSpeciesId": 70,
+        "method": "level",
+        "source": "pokeapi-level",
+        "requiredLevel": 21
+      }
+    ],
+    "70": [
+      {
+        "toSpeciesId": 71,
+        "method": "item",
+        "source": "special-item",
+        "itemId": "leaf-stone"
+      }
+    ],
+    "72": [
+      {
+        "toSpeciesId": 73,
+        "method": "level",
+        "source": "pokeapi-level",
+        "requiredLevel": 30
+      }
+    ],
+    "74": [
+      {
+        "toSpeciesId": 75,
+        "method": "level",
+        "source": "pokeapi-level",
+        "requiredLevel": 25
+      }
+    ],
+    "75": [
+      {
+        "toSpeciesId": 76,
+        "method": "item",
+        "source": "special-trade",
+        "itemId": "linking-cord"
+      }
+    ],
+    "77": [
+      {
+        "toSpeciesId": 78,
+        "method": "level",
+        "source": "pokeapi-level",
+        "requiredLevel": 40
+      }
+    ],
+    "79": [
+      {
+        "toSpeciesId": 80,
+        "method": "level",
+        "source": "pokeapi-level",
+        "requiredLevel": 37
+      },
+      {
+        "toSpeciesId": 199,
+        "method": "item",
+        "source": "special-held-item",
+        "itemId": "kings-rock"
+      }
+    ],
+    "81": [
+      {
+        "toSpeciesId": 82,
+        "method": "level",
+        "source": "pokeapi-level",
+        "requiredLevel": 30
+      }
+    ],
+    "82": [
+      {
+        "toSpeciesId": 462,
+        "method": "item",
+        "source": "special-item",
+        "itemId": "thunder-stone"
+      }
+    ],
+    "84": [
+      {
+        "toSpeciesId": 85,
+        "method": "level",
+        "source": "pokeapi-level",
+        "requiredLevel": 31
+      }
+    ],
+    "86": [
+      {
+        "toSpeciesId": 87,
+        "method": "level",
+        "source": "pokeapi-level",
+        "requiredLevel": 34
+      }
+    ],
+    "88": [
+      {
+        "toSpeciesId": 89,
+        "method": "level",
+        "source": "pokeapi-level",
+        "requiredLevel": 38
+      }
+    ],
+    "90": [
+      {
+        "toSpeciesId": 91,
+        "method": "item",
+        "source": "special-item",
+        "itemId": "water-stone"
+      }
+    ],
+    "92": [
+      {
+        "toSpeciesId": 93,
+        "method": "level",
+        "source": "pokeapi-level",
+        "requiredLevel": 25
+      }
+    ],
+    "93": [
+      {
+        "toSpeciesId": 94,
+        "method": "item",
+        "source": "special-trade",
+        "itemId": "linking-cord"
+      }
+    ],
+    "95": [
+      {
+        "toSpeciesId": 208,
+        "method": "item",
+        "source": "special-held-item",
+        "itemId": "metal-coat"
+      }
+    ],
+    "96": [
+      {
+        "toSpeciesId": 97,
+        "method": "level",
+        "source": "pokeapi-level",
+        "requiredLevel": 26
+      }
+    ],
+    "98": [
+      {
+        "toSpeciesId": 99,
+        "method": "level",
+        "source": "pokeapi-level",
+        "requiredLevel": 28
+      }
+    ],
+    "100": [
+      {
+        "toSpeciesId": 101,
+        "method": "item",
+        "source": "pokeapi-use-item",
+        "itemId": "leaf-stone"
+      },
+      {
+        "toSpeciesId": 101,
+        "method": "level",
+        "source": "pokeapi-level",
+        "requiredLevel": 30
+      }
+    ],
+    "102": [
+      {
+        "toSpeciesId": 103,
+        "method": "item",
+        "source": "special-item",
+        "itemId": "leaf-stone"
+      }
+    ],
+    "104": [
+      {
+        "toSpeciesId": 105,
+        "method": "level",
+        "source": "pokeapi-level",
+        "requiredLevel": 28
+      }
+    ],
+    "108": [
+      {
+        "toSpeciesId": 463,
+        "method": "level",
+        "source": "special-level",
+        "requiredLevel": 30
+      }
+    ],
+    "109": [
+      {
+        "toSpeciesId": 110,
+        "method": "level",
+        "source": "pokeapi-level",
+        "requiredLevel": 35
+      }
+    ],
+    "111": [
+      {
+        "toSpeciesId": 112,
+        "method": "level",
+        "source": "pokeapi-level",
+        "requiredLevel": 42
+      }
+    ],
+    "112": [
+      {
+        "toSpeciesId": 464,
+        "method": "item",
+        "source": "special-held-item",
+        "itemId": "protector"
+      }
+    ],
+    "113": [
+      {
+        "toSpeciesId": 242,
+        "method": "level",
+        "source": "special-level",
+        "requiredLevel": 36
+      }
+    ],
+    "114": [
+      {
+        "toSpeciesId": 465,
+        "method": "level",
+        "source": "special-level",
+        "requiredLevel": 30
+      }
+    ],
+    "116": [
+      {
+        "toSpeciesId": 117,
+        "method": "level",
+        "source": "pokeapi-level",
+        "requiredLevel": 32
+      }
+    ],
+    "117": [
+      {
+        "toSpeciesId": 230,
+        "method": "item",
+        "source": "special-held-item",
+        "itemId": "dragon-scale"
+      }
+    ],
+    "118": [
+      {
+        "toSpeciesId": 119,
+        "method": "level",
+        "source": "pokeapi-level",
+        "requiredLevel": 33
+      }
+    ],
+    "120": [
+      {
+        "toSpeciesId": 121,
+        "method": "item",
+        "source": "special-item",
+        "itemId": "water-stone"
+      }
+    ],
+    "123": [
+      {
+        "toSpeciesId": 212,
+        "method": "item",
+        "source": "special-held-item",
+        "itemId": "metal-coat"
+      }
+    ],
+    "125": [
+      {
+        "toSpeciesId": 466,
+        "method": "item",
+        "source": "special-held-item",
+        "itemId": "electirizer"
+      }
+    ],
+    "126": [
+      {
+        "toSpeciesId": 467,
+        "method": "item",
+        "source": "special-held-item",
+        "itemId": "magmarizer"
+      }
+    ],
+    "129": [
+      {
+        "toSpeciesId": 130,
+        "method": "level",
+        "source": "pokeapi-level",
+        "requiredLevel": 20
+      }
+    ],
+    "133": [
+      {
+        "toSpeciesId": 134,
+        "method": "item",
+        "source": "special-item",
+        "itemId": "water-stone"
+      },
+      {
+        "toSpeciesId": 135,
+        "method": "item",
+        "source": "special-item",
+        "itemId": "thunder-stone"
+      },
+      {
+        "toSpeciesId": 136,
+        "method": "item",
+        "source": "special-item",
+        "itemId": "fire-stone"
+      },
+      {
+        "toSpeciesId": 196,
+        "method": "item",
+        "source": "special-item",
+        "itemId": "sun-stone"
+      },
+      {
+        "toSpeciesId": 197,
+        "method": "item",
+        "source": "special-item",
+        "itemId": "moon-stone"
+      },
+      {
+        "toSpeciesId": 470,
+        "method": "item",
+        "source": "special-item",
+        "itemId": "leaf-stone"
+      },
+      {
+        "toSpeciesId": 471,
+        "method": "item",
+        "source": "special-item",
+        "itemId": "ice-stone"
+      }
+    ],
+    "137": [
+      {
+        "toSpeciesId": 233,
+        "method": "item",
+        "source": "special-held-item",
+        "itemId": "up-grade"
+      }
+    ],
+    "138": [
+      {
+        "toSpeciesId": 139,
+        "method": "level",
+        "source": "pokeapi-level",
+        "requiredLevel": 40
+      }
+    ],
+    "140": [
+      {
+        "toSpeciesId": 141,
+        "method": "level",
+        "source": "pokeapi-level",
+        "requiredLevel": 40
+      }
+    ],
+    "147": [
+      {
+        "toSpeciesId": 148,
+        "method": "level",
+        "source": "pokeapi-level",
+        "requiredLevel": 30
+      }
+    ],
+    "148": [
+      {
+        "toSpeciesId": 149,
+        "method": "level",
+        "source": "pokeapi-level",
+        "requiredLevel": 55
+      }
+    ],
+    "152": [
+      {
+        "toSpeciesId": 153,
+        "method": "level",
+        "source": "pokeapi-level",
+        "requiredLevel": 16
+      }
+    ],
+    "153": [
+      {
+        "toSpeciesId": 154,
+        "method": "level",
+        "source": "pokeapi-level",
+        "requiredLevel": 32
+      }
+    ],
+    "155": [
+      {
+        "toSpeciesId": 156,
+        "method": "level",
+        "source": "pokeapi-level",
+        "requiredLevel": 14
+      },
+      {
+        "toSpeciesId": 156,
+        "method": "level",
+        "source": "pokeapi-level",
+        "requiredLevel": 17
+      }
+    ],
+    "156": [
+      {
+        "toSpeciesId": 157,
+        "method": "level",
+        "source": "pokeapi-level",
+        "requiredLevel": 36
+      }
+    ],
+    "158": [
+      {
+        "toSpeciesId": 159,
+        "method": "level",
+        "source": "pokeapi-level",
+        "requiredLevel": 18
+      }
+    ],
+    "159": [
+      {
+        "toSpeciesId": 160,
+        "method": "level",
+        "source": "pokeapi-level",
+        "requiredLevel": 30
+      }
+    ],
+    "161": [
+      {
+        "toSpeciesId": 162,
+        "method": "level",
+        "source": "pokeapi-level",
+        "requiredLevel": 15
+      }
+    ],
+    "163": [
+      {
+        "toSpeciesId": 164,
+        "method": "level",
+        "source": "pokeapi-level",
+        "requiredLevel": 20
+      }
+    ],
+    "165": [
+      {
+        "toSpeciesId": 166,
+        "method": "level",
+        "source": "pokeapi-level",
+        "requiredLevel": 18
+      }
+    ],
+    "167": [
+      {
+        "toSpeciesId": 168,
+        "method": "level",
+        "source": "pokeapi-level",
+        "requiredLevel": 22
+      }
+    ],
+    "170": [
+      {
+        "toSpeciesId": 171,
+        "method": "level",
+        "source": "pokeapi-level",
+        "requiredLevel": 27
+      }
+    ],
+    "172": [
+      {
+        "toSpeciesId": 25,
+        "method": "level",
+        "source": "special-level",
+        "requiredLevel": 10
+      }
+    ],
+    "173": [
+      {
+        "toSpeciesId": 35,
+        "method": "level",
+        "source": "special-level",
+        "requiredLevel": 10
+      }
+    ],
+    "174": [
+      {
+        "toSpeciesId": 39,
+        "method": "level",
+        "source": "special-level",
+        "requiredLevel": 10
+      }
+    ],
+    "175": [
+      {
+        "toSpeciesId": 176,
+        "method": "level",
+        "source": "special-level",
+        "requiredLevel": 20
+      }
+    ],
+    "176": [
+      {
+        "toSpeciesId": 468,
+        "method": "item",
+        "source": "special-item",
+        "itemId": "shiny-stone"
+      }
+    ],
+    "177": [
+      {
+        "toSpeciesId": 178,
+        "method": "level",
+        "source": "pokeapi-level",
+        "requiredLevel": 25
+      }
+    ],
+    "179": [
+      {
+        "toSpeciesId": 180,
+        "method": "level",
+        "source": "pokeapi-level",
+        "requiredLevel": 15
+      }
+    ],
+    "180": [
+      {
+        "toSpeciesId": 181,
+        "method": "level",
+        "source": "pokeapi-level",
+        "requiredLevel": 30
+      }
+    ],
+    "183": [
+      {
+        "toSpeciesId": 184,
+        "method": "level",
+        "source": "pokeapi-level",
+        "requiredLevel": 18
+      }
+    ],
+    "187": [
+      {
+        "toSpeciesId": 188,
+        "method": "level",
+        "source": "pokeapi-level",
+        "requiredLevel": 18
+      }
+    ],
+    "188": [
+      {
+        "toSpeciesId": 189,
+        "method": "level",
+        "source": "pokeapi-level",
+        "requiredLevel": 27
+      }
+    ],
+    "190": [
+      {
+        "toSpeciesId": 424,
+        "method": "level",
+        "source": "special-level",
+        "requiredLevel": 30
+      }
+    ],
+    "191": [
+      {
+        "toSpeciesId": 192,
+        "method": "item",
+        "source": "special-item",
+        "itemId": "sun-stone"
+      }
+    ],
+    "193": [
+      {
+        "toSpeciesId": 469,
+        "method": "level",
+        "source": "special-level",
+        "requiredLevel": 30
+      }
+    ],
+    "194": [
+      {
+        "toSpeciesId": 195,
+        "method": "level",
+        "source": "pokeapi-level",
+        "requiredLevel": 20
+      }
+    ],
+    "198": [
+      {
+        "toSpeciesId": 430,
+        "method": "item",
+        "source": "special-item",
+        "itemId": "dusk-stone"
+      }
+    ],
+    "200": [
+      {
+        "toSpeciesId": 429,
+        "method": "item",
+        "source": "special-item",
+        "itemId": "dusk-stone"
+      }
+    ],
+    "204": [
+      {
+        "toSpeciesId": 205,
+        "method": "level",
+        "source": "pokeapi-level",
+        "requiredLevel": 31
+      }
+    ],
+    "207": [
+      {
+        "toSpeciesId": 472,
+        "method": "item",
+        "source": "special-held-item",
+        "itemId": "razor-fang"
+      }
+    ],
+    "209": [
+      {
+        "toSpeciesId": 210,
+        "method": "level",
+        "source": "pokeapi-level",
+        "requiredLevel": 23
+      }
+    ],
+    "215": [
+      {
+        "toSpeciesId": 461,
+        "method": "item",
+        "source": "special-held-item",
+        "itemId": "razor-claw"
+      }
+    ],
+    "216": [
+      {
+        "toSpeciesId": 217,
+        "method": "level",
+        "source": "pokeapi-level",
+        "requiredLevel": 30
+      }
+    ],
+    "218": [
+      {
+        "toSpeciesId": 219,
+        "method": "level",
+        "source": "pokeapi-level",
+        "requiredLevel": 38
+      }
+    ],
+    "220": [
+      {
+        "toSpeciesId": 221,
+        "method": "level",
+        "source": "pokeapi-level",
+        "requiredLevel": 33
+      }
+    ],
+    "221": [
+      {
+        "toSpeciesId": 473,
+        "method": "level",
+        "source": "special-level",
+        "requiredLevel": 36
+      }
+    ],
+    "223": [
+      {
+        "toSpeciesId": 224,
+        "method": "level",
+        "source": "pokeapi-level",
+        "requiredLevel": 25
+      }
+    ],
+    "228": [
+      {
+        "toSpeciesId": 229,
+        "method": "level",
+        "source": "pokeapi-level",
+        "requiredLevel": 24
+      }
+    ],
+    "231": [
+      {
+        "toSpeciesId": 232,
+        "method": "level",
+        "source": "pokeapi-level",
+        "requiredLevel": 25
+      }
+    ],
+    "233": [
+      {
+        "toSpeciesId": 474,
+        "method": "item",
+        "source": "special-held-item",
+        "itemId": "dubious-disc"
+      }
+    ],
+    "236": [
+      {
+        "toSpeciesId": 106,
+        "method": "level",
+        "source": "special-branch",
+        "requiredLevel": 20
+      },
+      {
+        "toSpeciesId": 107,
+        "method": "level",
+        "source": "special-branch",
+        "requiredLevel": 20
+      },
+      {
+        "toSpeciesId": 237,
+        "method": "level",
+        "source": "special-branch",
+        "requiredLevel": 20
+      }
+    ],
+    "238": [
+      {
+        "toSpeciesId": 124,
+        "method": "level",
+        "source": "pokeapi-level",
+        "requiredLevel": 30
+      }
+    ],
+    "239": [
+      {
+        "toSpeciesId": 125,
+        "method": "level",
+        "source": "pokeapi-level",
+        "requiredLevel": 30
+      }
+    ],
+    "240": [
+      {
+        "toSpeciesId": 126,
+        "method": "level",
+        "source": "pokeapi-level",
+        "requiredLevel": 30
+      }
+    ],
+    "246": [
+      {
+        "toSpeciesId": 247,
+        "method": "level",
+        "source": "pokeapi-level",
+        "requiredLevel": 30
+      }
+    ],
+    "247": [
+      {
+        "toSpeciesId": 248,
+        "method": "level",
+        "source": "pokeapi-level",
+        "requiredLevel": 55
+      }
+    ],
+    "252": [
+      {
+        "toSpeciesId": 253,
+        "method": "level",
+        "source": "pokeapi-level",
+        "requiredLevel": 16
+      }
+    ],
+    "253": [
+      {
+        "toSpeciesId": 254,
+        "method": "level",
+        "source": "pokeapi-level",
+        "requiredLevel": 36
+      }
+    ],
+    "255": [
+      {
+        "toSpeciesId": 256,
+        "method": "level",
+        "source": "pokeapi-level",
+        "requiredLevel": 16
+      }
+    ],
+    "256": [
+      {
+        "toSpeciesId": 257,
+        "method": "level",
+        "source": "pokeapi-level",
+        "requiredLevel": 36
+      }
+    ],
+    "258": [
+      {
+        "toSpeciesId": 259,
+        "method": "level",
+        "source": "pokeapi-level",
+        "requiredLevel": 16
+      }
+    ],
+    "259": [
+      {
+        "toSpeciesId": 260,
+        "method": "level",
+        "source": "pokeapi-level",
+        "requiredLevel": 36
+      }
+    ],
+    "261": [
+      {
+        "toSpeciesId": 262,
+        "method": "level",
+        "source": "pokeapi-level",
+        "requiredLevel": 18
+      }
+    ],
+    "263": [
+      {
+        "toSpeciesId": 264,
+        "method": "level",
+        "source": "pokeapi-level",
+        "requiredLevel": 20
+      }
+    ],
+    "265": [
+      {
+        "toSpeciesId": 266,
+        "method": "level",
+        "source": "pokeapi-level",
+        "requiredLevel": 7
+      },
+      {
+        "toSpeciesId": 268,
+        "method": "level",
+        "source": "pokeapi-level",
+        "requiredLevel": 7
+      }
+    ],
+    "266": [
+      {
+        "toSpeciesId": 267,
+        "method": "level",
+        "source": "pokeapi-level",
+        "requiredLevel": 10
+      }
+    ],
+    "268": [
+      {
+        "toSpeciesId": 269,
+        "method": "level",
+        "source": "pokeapi-level",
+        "requiredLevel": 10
+      }
+    ],
+    "270": [
+      {
+        "toSpeciesId": 271,
+        "method": "level",
+        "source": "pokeapi-level",
+        "requiredLevel": 14
+      }
+    ],
+    "271": [
+      {
+        "toSpeciesId": 272,
+        "method": "item",
+        "source": "special-item",
+        "itemId": "water-stone"
+      }
+    ],
+    "273": [
+      {
+        "toSpeciesId": 274,
+        "method": "level",
+        "source": "pokeapi-level",
+        "requiredLevel": 14
+      }
+    ],
+    "274": [
+      {
+        "toSpeciesId": 275,
+        "method": "item",
+        "source": "special-item",
+        "itemId": "leaf-stone"
+      }
+    ],
+    "276": [
+      {
+        "toSpeciesId": 277,
+        "method": "level",
+        "source": "pokeapi-level",
+        "requiredLevel": 22
+      }
+    ],
+    "278": [
+      {
+        "toSpeciesId": 279,
+        "method": "level",
+        "source": "pokeapi-level",
+        "requiredLevel": 25
+      }
+    ],
+    "280": [
+      {
+        "toSpeciesId": 281,
+        "method": "level",
+        "source": "pokeapi-level",
+        "requiredLevel": 20
+      }
+    ],
+    "281": [
+      {
+        "toSpeciesId": 282,
+        "method": "level",
+        "source": "pokeapi-level",
+        "requiredLevel": 30
+      },
+      {
+        "toSpeciesId": 475,
+        "method": "item",
+        "source": "special-item",
+        "itemId": "dawn-stone"
+      }
+    ],
+    "283": [
+      {
+        "toSpeciesId": 284,
+        "method": "level",
+        "source": "pokeapi-level",
+        "requiredLevel": 22
+      }
+    ],
+    "285": [
+      {
+        "toSpeciesId": 286,
+        "method": "level",
+        "source": "pokeapi-level",
+        "requiredLevel": 23
+      }
+    ],
+    "287": [
+      {
+        "toSpeciesId": 288,
+        "method": "level",
+        "source": "pokeapi-level",
+        "requiredLevel": 18
+      }
+    ],
+    "288": [
+      {
+        "toSpeciesId": 289,
+        "method": "level",
+        "source": "pokeapi-level",
+        "requiredLevel": 36
+      }
+    ],
+    "290": [
+      {
+        "toSpeciesId": 291,
+        "method": "level",
+        "source": "pokeapi-level",
+        "requiredLevel": 20
+      },
+      {
+        "toSpeciesId": 292,
+        "method": "level",
+        "source": "special-branch",
+        "requiredLevel": 20
+      }
+    ],
+    "293": [
+      {
+        "toSpeciesId": 294,
+        "method": "level",
+        "source": "pokeapi-level",
+        "requiredLevel": 20
+      }
+    ],
+    "294": [
+      {
+        "toSpeciesId": 295,
+        "method": "level",
+        "source": "pokeapi-level",
+        "requiredLevel": 40
+      }
+    ],
+    "296": [
+      {
+        "toSpeciesId": 297,
+        "method": "level",
+        "source": "pokeapi-level",
+        "requiredLevel": 24
+      }
+    ],
+    "298": [
+      {
+        "toSpeciesId": 183,
+        "method": "level",
+        "source": "special-level",
+        "requiredLevel": 10
+      }
+    ],
+    "299": [
+      {
+        "toSpeciesId": 476,
+        "method": "item",
+        "source": "special-item",
+        "itemId": "thunder-stone"
+      }
+    ],
+    "300": [
+      {
+        "toSpeciesId": 301,
+        "method": "item",
+        "source": "special-item",
+        "itemId": "moon-stone"
+      }
+    ],
+    "304": [
+      {
+        "toSpeciesId": 305,
+        "method": "level",
+        "source": "pokeapi-level",
+        "requiredLevel": 32
+      }
+    ],
+    "305": [
+      {
+        "toSpeciesId": 306,
+        "method": "level",
+        "source": "pokeapi-level",
+        "requiredLevel": 42
+      }
+    ],
+    "307": [
+      {
+        "toSpeciesId": 308,
+        "method": "level",
+        "source": "pokeapi-level",
+        "requiredLevel": 37
+      }
+    ],
+    "309": [
+      {
+        "toSpeciesId": 310,
+        "method": "level",
+        "source": "pokeapi-level",
+        "requiredLevel": 26
+      }
+    ],
+    "315": [
+      {
+        "toSpeciesId": 407,
+        "method": "item",
+        "source": "special-item",
+        "itemId": "shiny-stone"
+      }
+    ],
+    "316": [
+      {
+        "toSpeciesId": 317,
+        "method": "level",
+        "source": "pokeapi-level",
+        "requiredLevel": 26
+      }
+    ],
+    "318": [
+      {
+        "toSpeciesId": 319,
+        "method": "level",
+        "source": "pokeapi-level",
+        "requiredLevel": 30
+      }
+    ],
+    "320": [
+      {
+        "toSpeciesId": 321,
+        "method": "level",
+        "source": "pokeapi-level",
+        "requiredLevel": 40
+      }
+    ],
+    "322": [
+      {
+        "toSpeciesId": 323,
+        "method": "level",
+        "source": "pokeapi-level",
+        "requiredLevel": 33
+      }
+    ],
+    "325": [
+      {
+        "toSpeciesId": 326,
+        "method": "level",
+        "source": "pokeapi-level",
+        "requiredLevel": 32
+      }
+    ],
+    "328": [
+      {
+        "toSpeciesId": 329,
+        "method": "level",
+        "source": "pokeapi-level",
+        "requiredLevel": 35
+      }
+    ],
+    "329": [
+      {
+        "toSpeciesId": 330,
+        "method": "level",
+        "source": "pokeapi-level",
+        "requiredLevel": 45
+      }
+    ],
+    "331": [
+      {
+        "toSpeciesId": 332,
+        "method": "level",
+        "source": "pokeapi-level",
+        "requiredLevel": 32
+      }
+    ],
+    "333": [
+      {
+        "toSpeciesId": 334,
+        "method": "level",
+        "source": "pokeapi-level",
+        "requiredLevel": 35
+      }
+    ],
+    "339": [
+      {
+        "toSpeciesId": 340,
+        "method": "level",
+        "source": "pokeapi-level",
+        "requiredLevel": 30
+      }
+    ],
+    "341": [
+      {
+        "toSpeciesId": 342,
+        "method": "level",
+        "source": "pokeapi-level",
+        "requiredLevel": 30
+      }
+    ],
+    "343": [
+      {
+        "toSpeciesId": 344,
+        "method": "level",
+        "source": "pokeapi-level",
+        "requiredLevel": 36
+      }
+    ],
+    "345": [
+      {
+        "toSpeciesId": 346,
+        "method": "level",
+        "source": "pokeapi-level",
+        "requiredLevel": 40
+      }
+    ],
+    "347": [
+      {
+        "toSpeciesId": 348,
+        "method": "level",
+        "source": "pokeapi-level",
+        "requiredLevel": 40
+      }
+    ],
+    "349": [
+      {
+        "toSpeciesId": 350,
+        "method": "item",
+        "source": "special-held-item",
+        "itemId": "prism-scale"
+      }
+    ],
+    "353": [
+      {
+        "toSpeciesId": 354,
+        "method": "level",
+        "source": "pokeapi-level",
+        "requiredLevel": 37
+      }
+    ],
+    "355": [
+      {
+        "toSpeciesId": 356,
+        "method": "level",
+        "source": "pokeapi-level",
+        "requiredLevel": 37
+      }
+    ],
+    "356": [
+      {
+        "toSpeciesId": 477,
+        "method": "item",
+        "source": "special-held-item",
+        "itemId": "reaper-cloth"
+      }
+    ],
+    "360": [
+      {
+        "toSpeciesId": 202,
+        "method": "level",
+        "source": "pokeapi-level",
+        "requiredLevel": 15
+      }
+    ],
+    "361": [
+      {
+        "toSpeciesId": 362,
+        "method": "level",
+        "source": "pokeapi-level",
+        "requiredLevel": 42
+      },
+      {
+        "toSpeciesId": 478,
+        "method": "item",
+        "source": "special-item",
+        "itemId": "dawn-stone"
+      }
+    ],
+    "363": [
+      {
+        "toSpeciesId": 364,
+        "method": "level",
+        "source": "pokeapi-level",
+        "requiredLevel": 32
+      }
+    ],
+    "364": [
+      {
+        "toSpeciesId": 365,
+        "method": "level",
+        "source": "pokeapi-level",
+        "requiredLevel": 44
+      }
+    ],
+    "366": [
+      {
+        "toSpeciesId": 367,
+        "method": "item",
+        "source": "special-held-item",
+        "itemId": "deep-sea-tooth"
+      },
+      {
+        "toSpeciesId": 368,
+        "method": "item",
+        "source": "special-held-item",
+        "itemId": "deep-sea-scale"
+      }
+    ],
+    "371": [
+      {
+        "toSpeciesId": 372,
+        "method": "level",
+        "source": "pokeapi-level",
+        "requiredLevel": 30
+      }
+    ],
+    "372": [
+      {
+        "toSpeciesId": 373,
+        "method": "level",
+        "source": "pokeapi-level",
+        "requiredLevel": 50
+      }
+    ],
+    "374": [
+      {
+        "toSpeciesId": 375,
+        "method": "level",
+        "source": "pokeapi-level",
+        "requiredLevel": 20
+      }
+    ],
+    "375": [
+      {
+        "toSpeciesId": 376,
+        "method": "level",
+        "source": "pokeapi-level",
+        "requiredLevel": 45
+      }
+    ],
+    "387": [
+      {
+        "toSpeciesId": 388,
+        "method": "level",
+        "source": "pokeapi-level",
+        "requiredLevel": 18
+      }
+    ],
+    "388": [
+      {
+        "toSpeciesId": 389,
+        "method": "level",
+        "source": "pokeapi-level",
+        "requiredLevel": 32
+      }
+    ],
+    "390": [
+      {
+        "toSpeciesId": 391,
+        "method": "level",
+        "source": "pokeapi-level",
+        "requiredLevel": 14
+      }
+    ],
+    "391": [
+      {
+        "toSpeciesId": 392,
+        "method": "level",
+        "source": "pokeapi-level",
+        "requiredLevel": 36
+      }
+    ],
+    "393": [
+      {
+        "toSpeciesId": 394,
+        "method": "level",
+        "source": "pokeapi-level",
+        "requiredLevel": 16
+      }
+    ],
+    "394": [
+      {
+        "toSpeciesId": 395,
+        "method": "level",
+        "source": "pokeapi-level",
+        "requiredLevel": 36
+      }
+    ],
+    "396": [
+      {
+        "toSpeciesId": 397,
+        "method": "level",
+        "source": "pokeapi-level",
+        "requiredLevel": 14
+      }
+    ],
+    "397": [
+      {
+        "toSpeciesId": 398,
+        "method": "level",
+        "source": "pokeapi-level",
+        "requiredLevel": 34
+      }
+    ],
+    "399": [
+      {
+        "toSpeciesId": 400,
+        "method": "level",
+        "source": "pokeapi-level",
+        "requiredLevel": 15
+      }
+    ],
+    "401": [
+      {
+        "toSpeciesId": 402,
+        "method": "level",
+        "source": "pokeapi-level",
+        "requiredLevel": 10
+      }
+    ],
+    "403": [
+      {
+        "toSpeciesId": 404,
+        "method": "level",
+        "source": "pokeapi-level",
+        "requiredLevel": 15
+      }
+    ],
+    "404": [
+      {
+        "toSpeciesId": 405,
+        "method": "level",
+        "source": "pokeapi-level",
+        "requiredLevel": 30
+      }
+    ],
+    "406": [
+      {
+        "toSpeciesId": 315,
+        "method": "level",
+        "source": "special-level",
+        "requiredLevel": 15
+      }
+    ],
+    "408": [
+      {
+        "toSpeciesId": 409,
+        "method": "level",
+        "source": "pokeapi-level",
+        "requiredLevel": 30
+      }
+    ],
+    "410": [
+      {
+        "toSpeciesId": 411,
+        "method": "level",
+        "source": "pokeapi-level",
+        "requiredLevel": 30
+      }
+    ],
+    "412": [
+      {
+        "toSpeciesId": 413,
+        "method": "level",
+        "source": "special-branch",
+        "requiredLevel": 20
+      },
+      {
+        "toSpeciesId": 414,
+        "method": "level",
+        "source": "special-branch",
+        "requiredLevel": 20
+      }
+    ],
+    "415": [
+      {
+        "toSpeciesId": 416,
+        "method": "level",
+        "source": "special-branch",
+        "requiredLevel": 21
+      }
+    ],
+    "418": [
+      {
+        "toSpeciesId": 419,
+        "method": "level",
+        "source": "pokeapi-level",
+        "requiredLevel": 26
+      }
+    ],
+    "420": [
+      {
+        "toSpeciesId": 421,
+        "method": "level",
+        "source": "pokeapi-level",
+        "requiredLevel": 25
+      }
+    ],
+    "422": [
+      {
+        "toSpeciesId": 423,
+        "method": "level",
+        "source": "pokeapi-level",
+        "requiredLevel": 30
+      }
+    ],
+    "425": [
+      {
+        "toSpeciesId": 426,
+        "method": "level",
+        "source": "pokeapi-level",
+        "requiredLevel": 28
+      }
+    ],
+    "427": [
+      {
+        "toSpeciesId": 428,
+        "method": "level",
+        "source": "special-level",
+        "requiredLevel": 20
+      }
+    ],
+    "431": [
+      {
+        "toSpeciesId": 432,
+        "method": "level",
+        "source": "pokeapi-level",
+        "requiredLevel": 38
+      }
+    ],
+    "433": [
+      {
+        "toSpeciesId": 358,
+        "method": "level",
+        "source": "special-level",
+        "requiredLevel": 20
+      }
+    ],
+    "434": [
+      {
+        "toSpeciesId": 435,
+        "method": "level",
+        "source": "pokeapi-level",
+        "requiredLevel": 34
+      }
+    ],
+    "436": [
+      {
+        "toSpeciesId": 437,
+        "method": "level",
+        "source": "pokeapi-level",
+        "requiredLevel": 33
+      }
+    ],
+    "438": [
+      {
+        "toSpeciesId": 185,
+        "method": "level",
+        "source": "special-level",
+        "requiredLevel": 15
+      }
+    ],
+    "439": [
+      {
+        "toSpeciesId": 122,
+        "method": "level",
+        "source": "special-level",
+        "requiredLevel": 15
+      }
+    ],
+    "440": [
+      {
+        "toSpeciesId": 113,
+        "method": "item",
+        "source": "special-held-item",
+        "itemId": "oval-stone"
+      }
+    ],
+    "443": [
+      {
+        "toSpeciesId": 444,
+        "method": "level",
+        "source": "pokeapi-level",
+        "requiredLevel": 24
+      }
+    ],
+    "444": [
+      {
+        "toSpeciesId": 445,
+        "method": "level",
+        "source": "pokeapi-level",
+        "requiredLevel": 48
+      }
+    ],
+    "446": [
+      {
+        "toSpeciesId": 143,
+        "method": "level",
+        "source": "special-level",
+        "requiredLevel": 30
+      }
+    ],
+    "447": [
+      {
+        "toSpeciesId": 448,
+        "method": "level",
+        "source": "special-level",
+        "requiredLevel": 30
+      }
+    ],
+    "449": [
+      {
+        "toSpeciesId": 450,
+        "method": "level",
+        "source": "pokeapi-level",
+        "requiredLevel": 34
+      }
+    ],
+    "451": [
+      {
+        "toSpeciesId": 452,
+        "method": "level",
+        "source": "pokeapi-level",
+        "requiredLevel": 40
+      }
+    ],
+    "453": [
+      {
+        "toSpeciesId": 454,
+        "method": "level",
+        "source": "pokeapi-level",
+        "requiredLevel": 37
+      }
+    ],
+    "456": [
+      {
+        "toSpeciesId": 457,
+        "method": "level",
+        "source": "pokeapi-level",
+        "requiredLevel": 31
+      }
+    ],
+    "458": [
+      {
+        "toSpeciesId": 226,
+        "method": "level",
+        "source": "special-level",
+        "requiredLevel": 20
+      }
+    ],
+    "459": [
+      {
+        "toSpeciesId": 460,
+        "method": "level",
+        "source": "pokeapi-level",
+        "requiredLevel": 40
+      }
+    ],
+    "495": [
+      {
+        "toSpeciesId": 496,
+        "method": "level",
+        "source": "pokeapi-level",
+        "requiredLevel": 17
+      }
+    ],
+    "496": [
+      {
+        "toSpeciesId": 497,
+        "method": "level",
+        "source": "pokeapi-level",
+        "requiredLevel": 36
+      }
+    ],
+    "498": [
+      {
+        "toSpeciesId": 499,
+        "method": "level",
+        "source": "pokeapi-level",
+        "requiredLevel": 17
+      }
+    ],
+    "499": [
+      {
+        "toSpeciesId": 500,
+        "method": "level",
+        "source": "pokeapi-level",
+        "requiredLevel": 36
+      }
+    ],
+    "501": [
+      {
+        "toSpeciesId": 502,
+        "method": "level",
+        "source": "pokeapi-level",
+        "requiredLevel": 17
+      }
+    ],
+    "502": [
+      {
+        "toSpeciesId": 503,
+        "method": "level",
+        "source": "pokeapi-level",
+        "requiredLevel": 36
+      }
+    ],
+    "504": [
+      {
+        "toSpeciesId": 505,
+        "method": "level",
+        "source": "pokeapi-level",
+        "requiredLevel": 20
+      }
+    ],
+    "506": [
+      {
+        "toSpeciesId": 507,
+        "method": "level",
+        "source": "pokeapi-level",
+        "requiredLevel": 16
+      }
+    ],
+    "507": [
+      {
+        "toSpeciesId": 508,
+        "method": "level",
+        "source": "pokeapi-level",
+        "requiredLevel": 32
+      }
+    ],
+    "509": [
+      {
+        "toSpeciesId": 510,
+        "method": "level",
+        "source": "pokeapi-level",
+        "requiredLevel": 20
+      }
+    ],
+    "511": [
+      {
+        "toSpeciesId": 512,
+        "method": "item",
+        "source": "special-item",
+        "itemId": "leaf-stone"
+      }
+    ],
+    "513": [
+      {
+        "toSpeciesId": 514,
+        "method": "item",
+        "source": "special-item",
+        "itemId": "fire-stone"
+      }
+    ],
+    "515": [
+      {
+        "toSpeciesId": 516,
+        "method": "item",
+        "source": "special-item",
+        "itemId": "water-stone"
+      }
+    ],
+    "517": [
+      {
+        "toSpeciesId": 518,
+        "method": "item",
+        "source": "special-item",
+        "itemId": "moon-stone"
+      }
+    ],
+    "519": [
+      {
+        "toSpeciesId": 520,
+        "method": "level",
+        "source": "pokeapi-level",
+        "requiredLevel": 21
+      }
+    ],
+    "520": [
+      {
+        "toSpeciesId": 521,
+        "method": "level",
+        "source": "pokeapi-level",
+        "requiredLevel": 32
+      }
+    ],
+    "522": [
+      {
+        "toSpeciesId": 523,
+        "method": "level",
+        "source": "pokeapi-level",
+        "requiredLevel": 27
+      }
+    ],
+    "524": [
+      {
+        "toSpeciesId": 525,
+        "method": "level",
+        "source": "pokeapi-level",
+        "requiredLevel": 25
+      }
+    ],
+    "525": [
+      {
+        "toSpeciesId": 526,
+        "method": "item",
+        "source": "special-trade",
+        "itemId": "linking-cord"
+      }
+    ],
+    "527": [
+      {
+        "toSpeciesId": 528,
+        "method": "level",
+        "source": "special-level",
+        "requiredLevel": 20
+      }
+    ],
+    "529": [
+      {
+        "toSpeciesId": 530,
+        "method": "level",
+        "source": "pokeapi-level",
+        "requiredLevel": 31
+      }
+    ],
+    "532": [
+      {
+        "toSpeciesId": 533,
+        "method": "level",
+        "source": "pokeapi-level",
+        "requiredLevel": 25
+      }
+    ],
+    "533": [
+      {
+        "toSpeciesId": 534,
+        "method": "item",
+        "source": "special-trade",
+        "itemId": "linking-cord"
+      }
+    ],
+    "535": [
+      {
+        "toSpeciesId": 536,
+        "method": "level",
+        "source": "pokeapi-level",
+        "requiredLevel": 25
+      }
+    ],
+    "536": [
+      {
+        "toSpeciesId": 537,
+        "method": "level",
+        "source": "pokeapi-level",
+        "requiredLevel": 36
+      }
+    ],
+    "540": [
+      {
+        "toSpeciesId": 541,
+        "method": "level",
+        "source": "pokeapi-level",
+        "requiredLevel": 20
+      }
+    ],
+    "541": [
+      {
+        "toSpeciesId": 542,
+        "method": "level",
+        "source": "special-level",
+        "requiredLevel": 36
+      }
+    ],
+    "543": [
+      {
+        "toSpeciesId": 544,
+        "method": "level",
+        "source": "pokeapi-level",
+        "requiredLevel": 22
+      }
+    ],
+    "544": [
+      {
+        "toSpeciesId": 545,
+        "method": "level",
+        "source": "pokeapi-level",
+        "requiredLevel": 30
+      }
+    ],
+    "546": [
+      {
+        "toSpeciesId": 547,
+        "method": "item",
+        "source": "special-item",
+        "itemId": "sun-stone"
+      }
+    ],
+    "548": [
+      {
+        "toSpeciesId": 549,
+        "method": "item",
+        "source": "special-item",
+        "itemId": "sun-stone"
+      }
+    ],
+    "551": [
+      {
+        "toSpeciesId": 552,
+        "method": "level",
+        "source": "pokeapi-level",
+        "requiredLevel": 29
+      }
+    ],
+    "552": [
+      {
+        "toSpeciesId": 553,
+        "method": "level",
+        "source": "pokeapi-level",
+        "requiredLevel": 40
+      }
+    ],
+    "554": [
+      {
+        "toSpeciesId": 555,
+        "method": "item",
+        "source": "pokeapi-use-item",
+        "itemId": "ice-stone"
+      },
+      {
+        "toSpeciesId": 555,
+        "method": "level",
+        "source": "pokeapi-level",
+        "requiredLevel": 35
+      }
+    ],
+    "557": [
+      {
+        "toSpeciesId": 558,
+        "method": "level",
+        "source": "pokeapi-level",
+        "requiredLevel": 34
+      }
+    ],
+    "559": [
+      {
+        "toSpeciesId": 560,
+        "method": "level",
+        "source": "pokeapi-level",
+        "requiredLevel": 39
+      }
+    ],
+    "562": [
+      {
+        "toSpeciesId": 563,
+        "method": "level",
+        "source": "pokeapi-level",
+        "requiredLevel": 34
+      }
+    ],
+    "564": [
+      {
+        "toSpeciesId": 565,
+        "method": "level",
+        "source": "pokeapi-level",
+        "requiredLevel": 37
+      }
+    ],
+    "566": [
+      {
+        "toSpeciesId": 567,
+        "method": "level",
+        "source": "pokeapi-level",
+        "requiredLevel": 37
+      }
+    ],
+    "568": [
+      {
+        "toSpeciesId": 569,
+        "method": "level",
+        "source": "pokeapi-level",
+        "requiredLevel": 36
+      }
+    ],
+    "570": [
+      {
+        "toSpeciesId": 571,
+        "method": "level",
+        "source": "pokeapi-level",
+        "requiredLevel": 30
+      }
+    ],
+    "572": [
+      {
+        "toSpeciesId": 573,
+        "method": "item",
+        "source": "special-item",
+        "itemId": "shiny-stone"
+      }
+    ],
+    "574": [
+      {
+        "toSpeciesId": 575,
+        "method": "level",
+        "source": "pokeapi-level",
+        "requiredLevel": 32
+      }
+    ],
+    "575": [
+      {
+        "toSpeciesId": 576,
+        "method": "level",
+        "source": "pokeapi-level",
+        "requiredLevel": 41
+      }
+    ],
+    "577": [
+      {
+        "toSpeciesId": 578,
+        "method": "level",
+        "source": "pokeapi-level",
+        "requiredLevel": 32
+      }
+    ],
+    "578": [
+      {
+        "toSpeciesId": 579,
+        "method": "level",
+        "source": "pokeapi-level",
+        "requiredLevel": 41
+      }
+    ],
+    "580": [
+      {
+        "toSpeciesId": 581,
+        "method": "level",
+        "source": "pokeapi-level",
+        "requiredLevel": 35
+      }
+    ],
+    "582": [
+      {
+        "toSpeciesId": 583,
+        "method": "level",
+        "source": "pokeapi-level",
+        "requiredLevel": 35
+      }
+    ],
+    "583": [
+      {
+        "toSpeciesId": 584,
+        "method": "level",
+        "source": "pokeapi-level",
+        "requiredLevel": 47
+      }
+    ],
+    "585": [
+      {
+        "toSpeciesId": 586,
+        "method": "level",
+        "source": "pokeapi-level",
+        "requiredLevel": 34
+      }
+    ],
+    "588": [
+      {
+        "toSpeciesId": 589,
+        "method": "item",
+        "source": "special-trade",
+        "itemId": "linking-cord"
+      }
+    ],
+    "590": [
+      {
+        "toSpeciesId": 591,
+        "method": "level",
+        "source": "pokeapi-level",
+        "requiredLevel": 39
+      }
+    ],
+    "592": [
+      {
+        "toSpeciesId": 593,
+        "method": "level",
+        "source": "pokeapi-level",
+        "requiredLevel": 40
+      }
+    ],
+    "595": [
+      {
+        "toSpeciesId": 596,
+        "method": "level",
+        "source": "pokeapi-level",
+        "requiredLevel": 36
+      }
+    ],
+    "597": [
+      {
+        "toSpeciesId": 598,
+        "method": "level",
+        "source": "pokeapi-level",
+        "requiredLevel": 40
+      }
+    ],
+    "599": [
+      {
+        "toSpeciesId": 600,
+        "method": "level",
+        "source": "pokeapi-level",
+        "requiredLevel": 38
+      }
+    ],
+    "600": [
+      {
+        "toSpeciesId": 601,
+        "method": "level",
+        "source": "pokeapi-level",
+        "requiredLevel": 49
+      }
+    ],
+    "602": [
+      {
+        "toSpeciesId": 603,
+        "method": "level",
+        "source": "pokeapi-level",
+        "requiredLevel": 39
+      }
+    ],
+    "603": [
+      {
+        "toSpeciesId": 604,
+        "method": "item",
+        "source": "special-item",
+        "itemId": "thunder-stone"
+      }
+    ],
+    "605": [
+      {
+        "toSpeciesId": 606,
+        "method": "level",
+        "source": "pokeapi-level",
+        "requiredLevel": 42
+      }
+    ],
+    "607": [
+      {
+        "toSpeciesId": 608,
+        "method": "level",
+        "source": "pokeapi-level",
+        "requiredLevel": 41
+      }
+    ],
+    "608": [
+      {
+        "toSpeciesId": 609,
+        "method": "item",
+        "source": "special-item",
+        "itemId": "dusk-stone"
+      }
+    ],
+    "610": [
+      {
+        "toSpeciesId": 611,
+        "method": "level",
+        "source": "pokeapi-level",
+        "requiredLevel": 38
+      }
+    ],
+    "611": [
+      {
+        "toSpeciesId": 612,
+        "method": "level",
+        "source": "pokeapi-level",
+        "requiredLevel": 48
+      }
+    ],
+    "613": [
+      {
+        "toSpeciesId": 614,
+        "method": "level",
+        "source": "pokeapi-level",
+        "requiredLevel": 37
+      }
+    ],
+    "616": [
+      {
+        "toSpeciesId": 617,
+        "method": "item",
+        "source": "special-trade",
+        "itemId": "linking-cord"
+      }
+    ],
+    "619": [
+      {
+        "toSpeciesId": 620,
+        "method": "level",
+        "source": "pokeapi-level",
+        "requiredLevel": 50
+      }
+    ],
+    "622": [
+      {
+        "toSpeciesId": 623,
+        "method": "level",
+        "source": "pokeapi-level",
+        "requiredLevel": 43
+      }
+    ],
+    "624": [
+      {
+        "toSpeciesId": 625,
+        "method": "level",
+        "source": "pokeapi-level",
+        "requiredLevel": 52
+      }
+    ],
+    "627": [
+      {
+        "toSpeciesId": 628,
+        "method": "level",
+        "source": "pokeapi-level",
+        "requiredLevel": 54
+      }
+    ],
+    "629": [
+      {
+        "toSpeciesId": 630,
+        "method": "level",
+        "source": "pokeapi-level",
+        "requiredLevel": 54
+      }
+    ],
+    "633": [
+      {
+        "toSpeciesId": 634,
+        "method": "level",
+        "source": "pokeapi-level",
+        "requiredLevel": 50
+      }
+    ],
+    "634": [
+      {
+        "toSpeciesId": 635,
+        "method": "level",
+        "source": "pokeapi-level",
+        "requiredLevel": 64
+      }
+    ],
+    "636": [
+      {
+        "toSpeciesId": 637,
+        "method": "level",
+        "source": "pokeapi-level",
+        "requiredLevel": 59
+      }
+    ]
+  }
+}

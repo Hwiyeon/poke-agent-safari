@@ -538,11 +538,18 @@ function normalizeEntry(entry, context) {
       const cacheCreate = Number(usage.cache_creation_input_tokens) || 0;
       const contextUsed = inputTokens + cacheRead + cacheCreate;
       const totalTokens = inputTokens + outputTokens + cacheRead + cacheCreate;
+      const rewardTokens = Math.max(0, totalTokens - cacheRead);
       if (contextUsed > 0) {
         outputMeta.contextUsed = contextUsed;
       }
       if (totalTokens > 0) {
         outputMeta.totalTokens = totalTokens;
+      }
+      if (cacheRead > 0) {
+        outputMeta.cachedInputTokens = cacheRead;
+      }
+      if (rewardTokens > 0 || totalTokens > 0) {
+        outputMeta.rewardTokens = rewardTokens;
       }
     }
 

@@ -4,6 +4,7 @@
   const __vscode = typeof acquireVsCodeApi === 'function' ? acquireVsCodeApi() : null;
   const __assetBase = (typeof window !== 'undefined' && window.__PAS_ASSET_BASE__) || '';
   const __dataBase = (typeof window !== 'undefined' && window.__PAS_DATA_BASE__) || '';
+  const __itemBase = (typeof window !== 'undefined' && window.__PAS_ITEM_BASE__) || '';
   const LANGUAGE_STORAGE_KEY = 'agent-safari-name-language';
   const LEGACY_STICKER_LANGUAGE_STORAGE_KEY = 'agent-safari-sticker-name-language';
 
@@ -18,6 +19,11 @@
 
   function dataUrl(name) {
     return __dataBase ? joinBase(__dataBase, name) : ('/data/' + name);
+  }
+
+  function itemSpriteUrl(itemId) {
+    const fileName = String(itemId || '') + '.png';
+    return __itemBase ? joinBase(__itemBase, fileName) : ('/sprites/items/' + fileName);
   }
 
   function readStoredLanguage() {
@@ -37,11 +43,36 @@
     } catch (_) {}
   }
 
+  let vscodeRequestSeq = 0;
+  const vscodePendingRequests = {};
+
+  function postVscodeAction(message) {
+    const requestId = 'action-' + (++vscodeRequestSeq);
+    __vscode.postMessage({ ...message, requestId });
+    return new Promise(function (resolve) {
+      const timeout = setTimeout(function () {
+        if (!vscodePendingRequests[requestId]) return;
+        delete vscodePendingRequests[requestId];
+        resolve({ ok: true, pending: true });
+      }, 1800);
+      vscodePendingRequests[requestId] = function (result) {
+        clearTimeout(timeout);
+        resolve(result && typeof result === 'object' ? result : { ok: !!result });
+      };
+    });
+  }
+
   const transport = __vscode ? {
     async connect(onState) {
       function handleMessage(event) {
         if (event.data && event.data.type === 'state') {
           onState(event.data.snapshot);
+        } else if (event.data && event.data.type === 'actionResult' && event.data.requestId) {
+          const resolve = vscodePendingRequests[event.data.requestId];
+          if (resolve) {
+            delete vscodePendingRequests[event.data.requestId];
+            resolve(event.data.result);
+          }
         }
       }
       window.addEventListener('message', handleMessage);
@@ -53,20 +84,22 @@
       };
     },
     box(id) {
-      __vscode.postMessage({ type: 'box', id: id });
-      return Promise.resolve({ ok: true });
+      return postVscodeAction({ type: 'box', id: id });
     },
     unbox(id) {
-      __vscode.postMessage({ type: 'unbox', id: id });
-      return Promise.resolve({ ok: true });
+      return postVscodeAction({ type: 'unbox', id: id });
     },
     owned(action, payload) {
-      __vscode.postMessage({ type: 'owned', action: action, payload: payload || {} });
-      return Promise.resolve({ ok: true });
+      return postVscodeAction({ type: 'owned', action: action, payload: payload || {} });
+    },
+    items(action, payload) {
+      return postVscodeAction({ type: 'items', action: action, payload: payload || {} });
+    },
+    explorationArea(areaId) {
+      return postVscodeAction({ type: 'explorationArea', areaId: areaId || 'all' });
     },
     hardReset() {
-      __vscode.postMessage({ type: 'hardReset' });
-      return Promise.resolve({ ok: true });
+      return postVscodeAction({ type: 'hardReset' });
     }
   } : {
     async connect(onState) {
@@ -118,6 +151,32 @@
         body: JSON.stringify(payload)
       });
     },
+    items(action, payload) {
+      payload = payload || {};
+      var path = null;
+      if (action === 'pickup') {
+        path = '/api/items/pickup';
+      } else if (action === 'pull') {
+        path = '/api/items/pull';
+      } else if (action === 'buy') {
+        path = '/api/items/buy';
+      } else if (action === 'sell') {
+        path = '/api/items/sell';
+      }
+      if (!path) return Promise.resolve({ ok: false, status: 400 });
+      return fetch(path, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+    },
+    explorationArea(areaId) {
+      return fetch('/api/exploration-area', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ areaId: areaId || 'all' })
+      });
+    },
     hardReset() {
       return fetch('/api/hard-reset', { method: 'POST' });
     }
@@ -159,17 +218,22 @@
   // We load it onto a hidden canvas and use getImageData() to look up
   // which area any (x,y) pixel belongs to.
 
+  const MAP_ASSET_DIR = 'map_assets/';
+  const OVERVIEW_MAP_ASSET = MAP_ASSET_DIR + 'island_map_cc.png';
+  const AREA_MASK_ASSET = MAP_ASSET_DIR + 'area_mask.png';
+  const DETAIL_AREA_BOUNDS = { x: 0, y: 0, w: WORLD_WIDTH, h: WORLD_HEIGHT };
+
   // Color-to-area mapping — must match tools/generate_area_mask.js AREA_COLORS
   const AREA_DEFS = [
-    { color: 'FF0000', id: 'mountain',      label: 'Mountain',      index: 0 },
-    { color: 'FF8000', id: 'cave',           label: 'Cave',          index: 1 },
-    { color: '008000', id: 'forest',         label: 'Forest',        index: 2 },
-    { color: 'FFFF00', id: 'ruin',           label: 'Ruins',         index: 3 },
-    { color: '800080', id: 'rough_terrain',  label: 'Hard Terrain',  index: 4 },
-    { color: '00FF00', id: 'grassland',      label: 'Grassland',     index: 5 },
-    { color: 'FF00FF', id: 'urban',          label: 'Urban',         index: 6 },
-    { color: '00FFFF', id: 'waters_edge',    label: "Water's Edge",  index: 7 },
-    { color: '0000FF', id: 'sea',            label: 'Sea',           index: 8 },
+    { color: 'FF0000', id: 'mountain',      label: 'Mountain',      index: 0, detailAsset: MAP_ASSET_DIR + 'mountain_detail_v2.png' },
+    { color: 'FF8000', id: 'cave',           label: 'Cave',          index: 1, detailAsset: MAP_ASSET_DIR + 'cave_detail_v2.png' },
+    { color: '008000', id: 'forest',         label: 'Forest',        index: 2, detailAsset: MAP_ASSET_DIR + 'forest_detail_v2.png' },
+    { color: 'FFFF00', id: 'ruin',           label: 'Ruins',         index: 3, detailAsset: MAP_ASSET_DIR + 'ruin_detail_v2.png' },
+    { color: '800080', id: 'rough_terrain',  label: 'Hard Terrain',  index: 4, detailAsset: MAP_ASSET_DIR + 'rough_terrain_detail_v2.png' },
+    { color: '00FF00', id: 'grassland',      label: 'Grassland',     index: 5, detailAsset: MAP_ASSET_DIR + 'grassland_detail_v2.png' },
+    { color: 'FF00FF', id: 'urban',          label: 'Urban',         index: 6, detailAsset: MAP_ASSET_DIR + 'urban_detail_v2.png' },
+    { color: '00FFFF', id: 'waters_edge',    label: "Water's Edge",  index: 7, detailAsset: MAP_ASSET_DIR + 'waters_edge_detail_v2.png' },
+    { color: '0000FF', id: 'sea',            label: 'Sea',           index: 8, detailAsset: MAP_ASSET_DIR + 'sea_detail_v2.png' },
   ];
 
   // Build fast color→index lookup (key = "R,G,B")
@@ -255,7 +319,7 @@
       relocateEntitiesToMask();
       savePositionCache();
     };
-    img.src = dataUrl('area_mask.png');
+    img.src = dataUrl(AREA_MASK_ASSET);
   })();
 
   // Re-position all existing entities using mask data (called once after mask loads)
@@ -354,7 +418,7 @@
   const activeCountEl = document.getElementById('active-count');
   const lastUpdateEl = document.getElementById('last-update');
   const tokenTotalEl = document.getElementById('token-total');
-  const projectFilterEl = document.getElementById('project-filter');
+  const areaFilterEl = document.getElementById('area-filter');
   const agentListEl = document.getElementById('agent-list');
   const boxListEl = document.getElementById('box-list');
   const boxCountEl = document.getElementById('box-count');
@@ -370,6 +434,14 @@
   const subhistoryTitleEl = document.getElementById('subhistory-title');
   const subhistorySummaryEl = document.getElementById('subhistory-summary');
   const subhistoryGridEl = document.getElementById('subhistory-grid');
+  const actionModalEl = document.getElementById('action-modal');
+  const actionBackdropEl = document.getElementById('action-backdrop');
+  const actionPanelEl = document.getElementById('action-panel');
+  const actionTitleEl = document.getElementById('action-title');
+  const actionVisualEl = document.getElementById('action-visual');
+  const actionMessageEl = document.getElementById('action-message');
+  const actionConfirmEl = document.getElementById('action-confirm');
+  const actionCancelEl = document.getElementById('action-cancel');
   const pokedexToggleEl = document.getElementById('pokedex-toggle');
   const ownedToggleEl = document.getElementById('owned-toggle');
   const ownedRecruitToggleEl = document.getElementById('owned-recruit-toggle');
@@ -389,6 +461,19 @@
   const ownedStripGridEl = document.getElementById('owned-strip-grid');
   const ownedPartyGridEl = document.getElementById('owned-party-grid');
   const ownedBoxGridEl = document.getElementById('owned-box-grid');
+  const ownedItemSummaryEl = document.getElementById('owned-item-summary');
+  const ownedItemInfoEl = document.getElementById('owned-item-info');
+  const ownedItemInfoPopoverEl = document.getElementById('owned-item-info-popover');
+  const ownedItemPointsEl = document.getElementById('owned-item-points');
+  const ownedPickupPointsEl = document.getElementById('owned-pickup-points');
+  const ownedItemProgressTextEl = document.getElementById('owned-item-progress-text');
+  const ownedItemProgressFillEl = document.getElementById('owned-item-progress-fill');
+  const ownedPickupSelectEl = document.getElementById('owned-pickup-select');
+  const ownedItemPullEl = document.getElementById('owned-item-pull');
+  const ownedItemBuyEl = document.getElementById('owned-item-buy');
+  const ownedItemSellEl = document.getElementById('owned-item-sell');
+  const ownedItemClaimPickupEl = document.getElementById('owned-item-claim-pickup');
+  const ownedItemInventoryEl = document.getElementById('owned-item-inventory');
   const hardResetBtnEl = document.getElementById('hard-reset-btn');
   const promoStudioToggleEl = document.getElementById('promo-studio-toggle');
   const promoStudioPanelEl = document.getElementById('promo-studio-panel');
@@ -410,11 +495,12 @@
   const rateLimitsWrapEl = document.getElementById('rate-limits-wrap');
 
   const uiState = {
-    projectFilter: 'all',
+    areaFilter: 'all',
     pokedexOpen: false,
     ownedOpen: false,
     ownedRecruitOpen: false,
     ownedRecruitMode: 'available',
+    selectedEvolutionItemId: null,
     draggedOwnedId: null,
     ownedBoxPopoverTimer: null,
     boxHistoryOpen: false,
@@ -426,6 +512,32 @@
     promoStudioOpen: false,
     promoStudioEnabled: false
   };
+  let actionDialogResolver = null;
+
+  function areaDefById(areaId) {
+    for (var i = 0; i < AREA_DEFS.length; i++) {
+      if (AREA_DEFS[i].id === areaId) return AREA_DEFS[i];
+    }
+    return null;
+  }
+
+  function selectedAreaIndex() {
+    var area = areaDefById(uiState.areaFilter);
+    return area ? area.index : -1;
+  }
+
+  function isAreaDetailMode() {
+    return selectedAreaIndex() >= 0;
+  }
+
+  function isDetailAreaRoom(roomIndex) {
+    return isAreaDetailMode() && roomIndex === selectedAreaIndex();
+  }
+
+  function areaBounds(roomIndex) {
+    if (isDetailAreaRoom(roomIndex)) return DETAIL_AREA_BOUNDS;
+    return AREAS[roomIndex] || DETAIL_AREA_BOUNDS;
+  }
 
   function isSubtreeCollapsed(agentId, depth, childCount, collapsedIds) {
     if (!childCount) return false;
@@ -682,7 +794,9 @@
 
   function getPositionCacheScope(config) {
     var modeScope = config && config.isMockMode ? 'mock' : 'watch';
-    return config && config.promoStudioActive ? modeScope + ':promo' : modeScope;
+    var sceneScope = config && config.promoStudioActive ? modeScope + ':promo' : modeScope;
+    var areaScope = uiState.areaFilter === 'all' ? 'overview' : ('area:' + uiState.areaFilter);
+    return sceneScope + ':' + areaScope;
   }
 
   function getPositionCacheKey(scope) {
@@ -999,6 +1113,10 @@
 
   function getRenderPokemonId(agent) {
     if (!agent) return POKEDEX_MIN;
+    var renderedPokemonId = Number(agent.renderedPokemonId);
+    if (Number.isInteger(renderedPokemonId) && renderedPokemonId >= POKEDEX_MIN && renderedPokemonId <= POKEDEX_MAX) {
+      return renderedPokemonId;
+    }
     if (agent.forcedPokemonId) {
       return agent.forcedPokemonId;
     }
@@ -1296,7 +1414,7 @@
   }
 
   function clampToRoomBounds(x, y, roomIndex, drawSize) {
-    var room = AREAS[roomIndex];
+    var room = areaBounds(roomIndex);
     var size = typeof drawSize === 'number' ? drawSize : DRAW_SIZE;
     return {
       x: clamp(x, room.x + ENTITY_EDGE_PAD, room.x + room.w - size - ENTITY_EDGE_PAD),
@@ -1733,6 +1851,24 @@
 
   // Pick a non-overlapping random position inside the area
   function pickSlotInArea(roomIndex, seed) {
+    if (isDetailAreaRoom(roomIndex)) {
+      var detailRoom = areaBounds(roomIndex);
+      var detailMargin = DRAW_SIZE + ENTITY_EDGE_PAD;
+      var detailUsableW = Math.max(1, detailRoom.w - detailMargin * 2);
+      var detailUsableH = Math.max(1, detailRoom.h - detailMargin * 2);
+      for (var detailAttempt = 0; detailAttempt < 60; detailAttempt++) {
+        var detailX = detailRoom.x + detailMargin + ((seed + detailAttempt * 3571) % detailUsableW);
+        var detailY = detailRoom.y + detailMargin + (((seed + detailAttempt * 7919) * 2654435761) >>> 0) % detailUsableH;
+        if (!overlapsExisting(detailX + DRAW_SIZE / 2, detailY + DRAW_SIZE / 2)) {
+          return { x: detailX, y: detailY };
+        }
+      }
+      return {
+        x: detailRoom.x + detailRoom.w / 2 - DRAW_SIZE / 2,
+        y: detailRoom.y + detailRoom.h / 2 - DRAW_SIZE / 2
+      };
+    }
+
     if (areaMaskReady && areaValidCoords[roomIndex] && areaValidCoords[roomIndex].length > 0) {
       var list = areaValidCoords[roomIndex];
       // Use two different hash components to spread starting positions
@@ -1756,7 +1892,7 @@
       return clampToRoomBounds(coord.x - DRAW_SIZE / 2, coord.y - DRAW_SIZE / 2, roomIndex);
     }
     // Fallback when mask not loaded: scatter within the bounding box using seed
-    var room = AREAS[roomIndex];
+    var room = areaBounds(roomIndex);
     var margin = DRAW_SIZE + ENTITY_EDGE_PAD;
     var usableW = Math.max(1, room.w - margin * 2);
     var usableH = Math.max(1, room.h - margin * 2);
@@ -1780,6 +1916,9 @@
     var clamped = clampToRoomBounds(x, y, roomIndex, size);
     var cx = clamped.x;
     var cy = clamped.y;
+    if (isDetailAreaRoom(roomIndex)) {
+      return { x: cx, y: cy };
+    }
     // If mask is available, verify the center of the sprite is inside the area
     if (areaMaskReady && !isInsideArea(cx + size / 2, cy + size / 2, roomIndex)) {
       // Find nearest valid coord in this area
@@ -2093,31 +2232,76 @@
     }
   }
 
+  function normalizeAreaFilter(areaId) {
+    return areaDefById(areaId) ? areaId : 'all';
+  }
+
+  function snapshotAgents() {
+    return (appState.snapshot && appState.snapshot.agents) || [];
+  }
+
   function filteredAgents() {
-    return appState.snapshot.agents.filter(function (agent) {
-      if (uiState.projectFilter !== 'all' && agent.projectId !== uiState.projectFilter) return false;
+    var areaIndex = selectedAreaIndex();
+    return snapshotAgents().filter(function (agent) {
+      if (areaIndex >= 0 && getAreaIndex(agent) !== areaIndex) return false;
       return true;
     });
   }
 
-  function updateFilterOptions() {
-    const projects = Array.from(new Set(appState.snapshot.agents.map(function (a) { return a.projectId; }))).sort();
-    appState.projects = projects;
+  function outsideAreaAgents() {
+    var areaIndex = selectedAreaIndex();
+    if (areaIndex < 0) return [];
+    return snapshotAgents().filter(function (agent) {
+      return getAreaIndex(agent) !== areaIndex;
+    });
+  }
 
-    projectFilterEl.innerHTML = '<option value="all">All</option>';
-    for (const p of projects) {
-      const opt = document.createElement('option');
-      opt.value = p; opt.textContent = p;
-      if (p === uiState.projectFilter) opt.selected = true;
-      projectFilterEl.appendChild(opt);
+  function listedAgents() {
+    return snapshotAgents().slice();
+  }
+
+  function updateFilterOptions() {
+    if (!areaFilterEl) return;
+    areaFilterEl.innerHTML = '<option value="all">All Areas</option>';
+    for (var j = 0; j < AREA_DEFS.length; j++) {
+      var area = AREA_DEFS[j];
+      var opt = document.createElement('option');
+      opt.value = area.id;
+      opt.textContent = area.label;
+      if (area.id === uiState.areaFilter) opt.selected = true;
+      areaFilterEl.appendChild(opt);
     }
-    if (!projects.includes(uiState.projectFilter)) uiState.projectFilter = 'all';
-    projectFilterEl.value = uiState.projectFilter;
+    if (uiState.areaFilter !== 'all' && !areaDefById(uiState.areaFilter)) {
+      uiState.areaFilter = 'all';
+    }
+    areaFilterEl.value = uiState.areaFilter;
+  }
+
+  function syncAreaFilterFromSnapshot(config) {
+    var nextArea = normalizeAreaFilter((config && config.explorationAreaId) || appState.snapshot.explorationAreaId);
+    if (uiState.areaFilter === nextArea) return;
+    uiState.areaFilter = nextArea;
+    syncTerrainImage();
+  }
+
+  function setAreaFilter(areaId, options) {
+    options = options || {};
+    var nextArea = normalizeAreaFilter(areaId);
+    if (uiState.areaFilter === nextArea) return;
+    uiState.areaFilter = nextArea;
+    syncTerrainImage();
+    applyPositionCacheScope((appState.snapshot && appState.snapshot.config) || {});
+    reconcileEntities(filteredAgents());
+    renderAgentList();
+    tokenTotalEl.textContent = formatTokenCount(filteredTokenTotal(filteredAgents()));
+    if (options.syncServer !== false && transport.explorationArea) {
+      Promise.resolve(transport.explorationArea(nextArea)).catch(function () {});
+    }
   }
 
   function resetFilters() {
-    uiState.projectFilter = 'all';
-    projectFilterEl.value = 'all';
+    setAreaFilter('all');
+    if (areaFilterEl) areaFilterEl.value = 'all';
   }
 
   function buildAgentTree(agents) {
@@ -2263,7 +2447,7 @@
     }
     if (!agent.isPromoCustom || !agent.parentId) {
       if (!adopted) {
-        html += '<button class="box-detail-btn" data-action="adopt-agent" data-agent-id="' + escapeHtml(agent.agentId) + '">Adopt</button>';
+        html += renderAdoptAgentButton(agent);
       }
       html += '<button class="box-btn" data-action="box" data-agent-id="' + escapeHtml(agent.agentId) + '">Archive</button>';
     }
@@ -2274,7 +2458,8 @@
   }
 
   function renderAgentBranch(agent, depth, tree, expandedIds, collapsedIds, renderState, isLastChild) {
-    if (renderState.count >= 80) return '';
+    var limit = Number.isFinite(renderState.limit) ? renderState.limit : 80;
+    if (renderState.count >= limit) return '';
 
     var childCount = agent._children ? agent._children.length : 0;
     var isCollapsed = isSubtreeCollapsed(agent.agentId, depth, childCount, collapsedIds);
@@ -2292,11 +2477,11 @@
     html += '</div>';
     renderState.count += 1;
 
-    if (childCount > 0 && !isCollapsed && renderState.count < 80) {
+    if (childCount > 0 && !isCollapsed && renderState.count < limit) {
       var children = agent._children.slice();
       children.sort(function (a, b) { return (a.createdAt || 0) - (b.createdAt || 0); });
       html += '<div class="agent-branch-children">';
-      for (var i = 0; i < children.length && renderState.count < 80; i++) {
+      for (var i = 0; i < children.length && renderState.count < limit; i++) {
         html += renderAgentBranch(children[i], depth + 1, tree, expandedIds, collapsedIds, renderState, i === children.length - 1);
       }
       html += '</div>';
@@ -2712,6 +2897,182 @@
 
   function formatTokenCount(value) {
     return Math.max(0, Math.floor(value || 0)).toLocaleString('en-US');
+  }
+
+  async function readActionResult(actionPromise) {
+    try {
+      var response = await Promise.resolve(actionPromise);
+      if (response && typeof response.json === 'function') {
+        var data = null;
+        try { data = await response.json(); } catch (_) {}
+        if (data && typeof data === 'object') {
+          if (response.ok === false && data.ok !== false) data.ok = false;
+          return data;
+        }
+        return response.ok ? { ok: true } : { ok: false, error: 'Request failed.' };
+      }
+      if (response && typeof response === 'object') {
+        return response;
+      }
+      return { ok: !!response };
+    } catch (error) {
+      return { ok: false, error: error && error.message ? error.message : 'Request failed.' };
+    }
+  }
+
+  function localizedActionText(en, ko) {
+    return uiState.pokedexLanguage === 'ko' ? ko : en;
+  }
+
+  function pokemonSpriteBySpeciesId(speciesId) {
+    return spriteUrl('animated', speciesId, 'gif');
+  }
+
+  function actionItemVisualHtml(visual) {
+    if (!visual || !visual.itemId) return '';
+    var itemName = visual.name || evolutionItemLabel(visual.itemId);
+    var label = visual.label || localizedActionText('Item', '아이템');
+    var detail = visual.detail || '';
+    return [
+      '<div class="action-item-showcase">',
+      '<div class="action-item-orb"><img src="' + escapeHtml(itemSpriteUrl(visual.itemId)) + '" alt="" loading="lazy" /></div>',
+      '<div class="action-item-label">',
+      '<span>' + escapeHtml(label) + '</span>',
+      '<strong>' + escapeHtml(itemName) + '</strong>',
+      detail ? '<span>' + escapeHtml(detail) + '</span>' : '',
+      '</div>',
+      '</div>'
+    ].join('');
+  }
+
+  function actionPointsVisualHtml(visual) {
+    var value = visual && visual.value ? visual.value : '0 pts';
+    var label = visual && visual.label ? visual.label : localizedActionText('Points', '포인트');
+    return [
+      '<div class="action-points-showcase">',
+      '<div class="action-points-badge">' + escapeHtml(value) + '</div>',
+      '<span>' + escapeHtml(label) + '</span>',
+      '</div>'
+    ].join('');
+  }
+
+  function actionEvolutionVisualHtml(visual) {
+    if (!visual || !visual.beforeSpeciesId || !visual.afterSpeciesId) return '';
+    var beforeName = visual.beforeName || pokemonDisplayName(visual.beforeSpeciesId);
+    var afterName = visual.afterName || pokemonDisplayName(visual.afterSpeciesId);
+    var html = '';
+    html += '<div class="action-evolution-showcase">';
+    html += '<div class="action-pokemon-card">';
+    html += '<span>' + escapeHtml(localizedActionText('Before', '진화 전')) + '</span>';
+    html += '<img src="' + escapeHtml(pokemonSpriteBySpeciesId(visual.beforeSpeciesId)) + '" alt="" loading="lazy" />';
+    html += '<strong>' + escapeHtml(beforeName) + '</strong>';
+    html += '</div>';
+    html += '<div class="action-evolution-arrow" aria-hidden="true"></div>';
+    html += '<div class="action-pokemon-card">';
+    html += '<span>' + escapeHtml(localizedActionText('After', '진화 후')) + '</span>';
+    html += '<img src="' + escapeHtml(pokemonSpriteBySpeciesId(visual.afterSpeciesId)) + '" alt="" loading="lazy" />';
+    html += '<strong>' + escapeHtml(afterName) + '</strong>';
+    html += '</div>';
+    if (visual.itemId) {
+      var itemName = visual.itemName || evolutionItemLabel(visual.itemId);
+      html += '<div class="action-consume-strip">';
+      html += '<img src="' + escapeHtml(itemSpriteUrl(visual.itemId)) + '" alt="" loading="lazy" />';
+      html += '<span>' + escapeHtml(localizedActionText('Consumes', '소모')) + ': ' + escapeHtml(itemName) + '</span>';
+      html += '</div>';
+    }
+    html += '</div>';
+    return html;
+  }
+
+  function actionVisualHtml(visual) {
+    if (!visual || !visual.type) return '';
+    if (visual.type === 'item') return actionItemVisualHtml(visual);
+    if (visual.type === 'points') return actionPointsVisualHtml(visual);
+    if (visual.type === 'evolution') return actionEvolutionVisualHtml(visual);
+    return '';
+  }
+
+  function setActionButtonContent(button, label, iconClass) {
+    if (!button) return;
+    button.innerHTML = [
+      '<span class="action-btn-symbol ' + escapeHtml(iconClass || 'ok') + '" aria-hidden="true"></span>',
+      '<span>' + escapeHtml(label || '') + '</span>'
+    ].join('');
+  }
+
+  function closeActionDialog(value) {
+    if (!actionModalEl || actionModalEl.hidden) return;
+    actionModalEl.hidden = true;
+    var resolver = actionDialogResolver;
+    actionDialogResolver = null;
+    if (resolver) resolver(!!value);
+  }
+
+  function openActionDialog(config) {
+    var isConfirm = config && config.mode === 'confirm';
+    if (!actionModalEl || !actionTitleEl || !actionMessageEl || !actionConfirmEl || !actionCancelEl) {
+      return Promise.resolve(isConfirm ? false : true);
+    }
+    if (actionDialogResolver) closeActionDialog(false);
+    var visualHtml = actionVisualHtml(config && config.visual);
+    if (actionPanelEl) {
+      actionPanelEl.classList.toggle('evolution', !!(config && config.visual && config.visual.type === 'evolution'));
+    }
+    if (actionVisualEl) {
+      actionVisualEl.innerHTML = visualHtml;
+      actionVisualEl.hidden = !visualHtml;
+    }
+    actionTitleEl.textContent = (config && config.title) || localizedActionText('Action', '작업');
+    actionMessageEl.textContent = (config && config.message) || '';
+    actionMessageEl.classList.toggle('error', !!(config && config.isError));
+    actionCancelEl.hidden = !isConfirm;
+    actionCancelEl.textContent = (config && config.cancelText) || localizedActionText('No', '아니오');
+    actionConfirmEl.textContent = (config && config.confirmText) || (isConfirm ? localizedActionText('Yes', '예') : localizedActionText('OK', '확인'));
+    setActionButtonContent(
+      actionConfirmEl,
+      (config && config.confirmText) || (isConfirm ? localizedActionText('Yes', '예') : localizedActionText('OK', '확인')),
+      isConfirm ? 'yes' : 'ok'
+    );
+    setActionButtonContent(
+      actionCancelEl,
+      (config && config.cancelText) || localizedActionText('No', '아니오'),
+      'no'
+    );
+    actionModalEl.hidden = false;
+    window.setTimeout(function () {
+      try { actionConfirmEl.focus({ preventScroll: true }); } catch (_) {}
+    }, 0);
+    return new Promise(function (resolve) {
+      actionDialogResolver = resolve;
+    });
+  }
+
+  function showActionPopup(titleEn, titleKo, messageEn, messageKo) {
+    var options = arguments.length > 4 && arguments[4] ? arguments[4] : {};
+    return openActionDialog({
+      mode: 'result',
+      title: localizedActionText(titleEn, titleKo),
+      message: localizedActionText(messageEn, messageKo),
+      visual: options.visual || null,
+      isError: !!options.isError,
+      confirmText: localizedActionText('OK', '확인')
+    });
+  }
+
+  function confirmActionPopup(messageEn, messageKo) {
+    var options = arguments.length > 2 && arguments[2] ? arguments[2] : {};
+    return openActionDialog({
+      mode: 'confirm',
+      visual: options.visual || null,
+      title: localizedActionText('Confirm', '확인'),
+      message: localizedActionText(messageEn, messageKo),
+      confirmText: localizedActionText('Yes', '예'),
+      cancelText: localizedActionText('No', '아니오')
+    });
+  }
+
+  function actionErrorMessage(result) {
+    return result && result.error ? result.error : localizedActionText('Action failed.', '작업에 실패했습니다.');
   }
 
   function agentPanelName(agent) {
@@ -3188,6 +3549,7 @@
       subagentHistory: promoBoxSnapshot.subagentHistory,
       ownedPokemon: base.ownedPokemon || [],
       pokemonBoxes: base.pokemonBoxes || [],
+      evolutionItems: base.evolutionItems || evolutionItemState(),
       projectTraining: base.projectTraining || {},
       trainingEvents: base.trainingEvents || [],
       config: {
@@ -3201,6 +3563,7 @@
     var agents;
     var config = snapshot.config || {};
     appState.snapshot = snapshot;
+    syncAreaFilterFromSnapshot(config);
     applyPositionCacheScope(config);
     if (hardResetBtnEl) {
       hardResetBtnEl.hidden = !(config.isMockMode && config.supportsHardReset);
@@ -3209,8 +3572,8 @@
     appState.agentById = new Map((snapshot.agents || []).map(function (agent) {
       return [agent.agentId, agent];
     }));
-    reconcileEntities(snapshot.agents);
     updateFilterOptions();
+    reconcileEntities(filteredAgents());
     renderAgentList();
     renderBoxList();
     renderOwnedPokemon();
@@ -3500,10 +3863,10 @@
   }
 
   function renderAgentList() {
-    var agents = filteredAgents();
+    var agents = listedAgents();
 
     if (agents.length === 0) {
-      agentListEl.innerHTML = '<div class="poke-slot" style="cursor:default;justify-content:center">No agents match current filter.</div>';
+      agentListEl.innerHTML = '<div class="poke-slot" style="cursor:default;justify-content:center">No agents yet.</div>';
       return;
     }
 
@@ -3523,7 +3886,7 @@
         a._roomIndex = entity.roomIndex;
       } else {
         // Derive from pokemon habitat even if entity hasn't been created yet
-        var pid = getPokemonId(a.agentId);
+        var pid = getRenderPokemonId(a);
         var hIdx = getPokemonAreaIndex(pid);
         a._roomIndex = hIdx >= 0 ? hIdx : 999;
       }
@@ -3531,7 +3894,13 @@
 
     // Build tree, then sort roots by area index → createdAt
     var tree = buildAgentTree(agents);
+    var selectedRoomIndex = selectedAreaIndex();
     tree.roots.sort(function (a, b) {
+      if (selectedRoomIndex >= 0) {
+        var aPriority = a._roomIndex === selectedRoomIndex ? 0 : 1;
+        var bPriority = b._roomIndex === selectedRoomIndex ? 0 : 1;
+        if (aPriority !== bPriority) return aPriority - bPriority;
+      }
       if (a._roomIndex !== b._roomIndex) return a._roomIndex - b._roomIndex;
       return (a.createdAt || 0) - (b.createdAt || 0);
     });
@@ -3539,8 +3908,8 @@
     var collapsedIds = uiState.collapsedSubtrees || {};
     var html = '';
     var currentRoom = -1;
-    var renderState = { count: 0 };
-    for (var i = 0; i < tree.roots.length && renderState.count < 80; i++) {
+    var renderState = { count: 0, limit: agents.length };
+    for (var i = 0; i < tree.roots.length && renderState.count < renderState.limit; i++) {
       var agent = tree.roots[i];
       var roomIndex = agent._roomIndex;
 
@@ -4255,7 +4624,7 @@
             html += '<span class="box-item-action-spacer" aria-hidden="true"></span>';
           }
           if (!adopted) {
-            html += '<button class="box-detail-btn" data-action="adopt-agent" data-agent-id="' + escapeHtml(agent.agentId) + '">Adopt</button>';
+            html += renderAdoptAgentButton(agent);
           }
           html += '</div>';
         }
@@ -4308,6 +4677,233 @@
   function ownedDisplayName(pokemon) {
     if (!pokemon) return 'Pokemon';
     return pokemon.nickname || pokemonDisplayName(pokemon.speciesId);
+  }
+
+  function evolutionItemState() {
+    var fallback = {
+      pool: [],
+      inventory: {},
+      itemPoints: 0,
+      targetTickets: 0,
+      rewardTokenRemainder: 0,
+      pickupItemId: null,
+      tokenPerItemPoint: 10000,
+      randomPullPointCost: 250,
+      pullFailurePointRefund: 0,
+      itemBuyPointCost: null,
+      itemBuyPickupPointCost: 20,
+      itemClaimTicketCost: 20,
+      itemSellPointValue: 10
+    };
+    return (appState.snapshot && appState.snapshot.evolutionItems) || fallback;
+  }
+
+  function evolutionItemById(itemId) {
+    var items = evolutionItemState().pool || [];
+    for (var i = 0; i < items.length; i++) {
+      if (items[i].id === itemId) return items[i];
+    }
+    return null;
+  }
+
+  function fallbackEvolutionItemName(itemId) {
+    return String(itemId || '')
+      .split('-')
+      .filter(Boolean)
+      .map(function (part) { return part.charAt(0).toUpperCase() + part.slice(1); })
+      .join(' ');
+  }
+
+  function evolutionItemDisplayName(itemOrId) {
+    var item = typeof itemOrId === 'string' ? evolutionItemById(itemOrId) : itemOrId;
+    if (!item) return fallbackEvolutionItemName(itemOrId);
+    if (uiState.pokedexLanguage === 'ko') {
+      return item.nameKo || item.nameEn || fallbackEvolutionItemName(item.id);
+    }
+    return item.nameEn || fallbackEvolutionItemName(item.id);
+  }
+
+  function evolutionItemLabel(itemId) {
+    return evolutionItemDisplayName(itemId);
+  }
+
+  function ownedPokemonByOwnedId(id) {
+    var owned = appState.snapshot.ownedPokemon || [];
+    for (var i = 0; i < owned.length; i++) {
+      if (owned[i].id === id) return owned[i];
+    }
+    return null;
+  }
+
+  function showDrawActionResult(result) {
+    if (!result || !result.ok) {
+      showActionPopup('Draw Result', '뽑기 결과', actionErrorMessage(result), actionErrorMessage(result));
+      return;
+    }
+    if (result.pending) {
+      showActionPopup('Draw Result', '뽑기 결과', 'Draw request was sent.', '뽑기 요청을 보냈습니다.');
+      return;
+    }
+    if (!result.success) {
+      showActionPopup(
+        'Draw Result',
+        '뽑기 결과',
+        'No item this time.',
+        '이번에는 아이템이 나오지 않았습니다.'
+      );
+      return;
+    }
+    if (result.success) {
+      var itemName = evolutionItemLabel(result.itemId);
+      showActionPopup(
+        'Draw Result',
+        '뽑기 결과',
+        'You drew ' + itemName + '.',
+        itemName + ' 획득!',
+        { visual: { type: 'item', itemId: result.itemId, name: itemName, label: localizedActionText('Draw Item', '뽑은 아이템') } }
+      );
+      return;
+      showActionPopup('Draw Result', '뽑기 결과', 'You drew ' + itemName + '.', itemName + ' 획득!');
+    } else {
+      showActionPopup('Draw Result', '뽑기 결과', 'No item this time.', '이번에는 아이템이 나오지 않았습니다.');
+    }
+  }
+
+  function showItemActionResult(action, result, itemId) {
+    var itemName = evolutionItemLabel((result && result.itemId) || itemId);
+    if (!result || !result.ok) {
+      showActionPopup('Item Result', '아이템 결과', actionErrorMessage(result), actionErrorMessage(result));
+      return;
+    }
+    if (result.pending) {
+      showActionPopup('Item Result', '아이템 결과', 'Request was sent.', '요청을 보냈습니다.');
+      return;
+    }
+    if (action === 'buy') {
+      showActionPopup(
+        'Buy Result',
+        '구매 결과',
+        'Bought ' + itemName + '.',
+        itemName + ' 구매 완료.',
+        { visual: { type: 'item', itemId: (result && result.itemId) || itemId, name: itemName, label: localizedActionText('Purchased', '구매한 아이템') } }
+      );
+      return;
+      showActionPopup('Buy Result', '구매 결과', 'Bought ' + itemName + '.', itemName + ' 구매 완료.');
+    } else if (action === 'claim') {
+      showActionPopup(
+        'Claim Result',
+        '확정 획득 결과',
+        'Claimed ' + itemName + '.',
+        itemName + ' 확정 획득 완료.',
+        { visual: { type: 'item', itemId: (result && result.itemId) || itemId, name: itemName, label: localizedActionText('Claimed', '확정 획득') } }
+      );
+      return;
+      showActionPopup('Claim Result', '확정 획득 결과', 'Claimed ' + itemName + '.', itemName + ' 확정 획득 완료.');
+    } else if (action === 'sell') {
+      var sellValue = (result && result.evolutionItems && result.evolutionItems.itemSellPointValue) ||
+        evolutionItemState().itemSellPointValue || 10;
+      showActionPopup(
+        'Sell Result',
+        '판매 결과',
+        'Sold ' + itemName + '. +' + sellValue + ' pts gained.',
+        itemName + ' 판매 완료. +' + sellValue + ' pts 획득.',
+        { visual: { type: 'item', itemId: (result && result.itemId) || itemId, name: itemName, label: localizedActionText('Sold', '판매한 아이템'), detail: '+' + sellValue + ' pts' } }
+      );
+      return;
+      showActionPopup('Sell Result', '판매 결과', 'Sold ' + itemName + '. +' + sellValue + ' pts gained.', itemName + ' 판매 완료. +' + sellValue + ' pts 획득.');
+    }
+  }
+
+  function showEvolutionActionResult(result, beforePokemon, targetSpeciesId, consumedItemId) {
+    var beforeName = ownedDisplayName(beforePokemon);
+    var afterSpeciesId = result && result.pokemon && result.pokemon.speciesId
+      ? result.pokemon.speciesId
+      : targetSpeciesId;
+    var afterName = afterSpeciesId ? pokemonDisplayName(afterSpeciesId) : '';
+    if (!result || !result.ok) {
+      showActionPopup('Evolution Result', '진화 결과', actionErrorMessage(result), actionErrorMessage(result));
+      return;
+    }
+    if (result.pending) {
+      showActionPopup('Evolution Result', '진화 결과', 'Evolution request was sent.', '진화 요청을 보냈습니다.');
+      return;
+    }
+    showActionPopup(
+      'Evolution Result',
+      '진화 결과',
+      beforeName + (afterName ? ' evolved into ' + afterName + '.' : ' evolved.'),
+      beforeName + (afterName ? ' -> ' + afterName + ' 진화 완료.' : ' 진화 완료.'),
+      {
+        visual: {
+          type: 'evolution',
+          beforeSpeciesId: beforePokemon && beforePokemon.speciesId,
+          beforeName: beforeName,
+          afterSpeciesId: afterSpeciesId,
+          afterName: afterName,
+          itemId: consumedItemId || (result && result.itemId) || null
+        }
+      }
+    );
+    return;
+    showActionPopup(
+      'Evolution Result',
+      '진화 결과',
+      beforeName + (afterName ? ' evolved into ' + afterName + '.' : ' evolved.'),
+      beforeName + (afterName ? ' -> ' + afterName + ' 진화 완료.' : ' 진화 완료.')
+    );
+  }
+
+  function selectedEvolutionOption(evolution, targetSpeciesId) {
+    if (!evolution) return null;
+    if (Array.isArray(evolution.options) && evolution.options.length > 0) {
+      if (targetSpeciesId) {
+        for (var i = 0; i < evolution.options.length; i++) {
+          if (evolution.options[i].nextSpeciesId === targetSpeciesId) return evolution.options[i];
+        }
+      }
+      for (var j = 0; j < evolution.options.length; j++) {
+        if (evolution.options[j].canEvolve) return evolution.options[j];
+      }
+      return evolution.options[0];
+    }
+    return evolution;
+  }
+
+  function evolutionOptionLabel(option) {
+    if (!option) return '';
+    var target = '#' + String(option.nextSpeciesId).padStart(3, '0') + ' ' + pokemonDisplayName(option.nextSpeciesId);
+    if (option.method === 'item') {
+      return target + ' - ' + evolutionItemLabel(option.itemId);
+    }
+    return target + ' - Lv.' + option.requiredLevel;
+  }
+
+  function evolutionStatusText(evolution) {
+    if (!evolution) return '';
+    if (evolution.candidateCount > 1) {
+      if (evolution.canEvolve) return evolution.candidateCount + ' paths ready';
+      return evolution.candidateCount + ' evolution paths';
+    }
+    if (evolution.method === 'item') {
+      return evolution.canEvolve ? 'Can evolve' : 'Needs ' + evolutionItemLabel(evolution.itemId);
+    }
+    return evolution.canEvolve ? 'Can evolve' : 'Evolves at Lv.' + evolution.requiredLevel;
+  }
+
+  function renderEvolutionTargetSelect(pokemon, evolution) {
+    if (!evolution || !Array.isArray(evolution.options) || evolution.options.length <= 1) {
+      return '';
+    }
+    var selected = evolution.options.find(function (option) { return option.canEvolve; }) || evolution.options[0];
+    var html = '<select class="owned-evolution-select" data-owned-field="evolution-target" data-owned-id="' + escapeHtml(pokemon.id) + '">';
+    for (var i = 0; i < evolution.options.length; i++) {
+      var option = evolution.options[i];
+      html += '<option value="' + option.nextSpeciesId + '"' + (option.nextSpeciesId === selected.nextSpeciesId ? ' selected' : '') + (option.canEvolve ? '' : ' disabled') + '>';
+      html += escapeHtml(evolutionOptionLabel(option));
+      html += '</option>';
+    }
+    html += '</select>';
+    return html;
   }
 
   function ownedLevelDetails(pokemon) {
@@ -4378,7 +4974,7 @@
       html += '<span>From ' + escapeHtml(shortProjectName(pokemon.sourceProjectId)) + '</span>';
     }
     if (evolution) {
-      html += '<span>' + (evolution.canEvolve ? 'Can evolve' : 'Evolves at Lv.' + evolution.requiredLevel) + '</span>';
+      html += '<span>' + escapeHtml(evolutionStatusText(evolution)) + '</span>';
     }
     html += '</div>';
     html += '<div class="owned-project-row">';
@@ -4399,6 +4995,7 @@
         html += '<button type="button" data-owned-action="holdEvolution" data-owned-id="' + escapeHtml(pokemon.id) + '" data-held="' + (pokemon.evolutionHeld ? 'false' : 'true') + '">';
         html += pokemon.evolutionHeld ? 'Allow Evo' : 'Hold Evo';
         html += '</button>';
+        html += renderEvolutionTargetSelect(pokemon, evolution);
         html += '<button type="button" data-owned-action="evolve" data-owned-id="' + escapeHtml(pokemon.id) + '"' + (evolution.canEvolve ? '' : ' disabled') + '>';
         html += 'Evolve';
         html += '</button>';
@@ -4441,12 +5038,20 @@
     html += '<div class="owned-party-meta">';
     html += '<span>Training: ' + escapeHtml(renderOwnedTrainingLabel(pokemon)) + '</span>';
     if (evolution) {
-      html += '<span>' + (evolution.canEvolve ? 'Can evolve' : 'Evolves at Lv.' + evolution.requiredLevel) + '</span>';
+      html += '<span>' + escapeHtml(evolutionStatusText(evolution)) + '</span>';
     }
     html += '</div>';
     html += '<div class="owned-project-row owned-party-project-row">';
     html += '<span>Project</span>' + renderOwnedProjectSelect(pokemon);
     html += '</div>';
+    if (evolution) {
+      html += '<div class="owned-party-actions">';
+      html += renderEvolutionTargetSelect(pokemon, evolution);
+      html += '<button class="owned-party-evolve-btn" type="button" data-owned-action="evolve" data-owned-id="' + escapeHtml(pokemon.id) + '"' + (evolution.canEvolve ? '' : ' disabled') + '>';
+      html += 'Evolve';
+      html += '</button>';
+      html += '</div>';
+    }
     html += '</div>';
     html += '<button class="owned-party-box-btn" type="button" data-owned-action="box" data-owned-id="' + escapeHtml(pokemon.id) + '">Box</button>';
     html += '</article>';
@@ -4476,11 +5081,18 @@
     uiState.ownedOpen = !!isOpen;
     ownedModalEl.hidden = !uiState.ownedOpen;
     if (!uiState.ownedOpen) {
+      setOwnedItemInfoOpen(false);
       setOwnedRecruitOpen(false);
     }
     if (uiState.ownedOpen) {
       renderOwnedPokemon();
     }
+  }
+
+  function setOwnedItemInfoOpen(isOpen) {
+    if (!ownedItemInfoEl || !ownedItemInfoPopoverEl) return;
+    ownedItemInfoPopoverEl.hidden = !isOpen;
+    ownedItemInfoEl.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
   }
 
   function setOwnedRecruitOpen(isOpen) {
@@ -4499,6 +5111,59 @@
       .map(function (id) { return parseInt(id, 10); })
       .filter(function (id) { return Number.isInteger(id) && id >= POKEDEX_MIN && id <= POKEDEX_MAX; })
       .sort(function (a, b) { return a - b; });
+  }
+
+  function isPokemonDiscovered(pokemonId) {
+    var pokedex = appState.snapshot.pokedex || {};
+    var seenIds = Array.isArray(pokedex.seenPokemonIds) ? pokedex.seenPokemonIds : [];
+    return seenIds.indexOf(Number(pokemonId)) >= 0;
+  }
+
+  function recruitPricing() {
+    var pricing = appState.snapshot.recruitPricing || {};
+    return {
+      discovered: pricing.discovered || { 1: 100, 2: 300, 3: 700, 4: 1000, 5: 2000 },
+      undiscovered: pricing.undiscovered || { 1: 500, 2: 1500, 3: 3500, 4: 5000, 5: 10000 }
+    };
+  }
+
+  function recruitCostForPokemon(pokemonId, discovered) {
+    var tier = Math.max(1, Math.min(5, Number(pokemonRarityTiers[pokemonId]) || 1));
+    var pricing = recruitPricing();
+    var costs = discovered ? pricing.discovered : pricing.undiscovered;
+    return {
+      tier: tier,
+      discovered: !!discovered,
+      pointCost: Number(costs[tier]) || Number(costs[String(tier)]) || 0
+    };
+  }
+
+  function currentItemPointBalance() {
+    return Math.max(0, Number(evolutionItemState().itemPoints) || 0);
+  }
+
+  function recruitCostForAgent(agent) {
+    var pokemonId = getRenderPokemonId(agent);
+    var discovered = isPokemonDiscovered(pokemonId);
+    var costInfo = recruitCostForPokemon(pokemonId, discovered);
+    return {
+      pokemonId: pokemonId,
+      pokemonName: pokemonDisplayName(pokemonId),
+      tier: costInfo.tier,
+      discovered: costInfo.discovered,
+      pointCost: costInfo.pointCost
+    };
+  }
+
+  function renderAdoptAgentButton(agent) {
+    var costInfo = recruitCostForAgent(agent);
+    var canAfford = currentItemPointBalance() >= costInfo.pointCost;
+    var title = canAfford
+      ? 'Recruit for ' + costInfo.pointCost + ' pts'
+      : 'Need ' + costInfo.pointCost + ' pts to recruit';
+    return '<button class="box-detail-btn" data-action="adopt-agent" data-agent-id="' + escapeHtml(agent.agentId) + '"' +
+      ' data-pokemon-id="' + escapeHtml(String(costInfo.pokemonId)) + '" data-point-cost="' + escapeHtml(String(costInfo.pointCost)) + '"' +
+      ' title="' + escapeHtml(title) + '"' + (canAfford ? '' : ' disabled') + '>Adopt (' + escapeHtml(String(costInfo.pointCost)) + ' pts)</button>';
   }
 
   function setOwnedRecruitMode(mode) {
@@ -4532,13 +5197,18 @@
     }
     syncOwnedRecruitModeButtons();
     var html = '';
+    var itemPoints = (evolutionItemState().itemPoints || 0);
     for (var j = 0; j < ids.length; j++) {
       var pokemonId = ids[j];
       var seen = !!availableLookup[pokemonId];
-      var cellClass = 'owned-recruit-cell' + (seen ? ' seen' : ' locked');
-      html += '<button class="' + cellClass + '" type="button"' + (seen ? ' data-owned-action="recruit-species"' : ' disabled') + ' data-pokemon-id="' + pokemonId + '">';
+      var costInfo = recruitCostForPokemon(pokemonId, seen);
+      var canAfford = itemPoints >= costInfo.pointCost;
+      var cellClass = 'owned-recruit-cell' + (seen ? ' seen' : ' unseen') + (canAfford ? '' : ' unaffordable');
+      html += '<button class="' + cellClass + '" type="button" data-owned-action="recruit-species" data-pokemon-id="' + pokemonId + '"' + (canAfford ? '' : ' disabled') + '>';
       html += '<span class="owned-recruit-number">#' + String(pokemonId).padStart(3, '0') + '</span>';
-      html += '<span class="owned-recruit-name">' + (seen ? escapeHtml(pokemonDisplayName(pokemonId)) : 'Unknown') + '</span>';
+      html += '<span class="owned-recruit-name">' + escapeHtml(pokemonDisplayName(pokemonId)) + '</span>';
+      html += '<span class="owned-recruit-cost">' + escapeHtml(String(costInfo.pointCost)) + ' pts</span>';
+      html += '<span class="owned-recruit-tier">T' + escapeHtml(String(costInfo.tier)) + (seen ? ' seen' : ' new') + '</span>';
       html += '<span class="owned-recruit-media">';
       if (seen) {
         html += '<img src="' + escapeHtml(spriteUrl('animated', pokemonId, 'gif')) + '" alt="" loading="lazy" />';
@@ -4549,6 +5219,114 @@
       html += '</button>';
     }
     ownedRecruitGridEl.innerHTML = html || '<div class="owned-empty">No discovered Pokemon available yet.</div>';
+  }
+
+  function ensureSelectedEvolutionItemId(itemState) {
+    var pool = itemState.pool || [];
+    var selected = uiState.selectedEvolutionItemId;
+    var exists = selected && pool.some(function (item) { return item.id === selected; });
+    if (!exists) {
+      var inventory = itemState.inventory || {};
+      var ownedItem = pool.find(function (item) { return (inventory[item.id] || 0) > 0; });
+      selected = (ownedItem && ownedItem.id) || itemState.pickupItemId || (pool[0] && pool[0].id) || null;
+      uiState.selectedEvolutionItemId = selected;
+    }
+    return selected;
+  }
+
+  function renderEvolutionItemInfoContent(tokenPerPoint, drawCost, pickupClaimCost, sellValue) {
+    if (!ownedItemInfoPopoverEl) return;
+    var isKo = uiState.pokedexLanguage === 'ko';
+    if (ownedItemInfoEl) {
+      ownedItemInfoEl.setAttribute('aria-label', isKo ? '아이템 규칙' : 'Item rules');
+    }
+    var rows = isKo ? [
+      ['포인트', formatTokenCount(tokenPerPoint) + ' total tokens마다 1 point를 얻습니다. 캐시된 입력 토큰도 포함됩니다.'],
+      ['뽑기', drawCost + ' pts를 사용합니다. 성공률은 30%입니다.'],
+      ['Target', '뽑기 성공 시 선택한 target 아이템이 15% 확률로 나옵니다.'],
+      ['Tickets', 'Target을 설정한 뽑기가 성공했지만 target이 아니면 target ticket +1. ' + pickupClaimCost + ' tickets로 target을 확정 획득합니다.'],
+      ['Sell', 'Sell은 +' + sellValue + ' pts를 얻습니다. 일반 포인트 구매는 비활성화되어 있습니다.']
+    ] : [
+      ['Points', formatTokenCount(tokenPerPoint) + ' total tokens = 1 point. Cached input tokens count.'],
+      ['Draw', 'Costs ' + drawCost + ' pts. Success rate is 30%.'],
+      ['Target', 'Successful draws have a 15% chance to hit the selected target item.'],
+      ['Tickets', 'If a successful targeted draw misses the target, target ticket +1. Spend ' + pickupClaimCost + ' tickets to claim the target.'],
+      ['Sell', 'Sell gives +' + sellValue + ' pts. Point buying is disabled.']
+    ];
+    var html = '<h4>' + (isKo ? '아이템 규칙' : 'Item Rules') + '</h4><ul>';
+    for (var i = 0; i < rows.length; i++) {
+      html += '<li><b>' + escapeHtml(rows[i][0]) + '</b><span>' + escapeHtml(rows[i][1]) + '</span></li>';
+    }
+    html += '</ul>';
+    ownedItemInfoPopoverEl.innerHTML = html;
+  }
+
+  function renderEvolutionItemPanel() {
+    if (!ownedItemInventoryEl) return;
+    var itemState = evolutionItemState();
+    var pool = itemState.pool || [];
+    var inventory = itemState.inventory || {};
+    var selectedItemId = ensureSelectedEvolutionItemId(itemState);
+    var tokenPerPoint = Math.max(1, Number(itemState.tokenPerItemPoint) || 10000);
+    var drawCost = Math.max(1, Number(itemState.randomPullPointCost) || 250);
+    var pickupClaimCost = Math.max(1, Number(itemState.itemClaimTicketCost || itemState.itemBuyPickupPointCost) || 20);
+    var sellValue = Math.max(1, Number(itemState.itemSellPointValue) || 10);
+    var pickupTargetId = itemState.pickupItemId || null;
+    var targetTickets = Math.max(0, Number(itemState.targetTickets !== undefined ? itemState.targetTickets : itemState.pickupPoints) || 0);
+    var remainder = Math.max(0, Math.min(tokenPerPoint, Number(itemState.rewardTokenRemainder) || 0));
+    var progress = Math.max(0, Math.min(100, (remainder / tokenPerPoint) * 100));
+    var totalOwnedItems = pool.reduce(function (sum, item) {
+      return sum + (inventory[item.id] || 0);
+    }, 0);
+
+    if (ownedItemSummaryEl) ownedItemSummaryEl.textContent = totalOwnedItems + ' items';
+    if (ownedItemPointsEl) ownedItemPointsEl.textContent = formatTokenCount(itemState.itemPoints || 0);
+    if (ownedPickupPointsEl) ownedPickupPointsEl.textContent = formatTokenCount(targetTickets);
+    if (ownedItemProgressTextEl) {
+      ownedItemProgressTextEl.textContent = formatTokenCount(remainder) + ' / ' + formatTokenCount(tokenPerPoint);
+    }
+    if (ownedItemProgressFillEl) {
+      ownedItemProgressFillEl.style.width = progress.toFixed(1) + '%';
+    }
+
+    if (ownedPickupSelectEl) {
+      var pickupHtml = '<option value="">' + (uiState.pokedexLanguage === 'ko' ? 'Target 없음' : 'No target') + '</option>';
+      for (var i = 0; i < pool.length; i++) {
+        pickupHtml += '<option value="' + escapeHtml(pool[i].id) + '"' + (pool[i].id === itemState.pickupItemId ? ' selected' : '') + '>';
+        pickupHtml += escapeHtml(evolutionItemDisplayName(pool[i]));
+        pickupHtml += '</option>';
+      }
+      ownedPickupSelectEl.innerHTML = pickupHtml;
+    }
+
+    if (ownedItemPullEl) ownedItemPullEl.textContent = 'Draw (' + drawCost + ' pts)';
+    if (ownedItemBuyEl) ownedItemBuyEl.hidden = true;
+    if (ownedItemSellEl) ownedItemSellEl.textContent = 'Sell (+' + sellValue + ' pts)';
+    if (ownedItemClaimPickupEl) {
+      ownedItemClaimPickupEl.innerHTML =
+        '<span>' + escapeHtml(localizedActionText('Claim Target', 'Target 획득')) + '</span>' +
+        '<b>' + escapeHtml(String(pickupClaimCost)) + ' tickets</b>';
+    }
+    renderEvolutionItemInfoContent(tokenPerPoint, drawCost, pickupClaimCost, sellValue);
+
+    var canPull = (itemState.itemPoints || 0) >= drawCost;
+    if (ownedItemPullEl) ownedItemPullEl.disabled = !canPull;
+    if (ownedItemBuyEl) ownedItemBuyEl.disabled = true;
+    if (ownedItemSellEl) ownedItemSellEl.disabled = !selectedItemId || (inventory[selectedItemId] || 0) <= 0;
+    if (ownedItemClaimPickupEl) ownedItemClaimPickupEl.disabled = !pickupTargetId || targetTickets < pickupClaimCost;
+
+    var html = '';
+    for (var j = 0; j < pool.length; j++) {
+      var item = pool[j];
+      var count = inventory[item.id] || 0;
+      var itemLabel = evolutionItemDisplayName(item);
+      html += '<button type="button" class="owned-item-chip' + (item.id === selectedItemId ? ' selected' : '') + (count <= 0 ? ' empty' : '') + '" data-item-id="' + escapeHtml(item.id) + '" title="' + escapeHtml(itemLabel) + '">';
+      html += '<img src="' + escapeHtml(itemSpriteUrl(item.id)) + '" alt="" loading="lazy" />';
+      html += '<span>' + escapeHtml(itemLabel) + '</span>';
+      html += '<b>x' + count + '</b>';
+      html += '</button>';
+    }
+    ownedItemInventoryEl.innerHTML = html || '<div class="owned-empty compact">No evolution items available.</div>';
   }
 
   function renderOwnedPartyStrip(owned) {
@@ -4602,6 +5380,7 @@
     ownedSummaryEl.textContent = owned.length + ' owned Pokemon';
     ownedPartyCountEl.textContent = 'Drag to arrange';
     ownedBoxCountEl.textContent = boxed.length + ' boxed';
+    renderEvolutionItemPanel();
 
     var partyHtml = '';
     for (var slot = 0; slot < OWNED_PARTY_SIZE; slot++) {
@@ -4706,11 +5485,34 @@
 
   // ── Load pre-rendered terrain PNG ──
   var terrainImage = null;
-  (function loadTerrainImage() {
+  var terrainImageKey = null;
+  var terrainImageCache = {};
+
+  function selectedMapAsset() {
+    var area = areaDefById(uiState.areaFilter);
+    return area && area.detailAsset ? area.detailAsset : OVERVIEW_MAP_ASSET;
+  }
+
+  function syncTerrainImage() {
+    var asset = selectedMapAsset();
+    if (terrainImageKey === asset && terrainImage) return;
+    terrainImageKey = asset;
+    if (terrainImageCache[asset]) {
+      terrainImage = terrainImageCache[asset];
+      return;
+    }
+    terrainImage = null;
     var img = new Image();
-    img.onload = function () { terrainImage = img; };
-    img.src = dataUrl('island_map_cc.png');
-  })();
+    img.onload = function () {
+      terrainImageCache[asset] = img;
+      if (terrainImageKey === asset) {
+        terrainImage = img;
+      }
+    };
+    img.src = dataUrl(asset);
+  }
+
+  syncTerrainImage();
 
   function drawBackground() {
     const { scale, offsetX, offsetY } = getTransform();
@@ -4954,6 +5756,32 @@
     }
   }
 
+  function renderOutsideAreaRail(agents) {
+    if (!isAreaDetailMode() || agents.length === 0) {
+      return '';
+    }
+
+    var area = areaDefById(uiState.areaFilter);
+    var html = '<aside class="outside-area-rail" aria-label="Agents outside ' + escapeHtml(area ? area.label : 'selected area') + '">';
+    html += '<div class="outside-area-rail-head" title="Agents outside selected area"><b>' + agents.length + '</b></div>';
+    html += '<div class="outside-area-rail-grid">';
+    for (var i = 0; i < agents.length; i++) {
+      var agent = agents[i];
+      var isSleep = agent.isSleeping || !agent.isActive;
+      var isSubagent = !!agent.parentId;
+      var sprite = isSleep ? pokemonStaticIconUrl(agent) : pokemonIconUrl(agent);
+      var sleepScale = isSleep ? agentSleepSpriteScale(agent) : 1;
+      var classes = 'agent-sprite agent-sprite-rendered outside-area-agent-icon';
+      if (isSubagent) classes += ' outside-area-agent-icon-subagent';
+      if (isSleep) classes += ' agent-sprite-sleeping';
+      html += '<button type="button" class="' + classes + '" data-agent-id="' + escapeHtml(agent.agentId) + '" title="' + escapeHtml(rootAgentBadge(agent)) + '" style="--sleep-sprite-scale:' + sleepScale.toFixed(3) + '">';
+      html += '<img class="agent-sprite-image" src="' + escapeHtml(sprite) + '" alt="" />';
+      html += '</button>';
+    }
+    html += '</div></aside>';
+    return html;
+  }
+
   function renderOverlay(agents, now) {
     const { scale, offsetX, offsetY } = getTransform();
     const dpr = window.devicePixelRatio || 1;
@@ -5003,7 +5831,7 @@
 
       if (!isSubagent) {
         var badgeRaw = rootAgentBadge(agent);
-        var badge = badgeRaw.length > 20 ? badgeRaw.slice(0, 19) + '…' : badgeRaw;
+        var badge = badgeRaw.length > 20 ? badgeRaw.slice(0, 19) + '...' : badgeRaw;
         var labelX = sx + drawSizeCss * 0.5;
         var labelY = sy - 2;
         html += '<span class="agent-label" style="left:' + labelX + 'px;top:' + labelY + 'px" title="' + escapeHtml(badgeRaw) + '">' + escapeHtml(badge) + '</span>';
@@ -5020,7 +5848,7 @@
     }
 
     // zzz bubbles appended last so they sit on top of all sprites/labels
-    overlayEl.innerHTML = html + zzzHtml;
+    overlayEl.innerHTML = html + zzzHtml + renderOutsideAreaRail(outsideAreaAgents());
     clampOverlayDecorations();
   }
 
@@ -5200,6 +6028,21 @@
   }
 
   function bindUi() {
+    if (actionConfirmEl) {
+      actionConfirmEl.addEventListener('click', function () {
+        closeActionDialog(true);
+      });
+    }
+    if (actionCancelEl) {
+      actionCancelEl.addEventListener('click', function () {
+        closeActionDialog(false);
+      });
+    }
+    if (actionBackdropEl) {
+      actionBackdropEl.addEventListener('click', function () {
+        closeActionDialog(false);
+      });
+    }
     // Map sprite hover → tooltip
     function updateMapTooltipForSprite(sprite) {
       if (!sprite) {
@@ -5344,18 +6187,18 @@
       });
     }
 
-    projectFilterEl.addEventListener('change', function () {
-      uiState.projectFilter = projectFilterEl.value;
-      renderAgentList();
-      tokenTotalEl.textContent = formatTokenCount(filteredTokenTotal(filteredAgents()));
-    });
+    if (areaFilterEl) {
+      areaFilterEl.addEventListener('change', function () {
+        setAreaFilter(areaFilterEl.value);
+      });
+    }
     if (hardResetBtnEl) {
       hardResetBtnEl.addEventListener('click', async function () {
         var config = (appState.snapshot && appState.snapshot.config) || {};
         if (!config.supportsHardReset) return;
         var mode = config.mode || (config.isMockMode ? 'mock' : 'watch');
         var source = config.source && config.source !== mode ? '/' + config.source : '';
-        if (!window.confirm('Reset ' + mode + source + ' state, safari log, My Pokemon, and discovered Pokedex progress?')) return;
+        if (!window.confirm('Reset ' + mode + source + ' state, safari log, My Pokemon, evolution items, and discovered Pokedex progress?')) return;
         hardResetBtnEl.disabled = true;
         try {
           var res = await transport.hardReset();
@@ -5372,7 +6215,44 @@
         }
       });
     }
-    agentListEl.addEventListener('click', function (e) {
+    async function handleAdoptAgentButton(btn) {
+      if (!btn || btn.disabled) return;
+      var agentId = btn.getAttribute('data-agent-id');
+      if (!agentId) return;
+      var agent = (appState.agentById && appState.agentById.get(agentId)) || boxedAgentById(agentId);
+      var costInfo = agent ? recruitCostForAgent(agent) : {
+        pokemonName: 'Pokemon',
+        pointCost: Number(btn.getAttribute('data-point-cost')) || 0
+      };
+      var visual = {
+        type: 'points',
+        value: '-' + costInfo.pointCost + ' pts',
+        label: localizedActionText('Recruit cost', 'Recruit 비용')
+      };
+      if (!(await confirmActionPopup(
+        'Recruit ' + costInfo.pokemonName + ' for ' + costInfo.pointCost + ' pts?',
+        costInfo.pokemonName + '을(를) ' + costInfo.pointCost + ' pts로 recruit할까요?',
+        { visual: visual }
+      ))) return;
+
+      btn.disabled = true;
+      var result = await readActionResult(transport.owned('adopt', { agentId: agentId }));
+      if (!result || !result.ok) {
+        showActionPopup('Recruit Result', 'Recruit 결과', actionErrorMessage(result), actionErrorMessage(result), { isError: true });
+        btn.disabled = false;
+        return;
+      }
+      var spent = result.recruitCost && Number(result.recruitCost.pointCost) ? Number(result.recruitCost.pointCost) : costInfo.pointCost;
+      showActionPopup(
+        'Recruit Result',
+        'Recruit 결과',
+        'Recruited ' + costInfo.pokemonName + '.',
+        costInfo.pokemonName + ' recruit 완료.',
+        { visual: { type: 'points', value: '-' + spent + ' pts', label: localizedActionText('Spent', '사용') } }
+      );
+    }
+
+    agentListEl.addEventListener('click', async function (e) {
       var btn = e.target.closest('[data-action="box"]');
       if (btn) {
         e.stopPropagation();
@@ -5418,13 +6298,13 @@
       btn = e.target.closest('[data-action="adopt-agent"]');
       if (btn) {
         e.stopPropagation();
-        transport.owned('adopt', { agentId: btn.getAttribute('data-agent-id') });
+        await handleAdoptAgentButton(btn);
         return;
       }
       var card = e.target.closest('.poke-slot');
       if (card) card.classList.toggle('expanded');
     });
-    function handleUnboxClick(e) {
+    async function handleUnboxClick(e) {
       var btn = e.target.closest('[data-action="unbox"]');
       if (btn) {
         e.stopPropagation();
@@ -5440,7 +6320,7 @@
       btn = e.target.closest('[data-action="adopt-agent"]');
       if (btn) {
         e.stopPropagation();
-        transport.owned('adopt', { agentId: btn.getAttribute('data-agent-id') });
+        await handleAdoptAgentButton(btn);
         return;
       }
       btn = e.target.closest('[data-action="open-subhistory"]');
@@ -5549,7 +6429,23 @@
     ownedBackdropEl.addEventListener('click', function () {
       setOwnedOpen(false);
     });
-    function handleOwnedClick(e) {
+    if (ownedItemInfoEl) {
+      ownedItemInfoEl.addEventListener('click', function (e) {
+        e.stopPropagation();
+        setOwnedItemInfoOpen(ownedItemInfoPopoverEl ? ownedItemInfoPopoverEl.hidden : true);
+      });
+    }
+    if (ownedItemInfoPopoverEl) {
+      ownedItemInfoPopoverEl.addEventListener('click', function (e) {
+        e.stopPropagation();
+      });
+    }
+    ownedModalEl.addEventListener('click', function (e) {
+      if (!ownedItemInfoPopoverEl || ownedItemInfoPopoverEl.hidden) return;
+      if (e.target.closest('#owned-item-info') || e.target.closest('#owned-item-info-popover')) return;
+      setOwnedItemInfoOpen(false);
+    });
+    async function handleOwnedClick(e) {
       var btn = e.target.closest('[data-owned-action]');
       if (!btn) return;
       e.stopPropagation();
@@ -5573,7 +6469,35 @@
       } else if (action === 'box') {
         transport.owned('box', { id: id });
       } else if (action === 'evolve') {
-        transport.owned('evolve', { id: id });
+        var evolvingPokemon = ownedPokemonByOwnedId(id);
+        var evolutionInfo = ownedEvolutionInfo(evolvingPokemon);
+        var targetSpeciesId = null;
+        var ownedRoot = btn.closest('[data-owned-id]');
+        var targetSelect = ownedRoot ? ownedRoot.querySelector('[data-owned-field="evolution-target"]') : null;
+        if (targetSelect && targetSelect.value) {
+          targetSpeciesId = parseInt(targetSelect.value, 10) || null;
+        } else if (evolutionInfo && evolutionInfo.nextSpeciesId) {
+          targetSpeciesId = evolutionInfo.nextSpeciesId;
+        }
+        var fromLabel = ownedDisplayName(evolvingPokemon);
+        var selectedEvolution = selectedEvolutionOption(evolutionInfo, targetSpeciesId);
+        var evolutionItemId = selectedEvolution && selectedEvolution.itemId ? selectedEvolution.itemId : null;
+        var toLabel = targetSpeciesId ? pokemonDisplayName(targetSpeciesId) : localizedActionText('the selected evolution', '선택한 진화');
+        if (!(await confirmActionPopup(
+          'Evolve ' + fromLabel + ' into ' + toLabel + '?',
+          fromLabel + '을(를) ' + toLabel + '(으)로 진화시킬까요?'
+        , {
+          visual: {
+            type: 'evolution',
+            beforeSpeciesId: evolvingPokemon && evolvingPokemon.speciesId,
+            beforeName: fromLabel,
+            afterSpeciesId: targetSpeciesId,
+            afterName: toLabel,
+            itemId: evolutionItemId
+          }
+        }))) return;
+        var evolveResult = await readActionResult(transport.owned('evolve', { id: id, targetSpeciesId: targetSpeciesId }));
+        showEvolutionActionResult(evolveResult, evolvingPokemon, targetSpeciesId, evolutionItemId);
       } else if (action === 'holdEvolution') {
         transport.owned('holdEvolution', { id: id, held: btn.getAttribute('data-held') === 'true' });
       } else if (action === 'release') {
@@ -5592,6 +6516,69 @@
     }
     ownedPartyGridEl.addEventListener('click', handleOwnedClick);
     ownedBoxGridEl.addEventListener('click', handleOwnedClick);
+    if (ownedItemPullEl) {
+      ownedItemPullEl.addEventListener('click', async function () {
+        var result = await readActionResult(transport.items('pull', {}));
+        showDrawActionResult(result);
+      });
+    }
+    if (ownedItemSellEl) {
+      ownedItemSellEl.addEventListener('click', async function () {
+        if (!uiState.selectedEvolutionItemId) return;
+        var itemState = evolutionItemState();
+        var value = itemState.itemSellPointValue || 10;
+        var itemName = evolutionItemLabel(uiState.selectedEvolutionItemId);
+        if (!(await confirmActionPopup(
+          'Sell ' + itemName + ' for +' + value + ' pts?',
+          itemName + '을(를) 판매하고 +' + value + ' pts를 받을까요?'
+        , {
+          visual: {
+            type: 'item',
+            itemId: uiState.selectedEvolutionItemId,
+            name: itemName,
+            label: localizedActionText('Sell', '판매'),
+            detail: '+' + value + ' pts'
+          }
+        }))) return;
+        var result = await readActionResult(transport.items('sell', { itemId: uiState.selectedEvolutionItemId }));
+        showItemActionResult('sell', result, uiState.selectedEvolutionItemId);
+      });
+    }
+    if (ownedItemClaimPickupEl) {
+      ownedItemClaimPickupEl.addEventListener('click', async function () {
+        var itemState = evolutionItemState();
+        if (!itemState.pickupItemId) return;
+        var cost = itemState.itemClaimTicketCost || itemState.itemBuyPickupPointCost || 20;
+        var itemName = evolutionItemLabel(itemState.pickupItemId);
+        if (!(await confirmActionPopup(
+          'Claim ' + itemName + ' for ' + cost + ' tickets?',
+          itemName + '을(를) ' + cost + ' tickets로 확정 획득할까요?'
+        , {
+          visual: {
+            type: 'item',
+            itemId: itemState.pickupItemId,
+            name: itemName,
+            label: localizedActionText('Claim Target', 'Target 획득'),
+            detail: cost + ' tickets'
+          }
+        }))) return;
+        var result = await readActionResult(transport.items('buy', { itemId: itemState.pickupItemId, currency: 'ticket' }));
+        showItemActionResult('claim', result, itemState.pickupItemId);
+      });
+    }
+    if (ownedPickupSelectEl) {
+      ownedPickupSelectEl.addEventListener('change', function () {
+        transport.items('pickup', { itemId: ownedPickupSelectEl.value || null });
+      });
+    }
+    if (ownedItemInventoryEl) {
+      ownedItemInventoryEl.addEventListener('click', function (e) {
+        var itemBtn = e.target.closest('[data-item-id]');
+        if (!itemBtn) return;
+        uiState.selectedEvolutionItemId = itemBtn.getAttribute('data-item-id');
+        renderEvolutionItemPanel();
+      });
+    }
     ownedBoxGridEl.addEventListener('click', function (e) {
       if (e.target.closest('button, select, input, textarea, a')) return;
       var tile = e.target.closest('.owned-box-tile');
@@ -5626,16 +6613,32 @@
         uiState.ownedBoxPopoverTimer = null;
       }, 260);
     });
-    ownedRecruitGridEl.addEventListener('click', function (e) {
+    ownedRecruitGridEl.addEventListener('click', async function (e) {
       var btn = e.target.closest('[data-owned-action="recruit-species"]');
       if (!btn) return;
       e.stopPropagation();
       var pokemonId = parseInt(btn.getAttribute('data-pokemon-id'), 10);
       if (!pokemonId) return;
-      Promise.resolve(transport.owned('adopt', { speciesId: pokemonId, inParty: false }))
-        .then(function () {
-          setOwnedRecruitOpen(false);
-        });
+      var discovered = isPokemonDiscovered(pokemonId);
+      var costInfo = recruitCostForPokemon(pokemonId, discovered);
+      var pokemonName = pokemonDisplayName(pokemonId);
+      if (!(await confirmActionPopup(
+        'Recruit ' + pokemonName + ' for ' + costInfo.pointCost + ' pts?',
+        pokemonName + '을(를) ' + costInfo.pointCost + ' pts로 recruit할까요?'
+      , {
+        visual: {
+          type: 'points',
+          value: '-' + costInfo.pointCost + ' pts',
+          label: localizedActionText('Recruit cost', 'Recruit 비용')
+        }
+      }))) return;
+      var result = await readActionResult(transport.owned('adopt', { speciesId: pokemonId, inParty: false }));
+      if (!result || !result.ok) {
+        showActionPopup('Recruit Result', 'Recruit 결과', actionErrorMessage(result), actionErrorMessage(result));
+        return;
+      }
+      showActionPopup('Recruit Result', 'Recruit 결과', 'Recruited ' + pokemonName + '.', pokemonName + ' recruit 완료.');
+      setOwnedRecruitOpen(false);
     });
     function handleOwnedChange(e) {
       var field = e.target.closest('[data-owned-field]');
@@ -5741,6 +6744,10 @@
     });
     window.addEventListener('keydown', function (e) {
       if (e.key !== 'Escape') return;
+      if (actionModalEl && !actionModalEl.hidden) {
+        closeActionDialog(false);
+        return;
+      }
       if (uiState.ownedRecruitOpen) {
         setOwnedRecruitOpen(false);
         return;
@@ -5756,6 +6763,10 @@
       }
       if (uiState.pokedexOpen) {
         setPokedexOpen(false);
+        return;
+      }
+      if (ownedItemInfoPopoverEl && !ownedItemInfoPopoverEl.hidden) {
+        setOwnedItemInfoOpen(false);
         return;
       }
       if (uiState.ownedOpen) {

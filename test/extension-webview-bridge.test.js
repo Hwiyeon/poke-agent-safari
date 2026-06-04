@@ -54,6 +54,7 @@ test('webview bridge waits for ready before sending state and handles actions', 
   const calls = [];
   state.manualBox = (id) => { calls.push(['box', id]); return true; };
   state.manualUnbox = (id) => { calls.push(['unbox', id]); return true; };
+  state.setExplorationArea = (areaId) => { calls.push(['area', areaId]); return { ok: true, areaId }; };
 
   const watcher = new EventEmitter();
   const warnings = [];
@@ -86,8 +87,9 @@ test('webview bridge waits for ready before sending state and handles actions', 
 
   fixture.receive({ type: 'box', id: 'agent-1' });
   fixture.receive({ type: 'unbox', id: 'agent-2' });
+  fixture.receive({ type: 'explorationArea', areaId: 'cave' });
   fixture.receive({ type: 'hardReset' });
-  assert.deepEqual(calls, [['box', 'agent-1'], ['unbox', 'agent-2']]);
+  assert.deepEqual(calls, [['box', 'agent-1'], ['unbox', 'agent-2'], ['area', 'cave']]);
   assert.equal(hardResetCount, 1);
 
   state.emit('update');

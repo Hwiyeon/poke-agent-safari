@@ -95,6 +95,7 @@
     "codexParser.js",
     "configResolver.js",
     "electron/**/*.js",
+    "evolutionItems.js",
     "extension/src/**/*.js",
     "extension/README.md",
     "index.js",
@@ -113,15 +114,17 @@
     "watcher.js",
     "data/pokemon_data.json",
     "data/evolution_paths.json",
+    "data/evolution_rules.json",
     "data/pokemon_names_ko.json",
-    "data/area_mask.png",
-    "data/island_map_cc.png"
+    "data/map_assets/*.png",
+    "public/item-sprites/*.png"
   ],
   "scripts": {
     "setup:assets": "node tools/setup_poke_assets.js",
     "dev:pokemon-cache": "node dev/setup_poke_cache.js --range 1-649",
     "dev:pokemon-data": "node dev/run_pokedata.js --range 1-649 --output data/pokemon_data.json --table-output dev/data/generated/pokemon_table.md",
     "dev:pokemon-data:preview": "node dev/run_pokedata.js --range 1-649",
+    "dev:evolution-rules": "node dev/generate_evolution_rules.js",
     "dev:map": "node dev/map/generate_map.js",
     "dev:area-mask": "node dev/map/generate_area_mask.js",
     "dev:spawn-viz": "node dev/map/generate_spawn_viz.js",

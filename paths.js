@@ -52,6 +52,14 @@ function spriteCandidatesIn(rootDir, kind, fileName) {
     ];
   }
 
+  if (kind === 'items') {
+    return [
+      path.join(PROJECT_ROOT, 'public', 'item-sprites', fileName),
+      logicalPath,
+      path.join(logicalRoot, 'sprites', 'items', fileName)
+    ];
+  }
+
   return [];
 }
 

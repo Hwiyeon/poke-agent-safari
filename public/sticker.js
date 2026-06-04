@@ -4,16 +4,19 @@
   var POKEDEX_MIN = 1;
   var POKEDEX_MAX = 649;
   var POKEDEX_TOTAL = POKEDEX_MAX - POKEDEX_MIN + 1;
-  var OWNED_LIMIT = 2;
-  var AGENT_LIMIT = 3;
+  var PARTY_LIMIT = 6;
   var LANGUAGE_STORAGE_KEY = 'agent-safari-name-language';
   var LEGACY_LANGUAGE_STORAGE_KEY = 'agent-safari-sticker-name-language';
+  var TIER_WEIGHTS = { 1: 40, 2: 25, 3: 15, 4: 5, 5: 1 };
 
   var snapshot = null;
   var eventStream = null;
   var pollTimer = null;
   var pokemonNames = {};
   var pokemonKoNames = {};
+  var pokemonPool = [];
+  var pokemonPoolReady = false;
+  var evolutionPaths = {};
   var nameLanguage = readStoredNameLanguage();
   var languageMenuOpen = false;
 
@@ -66,12 +69,85 @@
     return Math.abs(h >>> 0);
   }
 
-  function pokemonIdForAgent(agent) {
+  function fallbackPokemonIdForAgentId(agentId) {
+    if (!agentId) return POKEDEX_MIN;
+    if (pokemonPoolReady && pokemonPool.length > 0) {
+      return pokemonPool[hashCode(agentId) % pokemonPool.length];
+    }
+    return (hashCode(agentId) % POKEDEX_TOTAL) + POKEDEX_MIN;
+  }
+
+  function pickHistoricalAgent(candidates, beforeTs) {
+    if (!candidates || candidates.length === 0) return null;
+    var cutoff = typeof beforeTs === 'number' ? beforeTs : Infinity;
+    var best = null;
+    var bestCreatedAt = -Infinity;
+
+    for (var i = 0; i < candidates.length; i += 1) {
+      var candidate = candidates[i];
+      if (!candidate) continue;
+      var createdAt = typeof candidate.createdAt === 'number' ? candidate.createdAt : -Infinity;
+      if (createdAt > cutoff) continue;
+      if (!best || createdAt >= bestCreatedAt) {
+        best = candidate;
+        bestCreatedAt = createdAt;
+      }
+    }
+
+    if (best) return best;
+
+    for (var j = 0; j < candidates.length; j += 1) {
+      var fallback = candidates[j];
+      if (!fallback) continue;
+      var fallbackCreatedAt = typeof fallback.createdAt === 'number' ? fallback.createdAt : -Infinity;
+      if (!best || fallbackCreatedAt >= bestCreatedAt) {
+        best = fallback;
+        bestCreatedAt = fallbackCreatedAt;
+      }
+    }
+
+    return best;
+  }
+
+  function findSnapshotAgentById(agentId, beforeTs) {
+    if (!agentId || !snapshot) return null;
+    var candidates = [];
+    ['agents', 'boxedAgents', 'subagentHistory'].forEach(function (key) {
+      var list = Array.isArray(snapshot[key]) ? snapshot[key] : [];
+      for (var i = list.length - 1; i >= 0; i -= 1) {
+        if (list[i] && list[i].agentId === agentId) candidates.push(list[i]);
+      }
+    });
+    return pickHistoricalAgent(candidates, beforeTs);
+  }
+
+  function getEvolutionPath(pokemonId) {
+    var normalizedId = Number(pokemonId);
+    var path = evolutionPaths[String(normalizedId)] || evolutionPaths[normalizedId];
+    return Array.isArray(path) && path.length > 0 ? path : [normalizedId];
+  }
+
+  function pokemonIdForAgent(agent, seen) {
+    var rendered = Number(agent && agent.renderedPokemonId);
+    if (Number.isInteger(rendered) && rendered >= POKEDEX_MIN && rendered <= POKEDEX_MAX) {
+      return rendered;
+    }
     if (agent && agent.forcedPokemonId) {
       return agent.forcedPokemonId;
     }
-    var rawId = agent && (agent.agentId || agent.parentId);
-    return (hashCode(rawId || 'agent') % POKEDEX_TOTAL) + POKEDEX_MIN;
+    if (!agent || !agent.agentId) return POKEDEX_MIN;
+    if (!agent.parentId) return fallbackPokemonIdForAgentId(agent.agentId);
+
+    var visiting = seen || {};
+    if (visiting[agent.agentId]) return fallbackPokemonIdForAgentId(agent.agentId);
+    visiting[agent.agentId] = true;
+
+    var parentAgent = findSnapshotAgentById(agent.parentId, agent.createdAt);
+    var parentPokemonId = parentAgent
+      ? pokemonIdForAgent(parentAgent, visiting)
+      : fallbackPokemonIdForAgentId(agent.parentId);
+    var candidates = getEvolutionPath(parentPokemonId);
+    return candidates[hashCode(agent.agentId) % candidates.length];
   }
 
   function spriteUrl(kind, id, ext) {
@@ -186,12 +262,21 @@
       })
       .then(function (data) {
         var list = Array.isArray(data && data.pokemon) ? data.pokemon : [];
+        var pool = [];
         list.forEach(function (pokemon) {
           var id = Number(pokemon && pokemon.pokemon_id);
           if (!Number.isInteger(id)) return;
           if (pokemon.name) pokemonNames[id] = formatPokemonName(pokemon.name);
           if (pokemon.name_ko) pokemonKoNames[id] = pokemon.name_ko;
+          if (id >= POKEDEX_MIN && id <= POKEDEX_MAX) {
+            var weight = TIER_WEIGHTS[pokemon.final_tier] || 1;
+            for (var i = 0; i < weight; i += 1) {
+              pool.push(id);
+            }
+          }
         });
+        pokemonPool = pool;
+        pokemonPoolReady = pool.length > 0;
       })
       .catch(function () {});
 
@@ -207,7 +292,17 @@
       })
       .catch(function () {});
 
-    Promise.all([english, korean]).then(function () {
+    var evolution = fetch(dataUrl('evolution_paths.json'), { cache: 'no-cache' })
+      .then(function (res) {
+        if (!res.ok) throw new Error('evolution paths failed');
+        return res.json();
+      })
+      .then(function (data) {
+        evolutionPaths = data && data.paths && typeof data.paths === 'object' ? data.paths : {};
+      })
+      .catch(function () {});
+
+    Promise.all([english, korean, evolution]).then(function () {
       if (snapshot) render(snapshot);
     });
   }
@@ -489,13 +584,13 @@
   }
 
   function renderOwned(owned) {
-    var party = owned.slice().sort(function (a, b) {
-      var aSlot = Number.isInteger(a.partySlot) ? a.partySlot : 99;
-      var bSlot = Number.isInteger(b.partySlot) ? b.partySlot : 99;
-      if (aSlot !== bSlot) return aSlot - bSlot;
+    var party = owned.filter(function (pokemon) {
+      return pokemon && Number.isInteger(pokemon.partySlot);
+    }).sort(function (a, b) {
+      if (a.partySlot !== b.partySlot) return a.partySlot - b.partySlot;
       return Number(b.updatedAt || b.createdAt || 0) - Number(a.updatedAt || a.createdAt || 0);
     });
-    els.ownedCount.textContent = String(owned.length);
+    els.ownedCount.textContent = String(Math.min(party.length, PARTY_LIMIT));
 
     if (party.length === 0) {
       els.ownedList.innerHTML = '<div class="panel-empty">No party Pokemon yet</div>';
@@ -503,7 +598,7 @@
     }
 
     var html = '';
-    party.slice(0, OWNED_LIMIT).forEach(function (pokemon) {
+    party.slice(0, PARTY_LIMIT).forEach(function (pokemon) {
       var stats = ownedLevel(pokemon);
       var speciesId = Number(pokemon.speciesId) || POKEDEX_MIN;
       var displayName = ownedDisplayName(pokemon);
@@ -546,7 +641,7 @@
     }
 
     var html = '';
-    sorted.slice(0, AGENT_LIMIT).forEach(function (agent) {
+    sorted.forEach(function (agent) {
       var level = agentLevel(agent);
       var hp = contextStats(agent);
       var pokemonId = pokemonIdForAgent(agent);

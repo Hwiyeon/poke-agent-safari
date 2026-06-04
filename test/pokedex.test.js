@@ -5,7 +5,7 @@ const assert = require('assert').strict;
 
 const { EVENT_TYPES } = require('../parser');
 const { AgentState } = require('../state');
-const { getPokemonIdForAgent, resolveRenderedPokemonIdForAgent } = require('../pokemon');
+const { getPokemonAreaId, getPokemonIdForAgent, resolveRenderedPokemonIdForAgent } = require('../pokemon');
 
 test('state tracks discovered pokemon in snapshot and serialization', () => {
   const state = new AgentState({
@@ -99,6 +99,55 @@ test('state reset clears agents, boxed entries, and pokedex progress', () => {
   assert.deepEqual(state.snapshot().boxedAgents, []);
   assert.deepEqual(state.snapshot().pokedex.seenPokemonIds, []);
   assert.equal(state.snapshot().pokedex.discoveredCount, 0);
+});
+
+test('area-specific pokemon pool matches the selected exploration area', () => {
+  const cavePokemonId = getPokemonIdForAgent('area-pool-agent-cave', { areaId: 'cave' });
+  const forestPokemonId = getPokemonIdForAgent('area-pool-agent-forest', { areaId: 'forest' });
+
+  assert.equal(getPokemonAreaId(cavePokemonId), 'cave');
+  assert.equal(getPokemonAreaId(forestPokemonId), 'forest');
+});
+
+test('state fixes root pokemon at spawn using the current exploration area', () => {
+  const state = new AgentState({
+    resolvePokemonId(agentId, context = {}) {
+      const agent = context.agent || null;
+      const meta = context.meta || {};
+      return resolveRenderedPokemonIdForAgent(agentId, {
+        parentId: (agent && agent.parentId) || meta.parentId || null,
+        assignedPokemonId: agent && agent.assignedPokemonId,
+        areaId: context.areaId,
+        getAgentById: context.getAgentById,
+        createdAt: (agent && agent.createdAt) || context.ts
+      });
+    }
+  });
+
+  state.setExplorationArea('cave');
+  state.applyEvent({
+    type: EVENT_TYPES.AGENT_SEEN,
+    agentId: 'spawned-in-cave',
+    ts: 1,
+    meta: { projectId: 'proj-a', sessionId: 'sess-a' }
+  });
+
+  state.setExplorationArea('forest');
+  state.applyEvent({
+    type: EVENT_TYPES.AGENT_SEEN,
+    agentId: 'spawned-in-forest',
+    ts: 2,
+    meta: { projectId: 'proj-a', sessionId: 'sess-b' }
+  });
+
+  const snapshot = state.snapshot();
+  const caveAgent = snapshot.agents.find((agent) => agent.agentId === 'spawned-in-cave');
+  const forestAgent = snapshot.agents.find((agent) => agent.agentId === 'spawned-in-forest');
+
+  assert.equal(getPokemonAreaId(caveAgent.assignedPokemonId), 'cave');
+  assert.equal(getPokemonAreaId(forestAgent.assignedPokemonId), 'forest');
+  assert.equal(snapshot.explorationAreaId, 'forest');
+  assert.equal(state.serialize().explorationAreaId, 'forest');
 });
 
 test('subagent discoveries record rendered unevolved pokemon and parent info', () => {

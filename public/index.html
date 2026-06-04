@@ -51,8 +51,8 @@
             </div>
           </div>
           <label class="control">
-            <span>Project</span>
-            <select id="project-filter">
+            <span>Area</span>
+            <select id="area-filter">
               <option value="all">All</option>
             </select>
           </label>
@@ -158,6 +158,60 @@
             </div>
             <div id="owned-party-grid" class="owned-party-grid"></div>
           </section>
+          <section class="owned-section owned-inventory-section">
+            <div class="owned-section-head">
+              <h3>Inventory</h3>
+              <span id="owned-item-summary">0 items</span>
+            </div>
+            <div class="owned-item-panel">
+              <div class="owned-item-wallet" aria-label="Evolution item wallet">
+                <div class="owned-points-card">
+                  <div class="owned-points-head">
+                    <span>Points</span>
+                    <button id="owned-item-info" class="owned-item-info-btn" type="button" aria-label="Item rules" aria-expanded="false" aria-controls="owned-item-info-popover">i</button>
+                  </div>
+                  <b id="owned-item-points" class="owned-points-value">0</b>
+                </div>
+              </div>
+              <div id="owned-item-info-popover" class="owned-item-info-popover" hidden>
+                <h4>Item Rules</h4>
+                <ul>
+                  <li><b>Points</b><span><b id="owned-info-token-per-point">10,000</b> total tokens = 1 point. Cached input tokens count.</span></li>
+                  <li><b>Draw</b><span>Costs <b id="owned-info-draw-cost">250</b> pts. Success rate is 30%.</span></li>
+                  <li><b>Target</b><span>Successful draws have a 15% chance to hit the selected target item.</span></li>
+                  <li><b>Tickets</b><span>If a successful targeted draw misses the target, target ticket +1. Spend <b id="owned-info-pickup-cost">20</b> tickets to claim the target.</span></li>
+                  <li><b>Sell</b><span>Sell gives +<b id="owned-info-sell-value">10</b> pts. Point buying is disabled.</span></li>
+                </ul>
+              </div>
+              <div class="owned-item-progress" aria-label="Item point progress">
+                <div class="owned-item-progress-row">
+                  <span>Next point</span>
+                  <b id="owned-item-progress-text">0 / 10,000</b>
+                </div>
+                <div class="owned-item-progress-track">
+                  <div id="owned-item-progress-fill" class="owned-item-progress-fill"></div>
+                </div>
+              </div>
+              <div class="owned-item-controls">
+                <div class="owned-item-actions-row">
+                  <button id="owned-item-pull" class="owned-item-action primary" type="button">Draw (250 pts)</button>
+                  <button id="owned-item-sell" class="owned-item-action" type="button">Sell (+10 pts)</button>
+                </div>
+                <div class="owned-pickup-row">
+                  <label class="owned-item-control">
+                    <span>Target</span>
+                    <select id="owned-pickup-select"></select>
+                  </label>
+                  <span class="owned-pickup-points-pill">Tickets <b id="owned-pickup-points">0</b></span>
+                  <button id="owned-item-claim-pickup" class="owned-item-action pickup" type="button">
+                    <span>Claim Target</span>
+                    <b>20 tickets</b>
+                  </button>
+                </div>
+              </div>
+              <div id="owned-item-inventory" class="owned-item-inventory"></div>
+            </div>
+          </section>
           <section class="owned-section">
             <div class="owned-section-head">
               <h3>Pokemon Box</h3>
@@ -181,6 +235,21 @@
             </div>
           </div>
           <div id="owned-recruit-grid" class="owned-recruit-grid"></div>
+        </div>
+      </section>
+    </div>
+
+    <div id="action-modal" class="pokedex-modal action-modal" hidden>
+      <div id="action-backdrop" class="pokedex-backdrop"></div>
+      <section id="action-panel" class="action-panel" role="dialog" aria-modal="true" aria-labelledby="action-title">
+        <div class="action-panel-head">
+          <h2 id="action-title">Action</h2>
+        </div>
+        <div id="action-visual" class="action-visual" hidden></div>
+        <p id="action-message" class="action-message"></p>
+        <div class="action-actions">
+          <button id="action-confirm" class="action-btn primary" type="button">OK</button>
+          <button id="action-cancel" class="action-btn secondary" type="button">No</button>
         </div>
       </section>
     </div>

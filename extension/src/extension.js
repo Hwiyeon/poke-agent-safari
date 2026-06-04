@@ -36,6 +36,8 @@ function createAgentState(mode, config) {
       const meta = context.meta || {};
       return resolveRenderedPokemonIdForAgent(agentId, {
         parentId: (agent && agent.parentId) || meta.parentId || null,
+        assignedPokemonId: agent && agent.assignedPokemonId,
+        areaId: context.areaId,
         getAgentById: context.getAgentById,
         createdAt: (agent && agent.createdAt) || context.ts
       });
@@ -296,6 +298,7 @@ function buildPanelHtml(context, panel, assetRoot) {
   const scriptUri = panel.webview.asWebviewUri(vscode.Uri.joinPath(publicDir, 'app.js')).toString();
   const assetBase = panel.webview.asWebviewUri(vscode.Uri.file(assetRoot)).toString();
   const dataBase = panel.webview.asWebviewUri(dataDir).toString();
+  const itemBase = panel.webview.asWebviewUri(vscode.Uri.joinPath(publicDir, 'item-sprites')).toString();
 
   return buildWebviewHtml({
     htmlRaw: fs.readFileSync(htmlPath, 'utf8'),
@@ -303,6 +306,7 @@ function buildPanelHtml(context, panel, assetRoot) {
     jsUri: scriptUri,
     assetBase,
     dataBase,
+    itemBase,
     cspSource: panel.webview.cspSource
   });
 }

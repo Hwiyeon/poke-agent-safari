@@ -23,6 +23,7 @@ function buildWebviewHtml(options = {}) {
       `<script nonce="${nonce}">
          window.__PAS_ASSET_BASE__=${JSON.stringify(options.assetBase)};
          window.__PAS_DATA_BASE__=${JSON.stringify(options.dataBase)};
+         window.__PAS_ITEM_BASE__=${JSON.stringify(options.itemBase || '')};
        </script>
        <script nonce="${nonce}" src="${options.jsUri}"></script>`
     );

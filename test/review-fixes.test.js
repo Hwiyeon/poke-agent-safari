@@ -11,6 +11,7 @@ const { StringDecoder } = require('string_decoder');
 const { EVENT_TYPES, normalizeLine } = require('../parser');
 const { AgentState } = require('../state');
 const { TranscriptWatcher } = require('../watcher');
+const { runSessionPidCheck, runStartupZombieBoxing } = require('../bootstrap');
 
 test('CLI supports --help without starting the server', () => {
   const cliPath = path.join(__dirname, '..', 'cli.js');
@@ -306,6 +307,63 @@ test('explicit provider boxing archives only matching root agents and waits for 
   });
 
   assert.equal(state.agents.has('codex-root'), true);
+});
+
+test('restored Claude agents are not archived by the first missing PID check', () => {
+  const state = new AgentState();
+
+  state.applyEvent({
+    type: EVENT_TYPES.AGENT_SEEN,
+    agentId: 'claude-root',
+    ts: 100,
+    meta: {
+      provider: 'claude',
+      projectId: 'project-a',
+      sessionId: 'session-a'
+    }
+  });
+
+  const restored = new AgentState();
+  assert.equal(restored.restore(state.serialize()), true);
+
+  restored.checkSessionPids(new Map(), true);
+  assert.equal(restored.agents.has('claude-root'), true);
+  assert.deepEqual(restored.boxedAgents, []);
+
+  restored.checkSessionPids(new Map([['session-a', process.pid]]), true);
+  assert.equal(restored.confirmedSessionIds.has('session-a'), true);
+
+  restored.checkSessionPids(new Map(), true);
+  assert.equal(restored.agents.has('claude-root'), false);
+  assert.equal(restored.boxedAgents.length, 1);
+  assert.equal(restored.boxedAgents[0].agentId, 'claude-root');
+});
+
+test('unreadable Claude sessions dir does not archive restored agents', () => {
+  const state = new AgentState();
+  const missingSessionsDir = path.join(os.tmpdir(), `poke-agents-missing-${Date.now()}-${Math.random().toString(36).slice(2)}`);
+
+  state.applyEvent({
+    type: EVENT_TYPES.AGENT_SEEN,
+    agentId: 'claude-root',
+    ts: 100,
+    meta: {
+      provider: 'claude',
+      projectId: 'project-a',
+      sessionId: 'session-a'
+    }
+  });
+  state.confirmedSessionIds.add('session-a');
+
+  runSessionPidCheck(state, missingSessionsDir);
+  assert.equal(state.agents.has('claude-root'), true);
+  assert.deepEqual(state.boxedAgents, []);
+
+  const startup = runStartupZombieBoxing(state, missingSessionsDir);
+  assert.equal(startup.dirReadable, false);
+  assert.equal(startup.boxedCount, 0);
+  assert.equal(state.agents.has('claude-root'), true);
+  assert.deepEqual(state.boxedAgents, []);
 });
 
 test('state restore trims oversized boxed and subagent history buffers', () => {

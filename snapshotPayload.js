@@ -3,6 +3,7 @@
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
+const { resolveRenderedPokemonIdForAgent } = require('./pokemon');
 
 const MOCK_RATE_LIMITS_BY_PROVIDER = Object.freeze({
   claude: Object.freeze({
@@ -77,15 +78,63 @@ function assignMockRateLimits(rateLimitsByProvider) {
   rateLimitsByProvider.codex = MOCK_RATE_LIMITS_BY_PROVIDER.codex;
 }
 
+function withRenderedPokemonIds(stateSnapshot) {
+  const agentSources = [
+    ...(Array.isArray(stateSnapshot.agents) ? stateSnapshot.agents : []),
+    ...(Array.isArray(stateSnapshot.boxedAgents) ? stateSnapshot.boxedAgents : []),
+    ...(Array.isArray(stateSnapshot.subagentHistory) ? stateSnapshot.subagentHistory : [])
+  ];
+  const byAgentId = new Map();
+
+  for (const agent of agentSources) {
+    if (!agent || !agent.agentId) continue;
+    const existing = byAgentId.get(agent.agentId);
+    const createdAt = typeof agent.createdAt === 'number' ? agent.createdAt : -Infinity;
+    const existingCreatedAt = existing && typeof existing.createdAt === 'number' ? existing.createdAt : -Infinity;
+    if (!existing || createdAt >= existingCreatedAt) {
+      byAgentId.set(agent.agentId, agent);
+    }
+  }
+
+  function getAgentById(agentId, options = {}) {
+    const candidate = byAgentId.get(agentId);
+    if (!candidate) return null;
+    const beforeTs = typeof options.beforeTs === 'number' ? options.beforeTs : Infinity;
+    const createdAt = typeof candidate.createdAt === 'number' ? candidate.createdAt : -Infinity;
+    return createdAt <= beforeTs ? candidate : null;
+  }
+
+  function decorate(agent) {
+    if (!agent || !agent.agentId) return agent;
+    return {
+      ...agent,
+      renderedPokemonId: resolveRenderedPokemonIdForAgent(agent.agentId, {
+        parentId: agent.parentId || null,
+        assignedPokemonId: agent.assignedPokemonId,
+        createdAt: agent.createdAt,
+        getAgentById
+      })
+    };
+  }
+
+  return {
+    ...stateSnapshot,
+    agents: Array.isArray(stateSnapshot.agents) ? stateSnapshot.agents.map(decorate) : stateSnapshot.agents,
+    boxedAgents: Array.isArray(stateSnapshot.boxedAgents) ? stateSnapshot.boxedAgents.map(decorate) : stateSnapshot.boxedAgents,
+    subagentHistory: Array.isArray(stateSnapshot.subagentHistory) ? stateSnapshot.subagentHistory.map(decorate) : stateSnapshot.subagentHistory
+  };
+}
+
 function buildPublicSnapshot(state, publicConfig = {}, options = {}) {
   const config = {
     mode: publicConfig.mode || (publicConfig.isMockMode ? 'mock' : 'watch'),
     source: publicConfig.source || (publicConfig.isMockMode ? 'mock' : 'claude'),
     enablePokeapiSprites: !!publicConfig.enablePokeapiSprites,
     isMockMode: !!publicConfig.isMockMode,
-    supportsHardReset: !!publicConfig.supportsHardReset
+    supportsHardReset: !!publicConfig.supportsHardReset,
+    explorationAreaId: state.explorationAreaId || 'all'
   };
-  const stateSnapshot = state.snapshot();
+  const stateSnapshot = withRenderedPokemonIds(state.snapshot());
   const stateRateLimits = options.rateLimits === undefined
     ? (state.rateLimits || stateSnapshot.rateLimits || null)
     : options.rateLimits;

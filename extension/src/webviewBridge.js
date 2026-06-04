@@ -58,45 +58,68 @@ function createWebviewBridge(options = {}) {
       const receiveDisposable = panel.webview.onDidReceiveMessage((message) => {
         if (!message || typeof message.type !== 'string') return;
 
+        let actionResult = null;
         switch (message.type) {
           case 'ready':
             readiness.set(panel, true);
             postState(panel);
             break;
           case 'box':
-            if (typeof message.id === 'string') state.manualBox(message.id);
+            if (typeof message.id === 'string') actionResult = { ok: !!state.manualBox(message.id) };
             break;
           case 'unbox':
-            if (typeof message.id === 'string') state.manualUnbox(message.id);
+            if (typeof message.id === 'string') actionResult = { ok: !!state.manualUnbox(message.id) };
             break;
           case 'owned':
             if (message.action === 'adopt') {
-              state.adoptOwnedPokemon(message.payload || {});
+              actionResult = state.adoptOwnedPokemon(message.payload || {});
             } else if (message.action === 'nickname' && message.payload) {
-              state.setOwnedPokemonNickname(message.payload.id, message.payload.nickname);
+              actionResult = state.setOwnedPokemonNickname(message.payload.id, message.payload.nickname);
             } else if (message.action === 'party' && message.payload) {
               if (message.payload.inParty === false) {
-                state.removeOwnedPokemonFromParty(message.payload.id);
+                actionResult = state.removeOwnedPokemonFromParty(message.payload.id);
               } else {
-                state.setOwnedPokemonParty(message.payload.id, message.payload.slot);
+                actionResult = state.setOwnedPokemonParty(message.payload.id, message.payload.slot);
               }
             } else if (message.action === 'box' && message.payload) {
-              state.removeOwnedPokemonFromParty(message.payload.id);
+              actionResult = state.removeOwnedPokemonFromParty(message.payload.id);
             } else if (message.action === 'assignProject' && message.payload) {
-              state.assignProjectTraining(message.payload.id, message.payload.projectId);
+              actionResult = state.assignProjectTraining(message.payload.id, message.payload.projectId);
             } else if (message.action === 'evolve' && message.payload) {
-              state.evolveOwnedPokemon(message.payload.id);
+              actionResult = state.evolveOwnedPokemon(message.payload.id, message.payload);
             } else if (message.action === 'holdEvolution' && message.payload) {
-              state.setOwnedPokemonEvolutionHold(message.payload.id, message.payload.held);
+              actionResult = state.setOwnedPokemonEvolutionHold(message.payload.id, message.payload.held);
             } else if (message.action === 'release' && message.payload) {
-              state.releaseOwnedPokemon(message.payload.id);
+              actionResult = state.releaseOwnedPokemon(message.payload.id);
             }
+            break;
+          case 'items':
+            if (message.action === 'pickup') {
+              actionResult = state.setEvolutionPickupItem(message.payload && message.payload.itemId);
+            } else if (message.action === 'pull') {
+              actionResult = state.pullEvolutionItem(message.payload || {});
+            } else if (message.action === 'buy' && message.payload) {
+              actionResult = state.buyEvolutionItem(message.payload.itemId, message.payload.currency);
+            } else if (message.action === 'sell' && message.payload) {
+              actionResult = state.sellEvolutionItem(message.payload.itemId);
+            }
+            break;
+          case 'explorationArea':
+            actionResult = state.setExplorationArea(message.areaId);
             break;
           case 'hardReset':
             if (typeof options.onHardReset === 'function') options.onHardReset();
+            actionResult = { ok: true };
             break;
           default:
             break;
+        }
+        if (message.requestId) {
+          panel.webview.postMessage({
+            type: 'actionResult',
+            requestId: message.requestId,
+            result: actionResult || { ok: false, error: 'Unknown action.' }
+          });
         }
       });
 
