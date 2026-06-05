@@ -17,7 +17,10 @@ const {
   savePokedex,
   loadPokedex,
   clearPersistedFiles,
-  performDashboardHardReset
+  performDashboardHardReset,
+  shouldLaunchElectron,
+  electronArgv,
+  webArgv
 } = require('../cli');
 
 function createState(pokemonByAgent) {
@@ -84,6 +87,26 @@ test('mock CLI flag can be explicitly disabled', () => {
   const { command, config } = resolveConfig(['--mock=false']);
   assert.equal(command, 'watch');
   assert.equal(config.isMockMode, false);
+});
+
+test('default CLI launch targets the Electron sticker', () => {
+  assert.equal(shouldLaunchElectron([]), true);
+  assert.equal(shouldLaunchElectron(['--source', 'codex']), true);
+  assert.equal(shouldLaunchElectron(['--mock']), true);
+  assert.equal(shouldLaunchElectron(['mock']), true);
+  assert.equal(shouldLaunchElectron(['sticker', '--source', 'claude']), true);
+});
+
+test('web CLI command keeps browser dashboard mode available', () => {
+  assert.equal(shouldLaunchElectron(['web']), false);
+  assert.equal(shouldLaunchElectron(['web', '--mock']), false);
+  assert.equal(shouldLaunchElectron(['watch']), false);
+  assert.deepEqual(webArgv(['web', '--mock']), ['--mock']);
+  assert.deepEqual(webArgv(['web', 'mock']), ['mock']);
+  assert.deepEqual(electronArgv(['sticker', '--source', 'codex']), ['--source', 'codex']);
+  assert.deepEqual(electronArgv(['--mock']), ['mock']);
+  assert.deepEqual(electronArgv(['sticker', '--mock', '--source', 'codex']), ['mock', '--source', 'codex']);
+  assert.deepEqual(electronArgv(['--mock=false', '--source', 'claude']), ['--mock=false', '--source', 'claude']);
 });
 
 test('watch and mock persisted state restore independently', () => {

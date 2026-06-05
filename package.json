@@ -2,7 +2,7 @@
   "name": "poke-agent-safari",
   "version": "0.2.0",
   "private": true,
-  "description": "Dependency-free local watcher + pixel dashboard for Claude Code transcript activity",
+  "description": "Local Agent Safari dashboard and Electron sticker for Claude Code and Codex activity",
   "main": "./index.js",
   "bin": {
     "poke-as": "./cli.js"
@@ -135,10 +135,10 @@
     "dev:area-mask": "node dev/map/generate_area_mask.js",
     "dev:spawn-viz": "node dev/map/generate_spawn_viz.js",
     "dev:mask-editor": "node dev/map/mask_editor.js",
-    "watch": "node cli.js watch",
-    "mock": "node cli.js mock",
-    "sticker": "electron electron/main.js",
-    "sticker:mock": "electron electron/main.js mock",
+    "watch": "node cli.js web",
+    "mock": "node cli.js web --mock",
+    "sticker": "node cli.js",
+    "sticker:mock": "node cli.js --mock",
     "test": "node test/claude-code-transcripts.test.js && node test/codex-transcripts.test.js && node test/review-fixes.test.js && node test/pokedex.test.js && node test/owned-pokemon.test.js && node test/setup-scripts.test.js && node test/cli-persistence.test.js && node test/extension-webview-bridge.test.js && node test/extension-html-template.test.js && node test/extension-asset-manager.test.js && node test/shared-snapshot.test.js",
     "package:vsix": "vsce package --no-dependencies",
     "publish:vsce": "vsce publish",
@@ -147,7 +147,6 @@
   "devDependencies": {
     "@types/vscode": "^1.85.0",
     "@vscode/vsce": "^2.27.0",
-    "electron": "^42.3.1",
     "ovsx": "^0.8.4"
   },
   "repository": {
@@ -155,5 +154,8 @@
     "url": "https://github.com/Hwiyeon/poke-agent-safari.git"
   },
   "homepage": "https://github.com/Hwiyeon/poke-agent-safari",
-  "license": "MIT"
+  "license": "MIT",
+  "dependencies": {
+    "electron": "^42.3.3"
+  }
 }

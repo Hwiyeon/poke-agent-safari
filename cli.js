@@ -2,6 +2,8 @@
 'use strict';
 
 const path = require('path');
+const fs = require('fs');
+const { spawn } = require('child_process');
 
 const { AgentState } = require('./state');
 const { TranscriptWatcher } = require('./watcher');
@@ -80,10 +82,16 @@ function resolveConfig(argv) {
 function usage() {
   return [
     'Usage:',
-    '  poke-as [watch] [--source claude|codex|all] [--port 8123] [--path ~/.claude/projects] [--codex-path ~/.codex/sessions] [--no-pokeapi]',
+    '  poke-as [--source claude|codex|all] [--port 8123] [--path ~/.claude/projects] [--codex-path ~/.codex/sessions] [--no-pokeapi]',
     '  poke-as --mock [--port 8123] [--no-pokeapi]',
-    '  poke-as mock [--port 8123] [--no-pokeapi]',
+    '  poke-as sticker [--source claude|codex|all] [--port 8123]',
+    '  poke-as web [watch|mock] [--source claude|codex|all] [--port 8123]',
+    '  poke-as watch [--source claude|codex|all] [--port 8123]',
     '  poke-as hard-reset [watch|mock] [--source claude|codex|all]',
+    '  poke-as help',
+    '',
+    'Default:',
+    '  poke-as opens the Electron sticker. Use "poke-as web" for the browser dashboard.',
     '',
     'Config precedence:',
     '  defaults < config.json < env vars < CLI flags',
@@ -91,6 +99,106 @@ function usage() {
     'Env vars:',
     '  PORT, HOST, AGENT_SAFARI_SOURCE, CLAUDE_PROJECTS_PATH, CODEX_SESSIONS_PATH, ACTIVE_TIMEOUT_SEC, STALE_TIMEOUT_SEC, ENABLE_POKEAPI_SPRITES'
   ].join('\n');
+}
+
+function firstPositionalArg(argv) {
+  const parsed = configResolver.parseArgv(argv);
+  return parsed._ && parsed._[0] ? parsed._[0] : null;
+}
+
+function stripFirstPositionalArg(argv, command) {
+  const out = [];
+  let stripped = false;
+  for (const token of argv) {
+    if (!stripped && token === command) {
+      stripped = true;
+      continue;
+    }
+    out.push(token);
+  }
+  return out;
+}
+
+function webArgv(argv) {
+  const command = firstPositionalArg(argv);
+  return command === 'web' ? stripFirstPositionalArg(argv, 'web') : argv;
+}
+
+function shouldLaunchElectron(argv) {
+  const command = firstPositionalArg(argv);
+  if (!command) return true;
+  return command === 'sticker' || command === 'electron' || command === 'mock';
+}
+
+function electronArgv(argv) {
+  const command = firstPositionalArg(argv);
+  let out = argv;
+  if (command === 'sticker' || command === 'electron') {
+    out = stripFirstPositionalArg(argv, command);
+  }
+
+  const parsed = configResolver.parseArgv(out);
+  if (!configResolver.parseBoolean(parsed.mock, false)) {
+    return out;
+  }
+
+  const normalized = [];
+  for (let i = 0; i < out.length; i += 1) {
+    const token = out[i];
+    if (token === '--mock') {
+      const next = out[i + 1];
+      if (next && !next.startsWith('--')) {
+        i += 1;
+      }
+      continue;
+    }
+    if (token.startsWith('--mock=')) {
+      continue;
+    }
+    normalized.push(token);
+  }
+  return ['mock', ...normalized];
+}
+
+function resolveElectronBinary() {
+  try {
+    const electron = require('electron');
+    if (typeof electron === 'string' && electron) {
+      return electron;
+    }
+  } catch (_) {
+    // Fall back to the local npm bin below.
+  }
+
+  const localBin = process.platform === 'win32'
+    ? path.join(__dirname, 'node_modules', '.bin', 'electron.cmd')
+    : path.join(__dirname, 'node_modules', '.bin', 'electron');
+  if (fs.existsSync(localBin)) {
+    return localBin;
+  }
+
+  throw new Error('Electron is not installed. Run "npm install" in the poke-agent-safari directory.');
+}
+
+function launchElectron(argv) {
+  const electronBin = resolveElectronBinary();
+  const child = spawn(electronBin, [path.join(__dirname, 'electron', 'main.js'), ...electronArgv(argv)], {
+    stdio: 'inherit',
+    windowsHide: false
+  });
+
+  child.on('error', (error) => {
+    process.stderr.write(`[electron] failed to launch: ${error.message}\n`);
+    process.exit(1);
+  });
+
+  child.on('exit', (code, signal) => {
+    if (signal) {
+      process.kill(process.pid, signal);
+      return;
+    }
+    process.exit(code == null ? 0 : code);
+  });
 }
 
 function createWatchers(config, state) {
@@ -126,8 +234,9 @@ function createMockDriver(state) {
   return createSharedMockDriver(state);
 }
 
-async function run() {
-  const { command, config } = resolveConfig(process.argv.slice(2));
+async function runWeb(argv = process.argv.slice(2)) {
+  const normalizedArgv = webArgv(argv);
+  const { command, config } = resolveConfig(normalizedArgv);
 
   if (command === 'help' || command === '--help' || command === '-h') {
     process.stdout.write(`${usage()}\n`);
@@ -135,8 +244,7 @@ async function run() {
   }
 
   if (command === 'hard-reset') {
-    const argv = process.argv.slice(2);
-    const rawTargetMode = argv[1] || 'watch';
+    const rawTargetMode = normalizedArgv[1] || 'watch';
     if (!isSupportedMode(rawTargetMode)) {
       process.stderr.write(`Unknown hard-reset target: ${rawTargetMode}\n\n${usage()}\n`);
       process.exitCode = 1;
@@ -300,6 +408,21 @@ async function run() {
   });
 }
 
+async function run() {
+  const argv = process.argv.slice(2);
+  const parsed = configResolver.parseArgv(argv);
+  const command = firstPositionalArg(argv);
+  if (parsed.help || command === 'help') {
+    process.stdout.write(`${usage()}\n`);
+    return;
+  }
+  if (shouldLaunchElectron(argv)) {
+    launchElectron(argv);
+    return;
+  }
+  await runWeb(argv);
+}
+
 module.exports = {
   DEFAULTS,
   resolveConfig,
@@ -312,6 +435,10 @@ module.exports = {
   clearPersistedFiles,
   performDashboardHardReset,
   readLiveSessionIds,
+  shouldLaunchElectron,
+  electronArgv,
+  webArgv,
+  runWeb,
   run
 };
 

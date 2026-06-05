@@ -13,7 +13,7 @@ v0.2.0에서는 대시보드가 수집/육성 루프로 확장되었습니다. �
 ## 릴리스 하이라이트
 
 - **Claude + Codex 통합:** `--source all`이 기본값입니다. `--source claude`, `--source codex`도 계속 사용할 수 있습니다.
-- **설치형 CLI:** `npm install -g .`로 `poke-as` 명령을 등록합니다.
+- **설치형 CLI:** `npm install -g .`로 `poke-as` 명령을 등록합니다. 기본 실행은 Electron sticker입니다.
 - **My Pokemon:** encounter 또는 Pokedex에서 포켓몬을 영입하고, 6칸 party, Pokemon Box, 닉네임, release, 프로젝트 배정을 관리합니다.
 - **Training:** owned Pokemon은 실제 토큰 사용량으로 EXP를 얻습니다. 프로젝트가 일치하는 포켓몬은 더 높은 training weight를 받습니다.
 - **Evolution items:** 토큰 사용량으로 item point를 얻고, random draw로 진화 아이템을 얻고, target ticket으로 원하는 아이템을 확정 획득할 수 있습니다.
@@ -81,21 +81,24 @@ npm install -g .
 
 `setup:assets`는 `public/vendor/pokeapi-sprites` 아래에 sparse PokeAPI sprite checkout을 만들거나 갱신하고, 필요한 item sprite를 `public/item-sprites`로 복사하며, `data/map_assets`의 필수 지도 asset을 검증합니다.
 
+Ubuntu 22.04에서는 Electron 실행을 위해 표준 데스크톱 runtime library가 필요할 수 있습니다.
+
+```bash
+sudo apt update
+sudo apt install -y libnss3 libatk-bridge2.0-0 libgtk-3-0 libxss1 libasound2 libgbm1
+```
+
 ## 빠른 시작
 
-대시보드 시작:
+Electron sticker 열기:
 
 ```bash
 poke-as
 ```
 
-브라우저에서 엽니다.
+sticker의 `+` 버튼을 누르면 전체 대시보드로 확장됩니다.
 
-```text
-http://127.0.0.1:8123
-```
-
-provider별 실행:
+provider별 sticker 실행:
 
 ```bash
 poke-as --source all
@@ -103,25 +106,46 @@ poke-as --source claude
 poke-as --source codex
 ```
 
-Mock mode:
+Mock sticker:
 
 ```bash
 poke-as --mock
 ```
 
-Sticker app:
+Web dashboard:
 
 ```bash
-npm run sticker
-npm run sticker:mock
+poke-as web
+```
+
+그 다음 브라우저에서 엽니다.
+
+```text
+http://127.0.0.1:8123
+```
+
+Web mock mode:
+
+```bash
+poke-as web --mock
+```
+
+기존 web alias도 계속 동작합니다.
+
+```bash
+poke-as watch
+npm run watch
+npm run mock
 ```
 
 ## CLI Reference
 
 ```bash
-poke-as [watch] [--source claude|codex|all] [--port 8123] [--path ~/.claude/projects] [--codex-path ~/.codex/sessions] [--no-pokeapi]
+poke-as [--source claude|codex|all] [--port 8123] [--path ~/.claude/projects] [--codex-path ~/.codex/sessions] [--no-pokeapi]
 poke-as --mock [--port 8123] [--no-pokeapi]
-poke-as mock [--port 8123] [--no-pokeapi]
+poke-as sticker [--source claude|codex|all] [--port 8123]
+poke-as web [watch|mock] [--source claude|codex|all] [--port 8123]
+poke-as watch [--source claude|codex|all] [--port 8123]
 poke-as hard-reset [watch|mock] [--source claude|codex|all]
 poke-as help
 ```

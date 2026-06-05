@@ -13,7 +13,7 @@ v0.2.0 turns the dashboard into a collection loop. You can recruit Pokemon into 
 ## Release Highlights
 
 - **Claude + Codex together:** `--source all` is now the default, with `--source claude` and `--source codex` still available.
-- **Installable CLI:** `npm install -g .` registers the `poke-as` command.
+- **Installable CLI:** `npm install -g .` registers the `poke-as` command, which opens the Electron sticker by default.
 - **My Pokemon:** recruit encountered or discovered Pokemon, manage a 6-slot party, box owned Pokemon, rename them, release them, and assign them to projects.
 - **Training:** owned Pokemon gain EXP from actual token usage. Pokemon assigned to a matching project receive higher training weight.
 - **Evolution items:** token usage earns item points, random draws produce evolution items, target tickets can claim a chosen item, and item evolutions consume the required item.
@@ -81,21 +81,24 @@ npm install -g .
 
 `setup:assets` creates or updates a sparse PokeAPI sprite checkout under `public/vendor/pokeapi-sprites`, copies required item sprites into `public/item-sprites`, and validates required map assets under `data/map_assets`.
 
+On Ubuntu 22.04, Electron may also need the standard desktop runtime libraries:
+
+```bash
+sudo apt update
+sudo apt install -y libnss3 libatk-bridge2.0-0 libgtk-3-0 libxss1 libasound2 libgbm1
+```
+
 ## Quick Start
 
-Start the dashboard:
+Open the Electron sticker:
 
 ```bash
 poke-as
 ```
 
-Open:
+Use the `+` button in the sticker to expand into the full dashboard.
 
-```text
-http://127.0.0.1:8123
-```
-
-Provider-specific modes:
+Provider-specific sticker modes:
 
 ```bash
 poke-as --source all
@@ -103,25 +106,46 @@ poke-as --source claude
 poke-as --source codex
 ```
 
-Mock mode:
+Mock sticker:
 
 ```bash
 poke-as --mock
 ```
 
-Sticker app:
+Web dashboard:
 
 ```bash
-npm run sticker
-npm run sticker:mock
+poke-as web
+```
+
+Then open:
+
+```text
+http://127.0.0.1:8123
+```
+
+Web mock mode:
+
+```bash
+poke-as web --mock
+```
+
+Legacy web aliases still work:
+
+```bash
+poke-as watch
+npm run watch
+npm run mock
 ```
 
 ## CLI Reference
 
 ```bash
-poke-as [watch] [--source claude|codex|all] [--port 8123] [--path ~/.claude/projects] [--codex-path ~/.codex/sessions] [--no-pokeapi]
+poke-as [--source claude|codex|all] [--port 8123] [--path ~/.claude/projects] [--codex-path ~/.codex/sessions] [--no-pokeapi]
 poke-as --mock [--port 8123] [--no-pokeapi]
-poke-as mock [--port 8123] [--no-pokeapi]
+poke-as sticker [--source claude|codex|all] [--port 8123]
+poke-as web [watch|mock] [--source claude|codex|all] [--port 8123]
+poke-as watch [--source claude|codex|all] [--port 8123]
 poke-as hard-reset [watch|mock] [--source claude|codex|all]
 poke-as help
 ```
