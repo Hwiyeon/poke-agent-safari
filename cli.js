@@ -80,9 +80,10 @@ function resolveConfig(argv) {
 function usage() {
   return [
     'Usage:',
-    '  node cli.js watch [--source claude|codex|all] [--port 8123] [--path ~/.claude/projects] [--codex-path ~/.codex/sessions] [--no-pokeapi]',
-    '  node cli.js mock  [--port 8123] [--no-pokeapi]',
-    '  node cli.js hard-reset [watch|mock] [--source claude|codex|all]',
+    '  poke-as [watch] [--source claude|codex|all] [--port 8123] [--path ~/.claude/projects] [--codex-path ~/.codex/sessions] [--no-pokeapi]',
+    '  poke-as --mock [--port 8123] [--no-pokeapi]',
+    '  poke-as mock [--port 8123] [--no-pokeapi]',
+    '  poke-as hard-reset [watch|mock] [--source claude|codex|all]',
     '',
     'Config precedence:',
     '  defaults < config.json < env vars < CLI flags',

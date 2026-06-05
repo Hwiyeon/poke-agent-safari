@@ -72,6 +72,20 @@ test('no-pokeapi CLI flag disables pokeapi sprites', () => {
   assert.equal(config.enablePokeapiSprites, false);
 });
 
+test('mock CLI flag selects mock mode', () => {
+  const { command, config } = resolveConfig(['--mock']);
+  assert.equal(command, 'mock');
+  assert.equal(config.isMockMode, true);
+  assert.equal(config.activeTimeoutSec, 8);
+  assert.equal(config.staleTimeoutSec, 120);
+});
+
+test('mock CLI flag can be explicitly disabled', () => {
+  const { command, config } = resolveConfig(['--mock=false']);
+  assert.equal(command, 'watch');
+  assert.equal(config.isMockMode, false);
+});
+
 test('watch and mock persisted state restore independently', () => {
   const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'poke-agents-persist-'));
   const watchPaths = getPersistencePaths('watch', tempRoot);

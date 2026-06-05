@@ -93,10 +93,11 @@ Then clone and download the Pokemon sprites:
 ```bash
 git clone git@github.com:Hwiyeon/poke-agent-safari.git
 cd poke-agent-safari
-node tools/setup_poke_assets.js
+npm install -g .
+npm run setup:assets
 ```
 
-- No external npm dependencies.
+- `npm install -g .` registers the `poke-as` command for your shell.
 - Watches Claude Code transcripts under `~/.claude/projects` and Codex sessions under `~/.codex/sessions` by default. Use `--source claude` or `--source codex` to narrow the dashboard.
 - `setup_poke_assets.js` pulls the sprite set from the [PokeAPI sprites repository](https://github.com/PokeAPI/sprites) into `public/vendor/pokeapi-sprites`.
 
@@ -104,7 +105,7 @@ node tools/setup_poke_assets.js
 Inside the `poke-agent-safari` directory, start the live watcher: 
 
 ```bash
-node cli.js watch
+poke-as
 ```
 
 Open `http://127.0.0.1:8123`.
@@ -112,22 +113,22 @@ Open `http://127.0.0.1:8123`.
 To watch only Codex sessions:
 
 ```bash
-node cli.js watch --source codex
+poke-as --source codex
 ```
 
 Watching both providers is the default, and can also be requested explicitly:
 
 ```bash
-node cli.js watch --source all
+poke-as --source all
 ```
 
 ### Commands
 
 ```bash
-node cli.js watch [--source claude|codex|all] [--port 8123]
-node cli.js mock [--port 8123] 
-node cli.js hard-reset [watch|mock] [--source claude|codex|all]
-node cli.js help
+poke-as [watch] [--source claude|codex|all] [--port 8123]
+poke-as --mock [--port 8123]
+poke-as hard-reset [watch|mock] [--source claude|codex|all]
+poke-as help
 ```
 
 ### Hard Reset
@@ -136,14 +137,14 @@ Available in both `watch` and `mock` via the dashboard button.
 
 - In `watch`: clears boxed history and Pokedex progress, keeps only currently active top-level agents on screen, and re-primes the watcher to the current end of each transcript so old history isn't replayed.
 - In `mock`: clears the mock snapshot and Pokedex files, then reseeds a fresh scene.
-- `node cli.js hard-reset [watch|mock] [--source claude|codex|all]` does the same without starting the dashboard.
+- `poke-as hard-reset [watch|mock] [--source claude|codex|all]` does the same without starting the dashboard.
 
 ## Mock Mode
 
 No real Claude logs? No problem. `mock` mode is for demos, screenshots, and UI testing.
 
 ```bash
-node cli.js mock
+poke-as --mock
 ```
 
 Open `Promo Studio` from the top bar while in `mock` mode to build polished promo scenes — spawn any Pokemon you want, tune `Level`, `HP %`, `EXP`, and `Status`, box and unbox custom root agents, and export the current scene as a PNG.

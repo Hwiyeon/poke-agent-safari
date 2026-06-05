@@ -133,17 +133,33 @@ function normalizeCliConfig(cli) {
   if (Array.isArray(cli)) {
     const parsed = parseArgv(cli);
     return {
-      command: parsed.help ? 'help' : parsed._[0] || 'watch',
+      command: resolveCommand(parsed),
       args: parsed
     };
   }
   if (cli.args) {
-    return cli;
+    return {
+      ...cli,
+      command: cli.command || resolveCommand(cli.args)
+    };
   }
   return {
     command: cli.command || 'watch',
     args: cli
   };
+}
+
+function resolveCommand(argMap) {
+  if (!argMap) {
+    return 'watch';
+  }
+  if (argMap.help) {
+    return 'help';
+  }
+  if (argMap._ && argMap._[0]) {
+    return argMap._[0];
+  }
+  return parseBoolean(argMap.mock, false) ? 'mock' : 'watch';
 }
 
 function resolveUnified(options = {}) {
@@ -230,7 +246,7 @@ function resolveUnified(options = {}) {
 
 function resolveCli(argv, options = {}) {
   const argMap = parseArgv(argv);
-  const command = argMap.help ? 'help' : argMap._[0] || 'watch';
+  const command = resolveCommand(argMap);
   return {
     command,
     config: resolveUnified({
@@ -250,6 +266,7 @@ module.exports = {
   parseNumber,
   normalizeSource,
   parseArgv,
+  resolveCommand,
   loadConfigFile,
   resolveUnified,
   resolveCli

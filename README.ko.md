@@ -93,17 +93,18 @@ sudo apt install -y git nodejs npm
 ```bash
 git clone git@github.com:Hwiyeon/poke-agent-safari.git poke-agent-safari
 cd poke-agent-safari
-node tools/setup_poke_assets.js
+npm install -g .
+npm run setup:assets
 ```
 
-- 외부 npm dependency가 없습니다.
+- `npm install -g .` 명령이 현재 shell에서 쓸 수 있는 `poke-as` 명령을 등록합니다.
 - 기본적으로 `~/.claude/projects` 아래의 Claude Code transcript와 `~/.codex/sessions` 아래의 Codex session을 함께 감시합니다. 하나만 보려면 `--source claude` 또는 `--source codex`를 사용하세요.
 - `setup_poke_assets.js`는 [PokeAPI sprites repository](https://github.com/PokeAPI/sprites)에서 sprite를 내려받아 `public/vendor/pokeapi-sprites`에 저장합니다.
 
 ## 빠른 시작
 `poke-agent-safari` 디렉토리 안에서 live watcher를 시작하세요.
 ```bash
-node cli.js watch
+poke-as
 ```
 
 `http://127.0.0.1:8123` 열기.
@@ -111,10 +112,10 @@ node cli.js watch
 ## 명령어
 
 ```bash
-node cli.js watch [--port 8123] 
-node cli.js mock [--port 8123] 
-node cli.js hard-reset [watch|mock]
-node cli.js help
+poke-as [watch] [--port 8123]
+poke-as --mock [--port 8123]
+poke-as hard-reset [watch|mock]
+poke-as help
 ```
 
 ## Hard Reset
@@ -123,14 +124,14 @@ node cli.js help
 
 - `watch`: boxed history와 Pokedex 진행도를 지우고, 현재 살아 있는 top-level agent만 화면에 남긴 뒤 watcher를 transcript 끝으로 다시 맞춰 과거 기록이 재생되지 않게 합니다.
 - `mock`: mock snapshot과 Pokedex 파일을 지우고 새로운 synthetic scene을 다시 만듭니다.
-- `node cli.js hard-reset [watch|mock]` 명령으로도 대시보드 없이 동일하게 초기화할 수 있습니다.
+- `poke-as hard-reset [watch|mock]` 명령으로도 대시보드 없이 동일하게 초기화할 수 있습니다.
 
 ## Mock Mode
 
 실제 Claude 로그가 없어도 됩니다. `mock` 모드는 데모, 스크린샷, UI 테스트용입니다.
 
 ```bash
-node cli.js mock
+poke-as --mock
 ```
 
 더 다듬어진 프로모 장면이 필요하다면 `mock` 모드에서 상단의 `Promo Studio`를 열면 됩니다. 원하는 포켓몬을 스폰하고, `Level`, `HP %`, `EXP`, `Status`를 조절하고, custom root agent를 box/unbox 하며, 현재 장면을 PNG로 내보낼 수 있습니다.

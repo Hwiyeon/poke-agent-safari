@@ -85,4 +85,10 @@ test('package files include setup and packaged runtime entry dependencies', () =
   }
 });
 
+test('package exposes the poke-as executable', () => {
+  assert.deepEqual(packageJson.bin, {
+    'poke-as': './cli.js'
+  });
+});
+
 run();
