@@ -5,7 +5,9 @@ const fs = require('fs');
 const path = require('path');
 const { spawnSync } = require('child_process');
 const {
+  DATA_DIR,
   PROJECT_ROOT,
+  PUBLIC_DIR,
   POKEAPI_CACHE_DIR,
   POKEAPI_SPRITES_DIR,
   GEN5_STATIC_DIR,
@@ -13,16 +15,39 @@ const {
   GEN5_ICON_DIR,
   GEN5_ICON_ANIMATED_DIR
 } = require('../paths');
+const { EVOLUTION_ITEM_POOL } = require('../evolutionItems');
 
 const LEGACY_CACHE_DIR = path.join(PROJECT_ROOT, '.pokemon_cache');
 const SUBMODULE_PATH = path.relative(PROJECT_ROOT, POKEAPI_SPRITES_DIR);
 const SUBMODULE_GIT_DIR = path.join(PROJECT_ROOT, '.git', 'modules', 'public', 'vendor', 'pokeapi-sprites');
 const SUBMODULE_URL = 'https://github.com/PokeAPI/sprites.git';
 const POKEAPI_ITEMS_DIR = path.join(POKEAPI_SPRITES_DIR, 'sprites', 'items');
+const LOCAL_ITEM_SPRITES_DIR = path.join(PUBLIC_DIR, 'item-sprites');
 const SPRITE_SPARSE_PATHS = [
   'sprites/pokemon/versions/generation-v/black-white',
   'sprites/pokemon/versions/generation-v/icons',
   'sprites/items'
+];
+const REQUIRED_EVOLUTION_ITEM_SPRITES = EVOLUTION_ITEM_POOL.map((item) => `${item.id}.png`);
+const REQUIRED_MAP_ASSETS = [
+  'area_mask.png',
+  'island_map_cc.png',
+  'cave_detail_v2.png',
+  'forest_detail_v2.png',
+  'grassland_detail_v2.png',
+  'mountain_detail_v2.png',
+  'rough_terrain_detail_v2.png',
+  'ruin_detail_v2.png',
+  'sea_detail_v2.png',
+  'urban_detail_v2.png',
+  'waters_edge_detail_v2.png'
+];
+const REQUIRED_POKEAPI_SAMPLE_FILES = [
+  path.join(GEN5_STATIC_DIR, '1.png'),
+  path.join(GEN5_ANIMATED_DIR, '1.gif'),
+  path.join(GEN5_ICON_DIR, '1.png'),
+  path.join(GEN5_ICON_ANIMATED_DIR, '1.png'),
+  path.join(POKEAPI_ITEMS_DIR, 'water-stone.png')
 ];
 
 function runGit(args, options = {}) {
@@ -199,15 +224,84 @@ function validateSpriteDirs() {
   process.exit(1);
 }
 
+function validateRequiredFiles(label, filePaths) {
+  const missing = filePaths.filter((filePath) => !fs.existsSync(filePath));
+  if (missing.length === 0) {
+    return;
+  }
+
+  process.stderr.write(`[assets] missing ${label}:\n`);
+  for (const filePath of missing) {
+    process.stderr.write(`  - ${filePath}\n`);
+  }
+  process.exit(1);
+}
+
+function syncEvolutionItemSprites() {
+  ensureDir(LOCAL_ITEM_SPRITES_DIR);
+
+  const missing = [];
+  let copied = 0;
+  for (const fileName of REQUIRED_EVOLUTION_ITEM_SPRITES) {
+    const targetPath = path.join(LOCAL_ITEM_SPRITES_DIR, fileName);
+    if (fs.existsSync(targetPath)) {
+      continue;
+    }
+
+    const sourcePath = path.join(POKEAPI_ITEMS_DIR, fileName);
+    if (fs.existsSync(sourcePath)) {
+      fs.copyFileSync(sourcePath, targetPath);
+      copied += 1;
+      continue;
+    }
+
+    missing.push({
+      targetPath,
+      sourcePath
+    });
+  }
+
+  if (copied > 0) {
+    process.stdout.write(`[assets] copied ${copied} bundled evolution item sprite(s)\n`);
+  }
+
+  if (missing.length === 0) {
+    return;
+  }
+
+  process.stderr.write('[assets] missing bundled evolution item sprites with no pokeapi source:\n');
+  for (const item of missing) {
+    process.stderr.write(`  - ${item.targetPath}\n`);
+    process.stderr.write(`    source checked: ${item.sourcePath}\n`);
+  }
+  process.exit(1);
+}
+
+function validateBundledAssets() {
+  validateRequiredFiles(
+    'map assets',
+    REQUIRED_MAP_ASSETS.map((fileName) => path.join(DATA_DIR, 'map_assets', fileName))
+  );
+  validateRequiredFiles(
+    'evolution item sprites',
+    REQUIRED_EVOLUTION_ITEM_SPRITES.map((fileName) => path.join(LOCAL_ITEM_SPRITES_DIR, fileName))
+  );
+}
+
 function main() {
   ensureSpriteCheckout();
 
   moveLegacyCache();
   ensureDir(POKEAPI_CACHE_DIR);
   validateSpriteDirs();
+  validateRequiredFiles('pokeapi sprite sample files', REQUIRED_POKEAPI_SAMPLE_FILES);
+  syncEvolutionItemSprites();
+  validateBundledAssets();
 
   process.stdout.write(`[assets] sparse paths: ${SPRITE_SPARSE_PATHS.join(', ')}\n`);
   process.stdout.write(`[assets] sprites ready at ${POKEAPI_SPRITES_DIR}\n`);
+  process.stdout.write(`[assets] item sprites ready at ${LOCAL_ITEM_SPRITES_DIR}\n`);
+  process.stdout.write(`[assets] map assets ready at ${path.join(DATA_DIR, 'map_assets')}\n`);
   process.stdout.write(`[assets] cache ready at ${POKEAPI_CACHE_DIR}\n`);
 }
 
@@ -216,6 +310,9 @@ if (require.main === module) {
 }
 
 module.exports = {
+  REQUIRED_EVOLUTION_ITEM_SPRITES,
+  REQUIRED_MAP_ASSETS,
+  REQUIRED_POKEAPI_SAMPLE_FILES,
   SPRITE_SPARSE_PATHS,
   parseGitLinkCommit
 };
