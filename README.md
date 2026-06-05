@@ -2,156 +2,277 @@
 
 # PokéAgent-Safari
 
-![PokéAgent-Safari overworld](imgs/overworld.jpg)
+## v0.2.0 - Collection & Sticker Release
 
-> *Your Claude Code and Codex agents become Pokemon.*
->
-> *Gotta Monitor 'Em All!*
+![PokéAgent-Safari v0.2.0 dashboard](imgs/v0.2.0-dashboard.png)
 
-`poke-agent-safari` is a live web dashboard for Claude Code and Codex agents.
+`poke-agent-safari` is a local activity dashboard for Claude Code and Codex. It watches transcript activity, turns each live agent into a Pokemon, and shows context, token usage, status, project, and session history as a small RPG-style safari.
 
-Every active session gets assigned a Pokemon and dropped onto a tiny island map — so you can see at a glance what's running, what's waiting, and which sessions are burning through tokens the fastest.
+v0.2.0 turns the dashboard into a collection loop. You can recruit Pokemon into `My Pokemon`, train them with real project token usage, collect evolution items, evolve them with generated Gen 1-5 rules, and keep an always-on-top Electron sticker open while you work.
 
-## At A Glance
+## Release Highlights
 
-- `Active Pokemon` — the Claude Code and Codex agents currently running on your machine
-- `HP` — remaining context window for that session
-- `EXP` and `LV` — token usage surfaced as RPG-style progress
-- `Status` — thinking, using a tool, outputting, waiting, or sleeping
-- `Pokedex` — your running collection of every Pokemon you've ever spawned
+- **Claude + Codex together:** `--source all` is now the default, with `--source claude` and `--source codex` still available.
+- **Installable CLI:** `npm install -g .` registers the `poke-as` command.
+- **My Pokemon:** recruit encountered or discovered Pokemon, manage a 6-slot party, box owned Pokemon, rename them, release them, and assign them to projects.
+- **Training:** owned Pokemon gain EXP from actual token usage. Pokemon assigned to a matching project receive higher training weight.
+- **Evolution items:** token usage earns item points, random draws produce evolution items, target tickets can claim a chosen item, and item evolutions consume the required item.
+- **Gen 1-5 Pokedex:** generated Pokemon metadata now covers `#1-#649`, including habitat, rarity, evolution paths, Korean names, and evolution rules.
+- **Area-aware island:** habitat-weighted spawns, area filters, detailed map assets, and an outside-area rail make the island more readable.
+- **Electron sticker:** compact desktop monitor for budgets, party Pokemon, active agents, and status counts.
+- **Promo Studio:** mock mode can compose custom scenes and export PNGs for screenshots or release images.
+- **VS Code extension refresh:** watch Claude, Codex, all providers, or mock mode from the same shared UI.
+- **Unified persistence:** live state is stored under `data/runtime/all` with Claude/Codex compatibility mirrors.
 
-## Recent Updates
+## Product Tour
 
-- **2026-05-18 - Codex compatibility.** Agent Safari now understands Codex session transcripts, watches Claude Code and Codex together by default, and separates Claude/Codex budget meters in the header.
-- **HP bar respects the context compression threshold.** When `CLAUDE_AUTOCOMPACT_PCT_OVERRIDE` is set in your Claude Code settings or environment, HP now hits 0 at that auto-compaction threshold instead of the raw model context limit — so HP tracks the context actually usable before Claude Code auto-compacts.
+### Live Dashboard
 
-## Table of Contents
+The main dashboard shows active agents on a habitat-aware island, live provider budgets, Pokedex progress, My Pokemon, and the Safari Log.
 
-- [Recent Updates](#recent-updates)
-- [Field Guide](#field-guide)
-  - [Island](#island)
-  - [Agents Panel](#agents-panel)
-  - [Pokedex](#pokedex)
-- [Installation](#installation)
-- [Quick Start](#quick-start)
-  - [Commands](#commands)
-  - [Hard Reset](#hard-reset)
-- [Mock Mode](#mock-mode)
-- [Notes](#notes)
+![Dashboard overview](imgs/v0.2.0-dashboard.png)
 
-## Field Guide
+### My Pokemon And Evolution Items
 
-### Island
+Owned Pokemon have party slots, levels, EXP bars, project assignments, evolution state, and box controls. The inventory panel tracks item points, random draws, target tickets, item sprites, selling, and target claims.
 
-![Island view](imgs/island.jpg)
-
-- Every new session gets a Pokemon when it first appears in the world.
-    - Pokemon spawn into habitat-matched parts of the island — cave Pokemon, grassland Pokemon, and sea Pokemon all show up where they belong.
-    - Spawn odds are weighted by rarity, so commons appear much more often than rares.
-- Root agents appear at full size; subagents show up nearby as smaller icons.
-    - Subagents stay within the parent's evolutionary line, appearing as the same Pokemon or an earlier evolution.
-
-### Agents Panel
-
-<table>
-  <tr>
-    <td width="50%"><img src="imgs/pokemon_tab.jpg" alt="Agents panel" /></td>
-    <td width="50%"><img src="imgs/status.jpg" alt="Agent status card" /></td>
-  </tr>
-</table>
-
-- Every spawned Pokemon is mirrored in the left panel so you can see the active roster at a glance.
-- The status card condenses a single agent into a quick readout of recent command, last activity, model, and live HP/EXP progress.
-- `LV` and `EXP` grow with token spend.
-- `HP` drops as the session burns through its context window — a useful signal for when to wrap up and start fresh.
-- When a subagent is summoned, the panel shows its hierarchy under the parent.
-- In live `watch` mode, a root agent that goes quiet for `10 minutes` switches to `Sleeping`.
-- Stay quiet for `8 hours` total and it gets boxed off the live map.
-
-- The Box archives finished sessions and keeps up to `300` records.
+![My Pokemon and evolution items](imgs/v0.2.0-my-pokemon.png)
 
 ### Pokedex
 
-![Island Pokedex](imgs/pokedex.jpg)
+Every discovered Pokemon is registered with first-discovery metadata. The current Pokedex range is `#1-#649`.
 
-- Every Pokemon you spawn is automatically registered.
-- First discovery records when it was first seen, plus the project and session where it showed up.
-- If a Pokemon was first discovered through a subagent, its parent lineage is recorded too.
-- Gotta Catch 'Em All!
+![Safari Pokedex](imgs/v0.2.0-pokedex.png)
+
+### Promo Studio
+
+Mock mode unlocks Promo Studio: build a custom scene, pick Pokemon, tune level/EXP/HP/status, add subagents, box/unbox custom roots, and download the scene as a PNG.
+
+![Promo Studio](imgs/v0.2.0-promo-studio.png)
+
+### Electron Sticker
+
+The sticker is a compact always-on-top view for day-to-day monitoring. It uses the same runtime and snapshot payload as the full dashboard.
+
+![Electron sticker compact view](imgs/v0.2.0-sticker.png)
 
 ## Installation
 
-On Ubuntu, install the prerequisites first:
+Requirements:
 
-```bash
-sudo apt update
-sudo apt install -y git nodejs npm
-```
+- Node.js `>=18`
+- npm
+- git
 
-Then clone and download the Pokemon sprites:
+Clone and install:
 
 ```bash
 git clone git@github.com:Hwiyeon/poke-agent-safari.git
 cd poke-agent-safari
-npm install -g .
+npm install
 npm run setup:assets
 ```
 
-- `npm install -g .` registers the `poke-as` command for your shell.
-- Watches Claude Code transcripts under `~/.claude/projects` and Codex sessions under `~/.codex/sessions` by default. Use `--source claude` or `--source codex` to narrow the dashboard.
-- `setup_poke_assets.js` pulls the sprite set from the [PokeAPI sprites repository](https://github.com/PokeAPI/sprites) into `public/vendor/pokeapi-sprites`.
+Optional global CLI install:
+
+```bash
+npm install -g .
+```
+
+`setup:assets` creates or updates a sparse PokeAPI sprite checkout under `public/vendor/pokeapi-sprites`, copies required item sprites into `public/item-sprites`, and validates required map assets under `data/map_assets`.
 
 ## Quick Start
-Inside the `poke-agent-safari` directory, start the live watcher: 
+
+Start the dashboard:
 
 ```bash
 poke-as
 ```
 
-Open `http://127.0.0.1:8123`.
+Open:
 
-To watch only Codex sessions:
-
-```bash
-poke-as --source codex
+```text
+http://127.0.0.1:8123
 ```
 
-Watching both providers is the default, and can also be requested explicitly:
+Provider-specific modes:
 
 ```bash
 poke-as --source all
+poke-as --source claude
+poke-as --source codex
 ```
 
-### Commands
-
-```bash
-poke-as [watch] [--source claude|codex|all] [--port 8123]
-poke-as --mock [--port 8123]
-poke-as hard-reset [watch|mock] [--source claude|codex|all]
-poke-as help
-```
-
-### Hard Reset
-
-Available in both `watch` and `mock` via the dashboard button.
-
-- In `watch`: clears boxed history and Pokedex progress, keeps only currently active top-level agents on screen, and re-primes the watcher to the current end of each transcript so old history isn't replayed.
-- In `mock`: clears the mock snapshot and Pokedex files, then reseeds a fresh scene.
-- `poke-as hard-reset [watch|mock] [--source claude|codex|all]` does the same without starting the dashboard.
-
-## Mock Mode
-
-No real Claude logs? No problem. `mock` mode is for demos, screenshots, and UI testing.
+Mock mode:
 
 ```bash
 poke-as --mock
 ```
 
-Open `Promo Studio` from the top bar while in `mock` mode to build polished promo scenes — spawn any Pokemon you want, tune `Level`, `HP %`, `EXP`, and `Status`, box and unbox custom root agents, and export the current scene as a PNG.
+Sticker app:
 
-All mock data is local-only and never touches your real transcript files.
+```bash
+npm run sticker
+npm run sticker:mock
+```
+
+## CLI Reference
+
+```bash
+poke-as [watch] [--source claude|codex|all] [--port 8123] [--path ~/.claude/projects] [--codex-path ~/.codex/sessions] [--no-pokeapi]
+poke-as --mock [--port 8123] [--no-pokeapi]
+poke-as mock [--port 8123] [--no-pokeapi]
+poke-as hard-reset [watch|mock] [--source claude|codex|all]
+poke-as help
+```
+
+Config precedence:
+
+```text
+defaults < config.json < environment variables < CLI flags
+```
+
+Environment variables:
+
+```text
+PORT
+HOST
+AGENT_SAFARI_SOURCE
+CLAUDE_PROJECTS_PATH
+CODEX_SESSIONS_PATH
+ACTIVE_TIMEOUT_SEC
+STALE_TIMEOUT_SEC
+ENABLE_POKEAPI_SPRITES
+```
+
+## How It Works
+
+### Agents
+
+- `HP` represents remaining context window.
+- `EXP` and `LV` represent token usage.
+- `Status` shows thinking, tool-running, outputting, waiting, or sleeping.
+- Root agents render at full size.
+- Subagents render nearby as smaller Pokemon in the same evolution line when possible.
+- Quiet root agents become `Sleeping` after `10 minutes` in watch mode.
+- Stale root agents move into the Safari Log after `8 hours`.
+
+### My Pokemon
+
+- Recruit from active encounters or discovered Pokedex entries.
+- Manage a 6-slot party and a Pokemon Box.
+- Rename, release, box, unbox, and reorder party members.
+- Assign Pokemon to projects so matching project activity trains them faster.
+- Hold evolution when you want to delay it.
+
+Training rules:
+
+- `50` agent tokens become `1` owned Pokemon EXP before allocation.
+- Project-assigned Pokemon receive double allocation weight for matching project activity.
+- Unassigned Pokemon can share general training.
+- Training events are persisted and included in dashboard snapshots.
+
+### Evolution Items
+
+- `10,000` total tokens earn `1` item point.
+- A random draw costs `250` item points.
+- Draw success rate is `30%`.
+- A target item receives a `2.5x` draw weight multiplier.
+- If a successful targeted draw misses the target, you gain `1` target ticket.
+- `20` target tickets can claim the selected target item.
+- Selling an item gives `10` item points.
+- Point buying is disabled.
+
+The item pool contains Gen 1-5 evolution items plus `linking-cord` for trade-style evolutions. Evolution rules are generated into `data/evolution_rules.json`.
+
+### Island Areas
+
+Pokemon assignment is habitat-aware. Selecting an exploration area changes the root-agent spawn pool when area data is available.
+
+Supported areas:
+
+- `mountain`
+- `cave`
+- `forest`
+- `ruin`
+- `rough_terrain`
+- `grassland`
+- `urban`
+- `waters_edge`
+- `sea`
+
+## Persistence
+
+Live watch state uses a unified source of truth:
+
+```text
+data/runtime/all/state.json
+data/runtime/all/pokedex.json
+```
+
+Compatibility mirrors are also written:
+
+```text
+data/runtime/claude/state.json
+data/runtime/claude/pokedex.json
+data/runtime/codex/state.json
+data/runtime/codex/pokedex.json
+```
+
+Mock data uses:
+
+```text
+data/runtime/mock/state.json
+data/runtime/mock/pokedex.json
+```
+
+Legacy `data/state.json` and provider runtime files are migrated into the unified store when possible.
+
+## Hard Reset
+
+Available from the dashboard or CLI:
+
+```bash
+poke-as hard-reset [watch|mock] [--source claude|codex|all]
+```
+
+Hard reset clears persisted state, Safari Log records, My Pokemon, evolution items, and Pokedex progress. In watch mode it also writes a reset flag so the next watcher start skips historical transcript tail replay.
+
+## VS Code Extension
+
+The VS Code extension reuses the same watcher, parser, state model, and public UI.
+
+Commands:
+
+- `Agent Safari: Open (Watch)`
+- `Agent Safari: Open (Watch Codex)`
+- `Agent Safari: Open (Watch All)`
+- `Agent Safari: Open (Mock)`
+- `Agent Safari: Hard Reset`
+- `Agent Safari: Download Sprite Assets`
+
+Sprite assets are downloaded into VS Code global storage on demand.
+
+## Development
+
+Useful scripts:
+
+```bash
+npm run dev:pokemon-cache
+npm run dev:pokemon-data:preview
+npm run dev:pokemon-data
+npm run dev:evolution-rules
+npm run dev:map
+npm run dev:area-mask
+npm run dev:spawn-viz
+npm run dev:mask-editor
+npm test
+```
+
+The `dev/` folder contains generation tools for Pokemon metadata, rarity calibration, evolution rules, map assets, and area masks. Runtime files that ship with the app live in `data/`, `public/`, and the explicit `package.json` `files` list.
 
 ## Notes
 
-- Tested on Ubuntu and macOS. Should work on other Node.js platforms, but not guaranteed.
-- Current Pokedex covers the first `649` Pokemon (generations 1-5).
+- Claude Code transcripts are watched under `~/.claude/projects` by default.
+- Codex sessions are watched under `~/.codex/sessions` by default.
+- Pokemon sprites and metadata come from PokeAPI-compatible public resources. Pokemon IP belongs to its respective owners.
