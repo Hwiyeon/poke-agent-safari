@@ -221,6 +221,26 @@ test('total tokens accrue evolution item points', () => {
   assert.equal(snapshot.evolutionItems.tokenPerItemPoint, 10000);
 });
 
+test('evolution item draw table uses v2 weights', () => {
+  const state = createState({});
+  const snapshot = state.snapshot().evolutionItems;
+  const weights = new Map(snapshot.pool.map((item) => [item.id, item.weight]));
+
+  assert.equal(snapshot.itemWeightTotal, 1000);
+  assert.equal(snapshot.pickupWeightMultiplier, 2.5);
+  for (const itemId of ['leaf-stone', 'water-stone', 'fire-stone', 'thunder-stone', 'ice-stone']) {
+    assert.equal(weights.get(itemId), 70);
+  }
+  assert.equal(weights.get('sun-stone'), 60);
+  assert.equal(weights.get('moon-stone'), 60);
+  assert.equal(weights.get('linking-cord'), 60);
+  for (const itemId of ['shiny-stone', 'dusk-stone', 'dawn-stone']) {
+    assert.equal(weights.get(itemId), 45);
+  }
+  assert.equal(weights.get('up-grade'), 25);
+  assert.equal(weights.get('dubious-disc'), 20);
+});
+
 test('evolution item pulls, ticket claims, and selling update the item wallet', () => {
   const state = createState({});
   state.evolutionItems.itemPoints = 250;
@@ -233,11 +253,19 @@ test('evolution item pulls, ticket claims, and selling update the item wallet', 
 
   state.evolutionItems.itemPoints = 250;
   state.evolutionItems.pickupItemId = 'thunder-stone';
-  const rolls = [0.1, 0.5, 0.0];
+  const rolls = [0.1, 0.5];
   const missedTarget = state.pullEvolutionItem({ rng: () => rolls.shift() });
   assert.equal(missedTarget.ok, true);
   assert.equal(missedTarget.success, true);
   assert.notEqual(missedTarget.itemId, 'thunder-stone');
+  assert.equal(state.snapshot().evolutionItems.targetTickets, 1);
+
+  state.evolutionItems.itemPoints = 250;
+  const hitRolls = [0.1, 0.75];
+  const hitTarget = state.pullEvolutionItem({ rng: () => hitRolls.shift() });
+  assert.equal(hitTarget.ok, true);
+  assert.equal(hitTarget.success, true);
+  assert.equal(hitTarget.itemId, 'thunder-stone');
   assert.equal(state.snapshot().evolutionItems.targetTickets, 1);
 
   state.evolutionItems.itemPoints = 35;
@@ -255,7 +283,7 @@ test('evolution item pulls, ticket claims, and selling update the item wallet', 
   state.evolutionItems.targetTickets = 20;
   const claimed = state.buyEvolutionItem('thunder-stone', 'ticket');
   assert.equal(claimed.ok, true);
-  assert.equal(state.snapshot().evolutionItems.inventory['thunder-stone'], 1);
+  assert.equal(state.snapshot().evolutionItems.inventory['thunder-stone'], 2);
   assert.equal(state.snapshot().evolutionItems.targetTickets, 0);
 });
 

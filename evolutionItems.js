@@ -34,11 +34,44 @@ const EVOLUTION_ITEM_POOL = Object.freeze([
   { id: 'linking-cord', nameEn: 'Linking Cord', nameKo: '연결의끈' }
 ]);
 
+const EVOLUTION_ITEM_WEIGHTS = Object.freeze({
+  'dawn-stone': 45,
+  'deep-sea-scale': 20,
+  'deep-sea-tooth': 20,
+  'dragon-scale': 15,
+  'dubious-disc': 20,
+  'dusk-stone': 45,
+  'electirizer': 20,
+  'fire-stone': 70,
+  'ice-stone': 70,
+  'kings-rock': 30,
+  'leaf-stone': 70,
+  'magmarizer': 20,
+  'metal-coat': 35,
+  'moon-stone': 60,
+  'oval-stone': 30,
+  'prism-scale': 20,
+  'protector': 15,
+  'razor-claw': 25,
+  'razor-fang': 25,
+  'reaper-cloth': 15,
+  'shiny-stone': 45,
+  'sun-stone': 60,
+  'thunder-stone': 70,
+  'up-grade': 25,
+  'water-stone': 70,
+  'linking-cord': 60
+});
+
 const EVOLUTION_ITEM_IDS = new Set(EVOLUTION_ITEM_POOL.map((item) => item.id));
+const EVOLUTION_ITEM_WEIGHT_TOTAL = EVOLUTION_ITEM_POOL.reduce(
+  (total, item) => total + (EVOLUTION_ITEM_WEIGHTS[item.id] || 0),
+  0
+);
 
 const TOKEN_PER_ITEM_POINT = 10000;
 const PULL_SUCCESS_RATE = 0.3;
-const PICKUP_SUCCESS_RATE = 0.15;
+const PICKUP_WEIGHT_MULTIPLIER = 2.5;
 const RANDOM_PULL_POINT_COST = 250;
 const PULL_FAILURE_POINT_REFUND = 0;
 const ITEM_SELL_POINT_VALUE = 10;
@@ -174,12 +207,35 @@ function pushPullHistory(state, entry) {
   }
 }
 
-function pickRandomItem(pool, rng) {
+function itemWeight(itemId) {
+  return EVOLUTION_ITEM_WEIGHTS[itemId] || 0;
+}
+
+function pickWeightedItem(pool, rng, options = {}) {
   if (!Array.isArray(pool) || pool.length === 0) {
     return null;
   }
-  const roll = Math.max(0, Math.min(0.999999999, Number(rng()) || 0));
-  return pool[Math.floor(roll * pool.length)] || pool[0];
+  const pickupItemId = isEvolutionItemId(options.pickupItemId) ? options.pickupItemId : null;
+  const weightedPool = pool
+    .map((itemId) => {
+      const id = String(itemId || '');
+      const multiplier = pickupItemId && id === pickupItemId ? PICKUP_WEIGHT_MULTIPLIER : 1;
+      return { id, weight: itemWeight(id) * multiplier };
+    })
+    .filter((item) => isEvolutionItemId(item.id) && item.weight > 0);
+  const totalWeight = weightedPool.reduce((total, item) => total + item.weight, 0);
+  if (totalWeight <= 0) {
+    return null;
+  }
+  const roll = Math.max(0, Math.min(0.999999999, Number(rng()) || 0)) * totalWeight;
+  let cursor = 0;
+  for (const item of weightedPool) {
+    cursor += item.weight;
+    if (roll < cursor) {
+      return item.id;
+    }
+  }
+  return weightedPool[weightedPool.length - 1].id;
 }
 
 function pullEvolutionItem(state, options = {}) {
@@ -201,14 +257,11 @@ function pullEvolutionItem(state, options = {}) {
 
   let itemId = null;
   const pickupItemId = state.pickupItemId;
-  if (pickupItemId && (Number(rng()) || 0) < PICKUP_SUCCESS_RATE) {
-    itemId = pickupItemId;
-  } else {
-    const pool = pickupItemId
-      ? EVOLUTION_ITEM_POOL.filter((item) => item.id !== pickupItemId).map((item) => item.id)
-      : EVOLUTION_ITEM_POOL.map((item) => item.id);
-    itemId = pickRandomItem(pool, rng);
-  }
+  itemId = pickWeightedItem(
+    EVOLUTION_ITEM_POOL.map((item) => item.id),
+    rng,
+    { pickupItemId }
+  );
 
   addInventoryItem(state, itemId, 1);
   if (pickupItemId && itemId !== pickupItemId) {
@@ -274,7 +327,9 @@ function evolutionItemSnapshot(state) {
   const normalized = cloneEvolutionItemState(state);
   return {
     ...normalized,
-    pool: EVOLUTION_ITEM_POOL.map((item) => ({ ...item })),
+    pool: EVOLUTION_ITEM_POOL.map((item) => ({ ...item, weight: itemWeight(item.id) })),
+    itemWeightTotal: EVOLUTION_ITEM_WEIGHT_TOTAL,
+    pickupWeightMultiplier: PICKUP_WEIGHT_MULTIPLIER,
     tokenPerItemPoint: TOKEN_PER_ITEM_POINT,
     randomPullPointCost: RANDOM_PULL_POINT_COST,
     pullFailurePointRefund: PULL_FAILURE_POINT_REFUND,
@@ -287,6 +342,9 @@ function evolutionItemSnapshot(state) {
 
 module.exports = {
   EVOLUTION_ITEM_POOL,
+  EVOLUTION_ITEM_WEIGHTS,
+  EVOLUTION_ITEM_WEIGHT_TOTAL,
+  PICKUP_WEIGHT_MULTIPLIER,
   TOKEN_PER_ITEM_POINT,
   RANDOM_PULL_POINT_COST,
   PULL_FAILURE_POINT_REFUND,
