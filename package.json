@@ -92,6 +92,7 @@
   "files": [
     "bootstrap.js",
     "claudeSettings.js",
+    "cli.js",
     "codexParser.js",
     "configResolver.js",
     "electron/**/*.js",
@@ -109,8 +110,10 @@
     "public/sticker.html",
     "public/sticker.js",
     "public/style.css",
+    "server.js",
     "snapshotPayload.js",
     "state.js",
+    "tools/setup_poke_assets.js",
     "watcher.js",
     "data/pokemon_data.json",
     "data/evolution_paths.json",

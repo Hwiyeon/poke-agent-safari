@@ -3,6 +3,7 @@
 const { test, run } = require('./runner');
 const assert = require('assert').strict;
 const path = require('path');
+const packageJson = require('../package.json');
 const { EVOLUTION_ITEM_POOL } = require('../evolutionItems');
 const {
   DATA_DIR,
@@ -70,6 +71,18 @@ test('asset setup parses pinned gitlink commits from ls-tree output', () => {
   const stdout = `160000 commit ${sha}\tpublic/vendor/pokeapi-sprites\n`;
   assert.equal(parseGitLinkCommit(stdout), sha);
   assert.equal(parseGitLinkCommit('100644 blob abc\tREADME.md\n'), null);
+});
+
+test('package files include setup and packaged runtime entry dependencies', () => {
+  for (const filePath of [
+    'cli.js',
+    'server.js',
+    'tools/setup_poke_assets.js',
+    'data/map_assets/*.png',
+    'public/item-sprites/*.png'
+  ]) {
+    assert.ok(packageJson.files.includes(filePath), `${filePath} should be packaged`);
+  }
 });
 
 run();
