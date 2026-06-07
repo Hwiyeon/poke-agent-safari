@@ -48,6 +48,8 @@ const DEFAULT_POKEMON_BOX_ID = 'box-default';
 const LEGACY_JOHTO_POKEDEX_MAX = 251;
 const PARTY_SIZE = 6;
 const TRAINING_TOKEN_DIVISOR = 10;
+const OWNED_LEVEL_100_EXP = 30115800;
+const OWNED_MEDIUM_FAST_LEVEL_100_EXP = 1000000;
 const RECRUIT_POINT_COSTS_DISCOVERED = Object.freeze({ 1: 100, 2: 300, 3: 700, 4: 1000, 5: 2000 });
 const RECRUIT_POINT_COSTS_UNDISCOVERED = Object.freeze({ 1: 500, 2: 1500, 3: 3500, 4: 5000, 5: 10000 });
 const DEFAULT_COUNTERS = Object.freeze({
@@ -271,12 +273,55 @@ function encounterIdForAgent(agent) {
   ].join(':');
 }
 
-function ownedExpToNextLevel(level, growthRate = 1) {
-  const normalizedLevel = Math.max(1, Math.min(100, Number(level) || 1));
-  const normalizedGrowth = Number.isFinite(Number(growthRate)) && Number(growthRate) > 0
+function normalizeOwnedGrowthRate(growthRate = 1) {
+  return Number.isFinite(Number(growthRate)) && Number(growthRate) > 0
     ? Number(growthRate)
     : 1;
-  return Math.max(1, Math.round(normalizedGrowth * (69000 + (normalizedLevel - 1) * 4800)));
+}
+
+function ownedMediumFastTotalExpForLevel(level) {
+  const normalizedLevel = Math.max(1, Math.min(100, Number(level) || 1));
+  if (normalizedLevel <= 1) {
+    return 0;
+  }
+  return Math.round((Math.pow(normalizedLevel, 3) / OWNED_MEDIUM_FAST_LEVEL_100_EXP) * OWNED_LEVEL_100_EXP);
+}
+
+function ownedBaseExpToNextLevel(level) {
+  const normalizedLevel = Math.max(1, Math.min(100, Math.floor(Number(level) || 1)));
+  if (normalizedLevel >= 100) {
+    return 0;
+  }
+  return Math.max(1, ownedMediumFastTotalExpForLevel(normalizedLevel + 1) - ownedMediumFastTotalExpForLevel(normalizedLevel));
+}
+
+function ownedExpToNextLevel(level, growthRate = 1) {
+  const baseExp = ownedBaseExpToNextLevel(level);
+  if (baseExp <= 0) {
+    return 0;
+  }
+  return Math.max(1, Math.round(normalizeOwnedGrowthRate(growthRate) * baseExp));
+}
+
+function ownedLevelFromTotalExp(totalExp, growthRate = 1) {
+  let remaining = Math.max(0, Math.floor(Number(totalExp) || 0));
+  let level = 1;
+  const normalizedGrowth = normalizeOwnedGrowthRate(growthRate);
+
+  while (level < 100) {
+    const needed = ownedExpToNextLevel(level, normalizedGrowth);
+    if (remaining < needed) {
+      break;
+    }
+    remaining -= needed;
+    level += 1;
+  }
+
+  if (level >= 100) {
+    return { level: 100, exp: 0 };
+  }
+
+  return { level, exp: remaining };
 }
 
 function normalizeOwnedPokemon(raw, fallbackNow = Date.now()) {
@@ -289,11 +334,18 @@ function normalizeOwnedPokemon(raw, fallbackNow = Date.now()) {
     return null;
   }
 
-  const level = Math.max(1, Math.min(100, Math.floor(Number(raw.level) || 1)));
-  const nextNeeded = level >= 100 ? 0 : ownedExpToNextLevel(level, raw.growthRate || 1);
-  const exp = level >= 100
+  const growthRate = normalizeOwnedGrowthRate(raw.growthRate || 1);
+  const totalTrainingExp = Math.max(0, Math.floor(Number(raw.totalTrainingExp) || 0));
+  let level = Math.max(1, Math.min(100, Math.floor(Number(raw.level) || 1)));
+  const nextNeeded = level >= 100 ? 0 : ownedExpToNextLevel(level, growthRate);
+  let exp = level >= 100
     ? 0
     : Math.max(0, Math.min(nextNeeded, Math.floor(Number(raw.exp) || 0)));
+  if (totalTrainingExp > 0) {
+    const trainedLevel = ownedLevelFromTotalExp(totalTrainingExp, growthRate);
+    level = trainedLevel.level;
+    exp = trainedLevel.exp;
+  }
   const partySlot = raw.partySlot !== null && raw.partySlot !== undefined && Number.isInteger(Number(raw.partySlot))
     ? Math.max(0, Math.min(PARTY_SIZE - 1, Number(raw.partySlot)))
     : null;
@@ -304,8 +356,8 @@ function normalizeOwnedPokemon(raw, fallbackNow = Date.now()) {
     nickname: normalizeOwnedText(raw.nickname, 40),
     level,
     exp,
-    totalTrainingExp: Math.max(0, Math.floor(Number(raw.totalTrainingExp) || 0)),
-    growthRate: Number.isFinite(Number(raw.growthRate)) && Number(raw.growthRate) > 0 ? Number(raw.growthRate) : 1,
+    totalTrainingExp,
+    growthRate,
     sourceEncounterId: normalizeOwnedText(raw.sourceEncounterId, 240),
     sourceAgentId: normalizeOwnedText(raw.sourceAgentId, 240),
     sourceProjectId: normalizeOwnedText(raw.sourceProjectId, 240),

@@ -149,6 +149,27 @@ test('project training grants usage exp to assigned pokemon and party', () => {
   assert.equal(state.snapshot().trainingEvents.length, 3);
 });
 
+test('owned pokemon use scaled medium fast experience thresholds', () => {
+  const state = createState({});
+  state.mergeSeenPokemonIds([1]);
+  const bulbasaur = state.adoptOwnedPokemon({ speciesId: 1 }).pokemon;
+
+  let current = state.snapshot().ownedPokemon[0];
+  assert.equal(current.expToNextLevel, 241);
+
+  state.addOwnedExperience(bulbasaur.id, 123354, { record: false });
+  current = state.snapshot().ownedPokemon[0];
+  assert.equal(current.level, 16);
+  assert.equal(current.exp, 0);
+  assert.equal(current.expToNextLevel, 24605);
+
+  state.addOwnedExperience(bulbasaur.id, 1405083 - 123354, { record: false });
+  current = state.snapshot().ownedPokemon[0];
+  assert.equal(current.level, 36);
+  assert.equal(current.exp, 0);
+  assert.equal(current.expToNextLevel, 120373);
+});
+
 test('project training does not grant usage exp to boxed pokemon', () => {
   const state = createState({ worker: 25 });
   state.mergeSeenPokemonIds([1, 4, 7, 25, 52, 54, 133, 194]);

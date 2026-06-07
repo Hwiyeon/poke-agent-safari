@@ -1666,10 +1666,26 @@
     return null;
   }
 
-  function ownedExpToNextLevel(level, growthRate) {
+  var OWNED_LEVEL_100_EXP = 30115800;
+  var OWNED_MEDIUM_FAST_LEVEL_100_EXP = 1000000;
+
+  function ownedMediumFastTotalExpForLevel(level) {
     var normalizedLevel = Math.max(1, Math.min(100, Number(level) || 1));
+    if (normalizedLevel <= 1) return 0;
+    return Math.round((Math.pow(normalizedLevel, 3) / OWNED_MEDIUM_FAST_LEVEL_100_EXP) * OWNED_LEVEL_100_EXP);
+  }
+
+  function ownedBaseExpToNextLevel(level) {
+    var normalizedLevel = Math.max(1, Math.min(100, Math.floor(Number(level) || 1)));
+    if (normalizedLevel >= 100) return 0;
+    return Math.max(1, ownedMediumFastTotalExpForLevel(normalizedLevel + 1) - ownedMediumFastTotalExpForLevel(normalizedLevel));
+  }
+
+  function ownedExpToNextLevel(level, growthRate) {
+    var baseExp = ownedBaseExpToNextLevel(level);
+    if (baseExp <= 0) return 0;
     var normalizedGrowth = Number.isFinite(Number(growthRate)) && Number(growthRate) > 0 ? Number(growthRate) : 1;
-    return Math.max(1, Math.round(normalizedGrowth * expToNextLevel(normalizedLevel)));
+    return Math.max(1, Math.round(normalizedGrowth * baseExp));
   }
 
   function ownedEvolutionInfo(pokemon) {

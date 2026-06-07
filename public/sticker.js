@@ -625,6 +625,28 @@
     return 69000 + stage * 4800;
   }
 
+  var OWNED_LEVEL_100_EXP = 30115800;
+  var OWNED_MEDIUM_FAST_LEVEL_100_EXP = 1000000;
+
+  function ownedMediumFastTotalExpForLevel(level) {
+    var normalizedLevel = Math.max(1, Math.min(100, Number(level) || 1));
+    if (normalizedLevel <= 1) return 0;
+    return Math.round((Math.pow(normalizedLevel, 3) / OWNED_MEDIUM_FAST_LEVEL_100_EXP) * OWNED_LEVEL_100_EXP);
+  }
+
+  function ownedBaseExpToNextLevel(level) {
+    var normalizedLevel = Math.max(1, Math.min(100, Math.floor(Number(level) || 1)));
+    if (normalizedLevel >= 100) return 0;
+    return Math.max(1, ownedMediumFastTotalExpForLevel(normalizedLevel + 1) - ownedMediumFastTotalExpForLevel(normalizedLevel));
+  }
+
+  function ownedExpToNextLevel(level, growthRate) {
+    var baseExp = ownedBaseExpToNextLevel(level);
+    if (baseExp <= 0) return 0;
+    var normalizedGrowth = Number.isFinite(Number(growthRate)) && Number(growthRate) > 0 ? Number(growthRate) : 1;
+    return Math.max(1, Math.round(normalizedGrowth * baseExp));
+  }
+
   function agentLevel(agent) {
     var totalTokens = Math.max(0, Number(agent && agent.totalTokens) || 0);
     var level = 1;
@@ -646,7 +668,7 @@
     var level = Math.max(1, Math.min(100, Number(pokemon && pokemon.level) || 1));
     var needed = pokemon && typeof pokemon.expToNextLevel === 'number'
       ? pokemon.expToNextLevel
-      : (level >= 100 ? 0 : 1);
+      : (level >= 100 ? 0 : ownedExpToNextLevel(level, pokemon && pokemon.growthRate));
     var exp = level >= 100 ? needed : Math.max(0, Number(pokemon && pokemon.exp) || 0);
     var progress = level >= 100 ? 100 : clampPct(needed > 0 ? (exp / needed) * 100 : 0);
     return { level: level, exp: exp, needed: needed, progress: progress };
