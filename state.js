@@ -45,6 +45,7 @@ const DEFAULT_MAX_BOXED_AGENTS = 300;
 const DEFAULT_MAX_SUBAGENT_HISTORY = 1000;
 const DEFAULT_MAX_TRAINING_EVENTS = 500;
 const DEFAULT_POKEMON_BOX_ID = 'box-default';
+const LEGACY_JOHTO_POKEDEX_MAX = 251;
 const PARTY_SIZE = 6;
 const TRAINING_TOKEN_DIVISOR = 50;
 const RECRUIT_POINT_COSTS_DISCOVERED = Object.freeze({ 1: 100, 2: 300, 3: 700, 4: 1000, 5: 2000 });
@@ -165,12 +166,72 @@ function pickBestAgentRecord(candidates, beforeTs) {
   return best;
 }
 
-function clampPokemonId(value) {
+function clampPokemonId(value, maxPokemonId = POKEDEX_MAX) {
   const pokemonId = Number(value);
-  if (!Number.isInteger(pokemonId) || pokemonId < POKEDEX_MIN || pokemonId > POKEDEX_MAX) {
+  const max = Math.max(POKEDEX_MIN, Math.min(POKEDEX_MAX, Number(maxPokemonId) || POKEDEX_MAX));
+  if (!Number.isInteger(pokemonId) || pokemonId < POKEDEX_MIN || pokemonId > max) {
     return null;
   }
   return pokemonId;
+}
+
+function normalizePokemonCatalogMax(value) {
+  const maxPokemonId = Number(value);
+  if (!Number.isInteger(maxPokemonId) || maxPokemonId < POKEDEX_MIN || maxPokemonId > POKEDEX_MAX) {
+    return null;
+  }
+  return maxPokemonId;
+}
+
+function assignedPokemonIdExistsInList(list) {
+  return Array.isArray(list) && list.some((entry) => !!(entry && clampPokemonId(entry.assignedPokemonId)));
+}
+
+function inferLegacyPokemonCatalogMax(data) {
+  const explicitMax = normalizePokemonCatalogMax(
+    data && (data.pokemonCatalogMax || data.pokedexMax || data.pokedexTotal || data.total)
+  );
+  if (explicitMax && explicitMax < POKEDEX_MAX) {
+    return explicitMax;
+  }
+  if (explicitMax) {
+    return null;
+  }
+
+  if (
+    assignedPokemonIdExistsInList(data && data.agents) ||
+    assignedPokemonIdExistsInList(data && data.boxedAgents) ||
+    assignedPokemonIdExistsInList(data && data.subagentHistory)
+  ) {
+    return null;
+  }
+
+  const seenIds = Array.isArray(data && data.seenPokemonIds)
+    ? data.seenPokemonIds.map((id) => Number(id)).filter((id) => Number.isInteger(id))
+    : [];
+  if (seenIds.length > 0 && seenIds.every((id) => id >= POKEDEX_MIN && id <= LEGACY_JOHTO_POKEDEX_MAX)) {
+    return LEGACY_JOHTO_POKEDEX_MAX;
+  }
+  return null;
+}
+
+function discoveryPokemonIdsByAgent(firstDiscoveryByPokemon) {
+  const byAgentId = new Map();
+  if (!firstDiscoveryByPokemon || typeof firstDiscoveryByPokemon !== 'object') {
+    return byAgentId;
+  }
+
+  for (const [rawPokemonId, rawInfo] of Object.entries(firstDiscoveryByPokemon)) {
+    const pokemonId = clampPokemonId(rawPokemonId);
+    if (!pokemonId || !rawInfo || typeof rawInfo !== 'object' || !rawInfo.agentId) {
+      continue;
+    }
+    const agentId = String(rawInfo.agentId);
+    if (!byAgentId.has(agentId)) {
+      byAgentId.set(agentId, pokemonId);
+    }
+  }
+  return byAgentId;
 }
 
 function recruitPointCostForSpecies(speciesId, discovered) {
@@ -321,7 +382,7 @@ class AgentState extends EventEmitter {
     this.suppressedSessions = new Set(); // sessionIds suppressed after hard-reset until USER_QUERY
   }
 
-  ensureAssignedPokemon(agent, meta = {}) {
+  ensureAssignedPokemon(agent, meta = {}, options = {}) {
     if (!agent || !agent.agentId || agent.parentId) {
       return;
     }
@@ -329,6 +390,13 @@ class AgentState extends EventEmitter {
     const existing = clampPokemonId(agent.assignedPokemonId);
     if (existing) {
       agent.assignedPokemonId = existing;
+      return;
+    }
+
+    const maxPokemonId = normalizePokemonCatalogMax(options.maxPokemonId) || POKEDEX_MAX;
+    const inferredPokemonId = clampPokemonId(options.inferredPokemonId, maxPokemonId);
+    if (inferredPokemonId) {
+      agent.assignedPokemonId = inferredPokemonId;
       return;
     }
 
@@ -343,8 +411,8 @@ class AgentState extends EventEmitter {
       });
     }
 
-    agent.assignedPokemonId = clampPokemonId(pokemonId) ||
-      getPokemonIdForAgent(agent.agentId, { areaId: this.explorationAreaId });
+    agent.assignedPokemonId = clampPokemonId(pokemonId, maxPokemonId) ||
+      getPokemonIdForAgent(agent.agentId, { areaId: this.explorationAreaId, maxPokemonId });
   }
 
   setExplorationArea(areaId) {
@@ -437,8 +505,9 @@ class AgentState extends EventEmitter {
     return changed;
   }
 
-  refreshSeenPokemonFromAgents() {
+  refreshSeenPokemonFromAgents(options = {}) {
     let changed = false;
+    const allowNewDiscoveries = options.allowNewDiscoveries !== false;
 
     for (const agent of this.agents.values()) {
       const pokemonId = this.resolvePokemonId ? this.resolvePokemonId(agent.agentId, {
@@ -450,7 +519,9 @@ class AgentState extends EventEmitter {
         changed = true;
         continue;
       }
-      changed = this.recordSeenPokemon(agent.agentId, agent.createdAt || Date.now(), {}, agent) || changed;
+      if (allowNewDiscoveries) {
+        changed = this.recordSeenPokemon(agent.agentId, agent.createdAt || Date.now(), {}, agent) || changed;
+      }
     }
     for (const agent of this.boxedAgents) {
       const pokemonId = this.resolvePokemonId ? this.resolvePokemonId(agent.agentId, {
@@ -462,7 +533,9 @@ class AgentState extends EventEmitter {
         changed = true;
         continue;
       }
-      changed = this.recordSeenPokemon(agent.agentId, agent.createdAt || Date.now(), {}, agent) || changed;
+      if (allowNewDiscoveries) {
+        changed = this.recordSeenPokemon(agent.agentId, agent.createdAt || Date.now(), {}, agent) || changed;
+      }
     }
 
     for (const agent of this.subagentHistory) {
@@ -475,7 +548,9 @@ class AgentState extends EventEmitter {
         changed = true;
         continue;
       }
-      changed = this.recordSeenPokemon(agent.agentId, agent.createdAt || Date.now(), {}, agent) || changed;
+      if (allowNewDiscoveries) {
+        changed = this.recordSeenPokemon(agent.agentId, agent.createdAt || Date.now(), {}, agent) || changed;
+      }
     }
 
     return changed;
@@ -964,7 +1039,8 @@ class AgentState extends EventEmitter {
     }
 
     const baseExp = Math.floor((Number(tokenDelta) || 0) / TRAINING_TOKEN_DIVISOR);
-    if (baseExp <= 0 || this.ownedPokemon.length === 0) {
+    const trainablePokemon = this.partyPokemon();
+    if (baseExp <= 0 || trainablePokemon.length === 0) {
       return false;
     }
 
@@ -974,7 +1050,7 @@ class AgentState extends EventEmitter {
       weights.set(id, (weights.get(id) || 0) + weight);
     };
 
-    for (const pokemon of this.ownedPokemon) {
+    for (const pokemon of trainablePokemon) {
       if (pokemon.assignedProjectId === agent.projectId) {
         addWeight(pokemon.id, 2);
       } else if (!pokemon.assignedProjectId) {
@@ -1119,7 +1195,7 @@ class AgentState extends EventEmitter {
     return { agent, created };
   }
 
-  addTokenUsage(agentId, tokens, rewardTokens) {
+  addTokenUsage(agentId, tokens, rewardTokens, options = {}) {
     const amount = Number(tokens);
     if (!Number.isFinite(amount) || amount <= 0) {
       return;
@@ -1131,8 +1207,9 @@ class AgentState extends EventEmitter {
     }
 
     agent.selfTokens = (agent.selfTokens || 0) + amount;
-    const trainingChanged = this.distributeTrainingExperience(agent, amount);
-    const pointGain = addEffectiveRewardTokens(this.evolutionItems, Math.floor(amount));
+    const replay = options.replay === true;
+    const trainingChanged = replay ? false : this.distributeTrainingExperience(agent, amount);
+    const pointGain = replay ? 0 : addEffectiveRewardTokens(this.evolutionItems, Math.floor(amount));
 
     let current = agent;
     let guard = 0;
@@ -1178,6 +1255,7 @@ class AgentState extends EventEmitter {
 
     const ts = typeof event.ts === 'number' ? event.ts : Date.now();
     const meta = event.meta || {};
+    const replay = meta.replay === true;
     if (meta.rateLimits) {
       const provider = normalizeProvider(meta.provider);
       this.rateLimits = meta.rateLimits;
@@ -1189,6 +1267,9 @@ class AgentState extends EventEmitter {
     if (this.suppressedSessions.size > 0) {
       const sid = meta.sessionId;
       if (sid && this.suppressedSessions.has(sid)) {
+        if (replay) {
+          return;
+        }
         if (event.type !== EVENT_TYPES.USER_QUERY) {
           return;
         }
@@ -1212,6 +1293,7 @@ class AgentState extends EventEmitter {
       if (boxIdx >= 0) {
         const boxed = this.boxedAgents[boxIdx];
         if (boxed.lifecycle === LIFECYCLE.BOXED) {
+          if (replay) return;
           if (event.type !== EVENT_TYPES.USER_QUERY) return;
           if (boxed.doneAt && ts <= boxed.doneAt) return;
         }
@@ -1339,7 +1421,9 @@ class AgentState extends EventEmitter {
         agent.activity = 'Outputting';
         agent.counters.outputs += 1;
         if (typeof meta.totalTokens === 'number' && meta.totalTokens > 0) {
-          this.addTokenUsage(agent.agentId, meta.totalTokens, meta.rewardTokens);
+          this.addTokenUsage(agent.agentId, meta.totalTokens, meta.rewardTokens, {
+            replay
+          });
         }
         break;
       case EVENT_TYPES.WAITING:
@@ -1391,7 +1475,7 @@ class AgentState extends EventEmitter {
 
     this.pushRecentEvent(event);
     this.lastUpdate = Date.now();
-    const pokedexChanged = this.recordSeenPokemon(event.agentId, ts, meta, agent);
+    const pokedexChanged = replay ? false : this.recordSeenPokemon(event.agentId, ts, meta, agent);
 
     if (pokedexChanged || agent.status !== previousStatus || created || event.type !== EVENT_TYPES.AGENT_SEEN) {
       this.emit('update', this.snapshot());
@@ -1746,6 +1830,7 @@ class AgentState extends EventEmitter {
     }
     return {
       version: 1,
+      pokemonCatalogMax: POKEDEX_MAX,
       savedAt: Date.now(),
       explorationAreaId: this.explorationAreaId,
       seenPokemonIds: Array.from(this.seenPokemonIds).sort((a, b) => a - b),
@@ -1767,6 +1852,12 @@ class AgentState extends EventEmitter {
     if (!data || data.version !== 1) return false;
 
     this.mergeSeenPokemonIds(data.seenPokemonIds, data.firstDiscoveryByPokemon);
+    const restorePokemonMax = inferLegacyPokemonCatalogMax(data);
+    const discoveryByAgentId = discoveryPokemonIdsByAgent(data.firstDiscoveryByPokemon);
+    const assignmentOptionsFor = (raw) => ({
+      maxPokemonId: restorePokemonMax,
+      inferredPokemonId: raw && raw.agentId ? discoveryByAgentId.get(String(raw.agentId)) : null
+    });
     this.explorationAreaId = normalizeAreaId(data.explorationAreaId);
     this.rateLimits = data.rateLimits || null;
     this.rateLimitsByProvider = cloneRateLimitsByProvider(data.rateLimitsByProvider);
@@ -1774,10 +1865,14 @@ class AgentState extends EventEmitter {
       this.rateLimitsByProvider.codex = this.rateLimits;
     }
     this.boxedAgents = Array.isArray(data.boxedAgents)
-      ? data.boxedAgents.map((b) => ({
-        ...(b.lifecycle ? b : { ...b, lifecycle: LIFECYCLE.BOXED }),
-        assignedPokemonId: clampPokemonId(b.assignedPokemonId)
-      }))
+      ? data.boxedAgents.map((b) => {
+        const restored = {
+          ...(b.lifecycle ? b : { ...b, lifecycle: LIFECYCLE.BOXED }),
+          assignedPokemonId: clampPokemonId(b.assignedPokemonId)
+        };
+        this.ensureAssignedPokemon(restored, b, assignmentOptionsFor(b));
+        return restored;
+      })
       : [];
     this.subagentHistory = Array.isArray(data.subagentHistory)
       ? data.subagentHistory.map((h) => ({
@@ -1826,12 +1921,14 @@ class AgentState extends EventEmitter {
     if (Array.isArray(data.agents)) {
       for (const raw of data.agents) {
         const agent = cloneAgentRecord(raw);
-        this.ensureAssignedPokemon(agent, raw);
+        this.ensureAssignedPokemon(agent, raw, assignmentOptionsFor(raw));
         this.agents.set(agent.agentId, agent);
       }
     }
 
-    this.refreshSeenPokemonFromAgents();
+    this.refreshSeenPokemonFromAgents({
+      allowNewDiscoveries: !(Array.isArray(data.seenPokemonIds) && data.seenPokemonIds.length > 0)
+    });
     this.lastUpdate = Date.now();
     return true;
   }

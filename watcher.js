@@ -11,6 +11,20 @@ const { normalizeLine: normalizeClaudeLine } = require('./parser');
 const DEFAULT_SCAN_INTERVAL_MS = 2500;
 const DEFAULT_INITIAL_READ_BYTES = 128 * 1024;
 
+function markReplayEvent(event, source) {
+  if (!event || typeof event !== 'object') {
+    return event;
+  }
+  return {
+    ...event,
+    meta: {
+      ...(event.meta || {}),
+      replay: true,
+      replaySource: source
+    }
+  };
+}
+
 class TranscriptWatcher extends EventEmitter {
   constructor(options = {}) {
     super();
@@ -332,8 +346,9 @@ class TranscriptWatcher extends EventEmitter {
         for (const event of events) {
           if (event.meta && event.meta.sessionDisplayName) {
             // Head scan sets the session name (first user message) only — not lastUserQuery.
-            delete event.meta.lastUserQuery;
-            this.emit('event', event);
+            const replayEvent = markReplayEvent(event, 'initial-head-scan');
+            delete replayEvent.meta.lastUserQuery;
+            this.emit('event', replayEvent);
             return;
           }
         }
@@ -375,8 +390,9 @@ class TranscriptWatcher extends EventEmitter {
         for (const event of events) {
           if (event.meta && event.meta.lastUserQuery) {
             // Tail scan sets lastUserQuery (last user message) only — not sessionDisplayName.
-            delete event.meta.sessionDisplayName;
-            this.emit('event', event);
+            const replayEvent = markReplayEvent(event, 'initial-tail-scan');
+            delete replayEvent.meta.sessionDisplayName;
+            this.emit('event', replayEvent);
             return;
           }
         }
@@ -478,8 +494,9 @@ class TranscriptWatcher extends EventEmitter {
         });
 
         for (const event of normalizedEvents) {
-          outEvents.push(event);
-          this.emit('event', event);
+          const emittedEvent = isPrime ? markReplayEvent(event, 'initial-tail') : event;
+          outEvents.push(emittedEvent);
+          this.emit('event', emittedEvent);
         }
       }
 

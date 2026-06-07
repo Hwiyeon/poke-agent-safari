@@ -123,10 +123,20 @@ function getPokemonIdForAgent(agentId, options = {}) {
   }
 
   const catalog = loadPokemonCatalog();
+  const maxPokemonId = Number(options.maxPokemonId);
   const areaId = normalizeAreaId(options.areaId);
-  const pool = areaId !== 'all' && catalog.areaWeightedPools[areaId] && catalog.areaWeightedPools[areaId].length > 0
+  let pool = areaId !== 'all' && catalog.areaWeightedPools[areaId] && catalog.areaWeightedPools[areaId].length > 0
     ? catalog.areaWeightedPools[areaId]
     : catalog.weightedPool;
+  if (Number.isInteger(maxPokemonId) && maxPokemonId >= POKEDEX_MIN && maxPokemonId < POKEDEX_MAX) {
+    pool = pool.filter((pokemonId) => pokemonId <= maxPokemonId);
+    if (pool.length === 0) {
+      pool = [];
+      for (let pokemonId = POKEDEX_MIN; pokemonId <= maxPokemonId; pokemonId += 1) {
+        pool.push(pokemonId);
+      }
+    }
+  }
   const index = hashCode(String(agentId)) % pool.length;
   return pool[index];
 }

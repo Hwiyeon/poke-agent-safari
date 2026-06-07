@@ -271,6 +271,7 @@ function savePokedex(state, persist) {
     const pokedex = state.pokedexSnapshot();
     const data = {
       version: 1,
+      pokemonCatalogMax: POKEDEX_MAX,
       updatedAt: Date.now(),
       seenPokemonIds: pokedex.seenPokemonIds,
       firstDiscoveryByPokemon: pokedex.firstDiscoveryByPokemon,

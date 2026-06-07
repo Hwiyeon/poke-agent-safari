@@ -73,6 +73,87 @@ test('state restore backfills discovered pokemon from restored agents', () => {
   assert.equal(state.snapshot().pokedex.firstDiscoveryByPokemon[7].agentId, 'live-agent');
 });
 
+test('state restore does not expand legacy pokedex progress with current catalog ids', () => {
+  const state = new AgentState({
+    resolvePokemonId() {
+      return 500;
+    }
+  });
+
+  const restored = state.restore({
+    version: 1,
+    savedAt: 100,
+    seenPokemonIds: [25],
+    firstDiscoveryByPokemon: {
+      25: {
+        agentId: 'legacy-root',
+        agentName: 'Legacy Root',
+        projectId: 'proj-a',
+        sessionId: 'sess-a',
+        discoveredAt: 90
+      }
+    },
+    agents: [],
+    boxedAgents: [
+      {
+        agentId: 'legacy-root',
+        projectId: 'proj-a',
+        sessionId: 'sess-a',
+        parentId: null,
+        createdAt: 10,
+        doneAt: 20,
+        counters: {}
+      },
+      {
+        agentId: 'legacy-other',
+        projectId: 'proj-a',
+        sessionId: 'sess-b',
+        parentId: null,
+        createdAt: 30,
+        doneAt: 40,
+        counters: {}
+      }
+    ],
+    subagentHistory: [
+      {
+        agentId: 'legacy-child',
+        projectId: 'proj-a',
+        sessionId: 'sess-a',
+        parentId: 'legacy-root',
+        createdAt: 15,
+        doneAt: 18,
+        counters: {}
+      }
+    ]
+  });
+
+  const snapshot = state.snapshot();
+  const legacyRoot = snapshot.boxedAgents.find((agent) => agent.agentId === 'legacy-root');
+  const legacyOther = snapshot.boxedAgents.find((agent) => agent.agentId === 'legacy-other');
+
+  assert.equal(restored, true);
+  assert.deepEqual(snapshot.pokedex.seenPokemonIds, [25]);
+  assert.equal(legacyRoot.assignedPokemonId, 25);
+  assert.ok(legacyOther.assignedPokemonId >= 1 && legacyOther.assignedPokemonId <= 251);
+});
+
+test('replayed transcript events do not create pokedex discoveries', () => {
+  const state = new AgentState({
+    resolvePokemonId() {
+      return 500;
+    }
+  });
+
+  state.applyEvent({
+    type: EVENT_TYPES.AGENT_SEEN,
+    agentId: 'historical-agent',
+    ts: 10,
+    meta: { projectId: 'proj-a', sessionId: 'sess-a', replay: true }
+  });
+
+  assert.deepEqual(state.snapshot().pokedex.seenPokemonIds, []);
+});
+
 test('state reset clears agents, boxed entries, and pokedex progress', () => {
   const state = new AgentState({
     resolvePokemonId(agentId) {

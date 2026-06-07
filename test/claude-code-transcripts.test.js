@@ -217,6 +217,7 @@ test('watcher hard reset re-primes to EOF without replaying prior transcript lin
 
   const initialEventCount = seenEvents.length;
   assert.equal(initialEventCount, 2);
+  assert.ok(seenEvents.slice(0, initialEventCount).every((event) => event.meta.replay === true));
 
   await watcher.resetToCurrentEnd();
   await new Promise((resolve) => setTimeout(resolve, 25));
@@ -239,6 +240,7 @@ test('watcher hard reset re-primes to EOF without replaying prior transcript lin
 
   assert.equal(seenEvents.length, initialEventCount + 2);
   assert.equal(seenEvents[seenEvents.length - 1].meta.totalTokens, 230);
+  assert.equal(seenEvents[seenEvents.length - 1].meta.replay, undefined);
 
   await watcher.stop();
 });

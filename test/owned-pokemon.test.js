@@ -147,6 +147,42 @@ test('project training grants usage exp to assigned pokemon and party', () => {
   assert.equal(state.snapshot().trainingEvents.length, 3);
 });
 
+test('project training does not grant usage exp to boxed pokemon', () => {
+  const state = createState({ worker: 25 });
+  state.mergeSeenPokemonIds([1, 4, 7, 25, 52, 54, 133, 194]);
+
+  const party = [1, 4, 7, 25, 52, 54].map((speciesId) => (
+    state.adoptOwnedPokemon({ speciesId }).pokemon
+  ));
+  const boxedUnassigned = state.adoptOwnedPokemon({ speciesId: 133 }).pokemon;
+  const boxedAssigned = state.adoptOwnedPokemon({ speciesId: 194 }).pokemon;
+
+  assert.equal(boxedUnassigned.partySlot, null);
+  assert.equal(boxedAssigned.partySlot, null);
+  state.assignProjectTraining(boxedAssigned.id, 'project-a');
+  state.applyEvent({
+    type: EVENT_TYPES.AGENT_SEEN,
+    agentId: 'worker',
+    ts: 20,
+    meta: { projectId: 'project-a', sessionId: 'session-a' }
+  });
+  state.applyEvent({
+    type: EVENT_TYPES.ASSISTANT_OUTPUT,
+    agentId: 'worker',
+    ts: 21,
+    meta: { totalTokens: 100000 }
+  });
+
+  const byId = new Map(state.snapshot().ownedPokemon.map((pokemon) => [pokemon.id, pokemon]));
+  assert.equal(byId.get(boxedUnassigned.id).totalTrainingExp, 0);
+  assert.equal(byId.get(boxedAssigned.id).totalTrainingExp, 0);
+  assert.equal(
+    party.reduce((sum, pokemon) => sum + byId.get(pokemon.id).totalTrainingExp, 0),
+    2000
+  );
+  assert.equal(state.snapshot().trainingEvents.length, 6);
+});
+
 test('project training weights assigned pokemon above unassigned pokemon', () => {
   const state = createState({ worker: 25 });
   state.mergeSeenPokemonIds([1, 4, 7, 25]);
@@ -219,6 +255,35 @@ test('total tokens accrue evolution item points', () => {
   assert.equal(snapshot.evolutionItems.itemPoints, 70);
   assert.equal(snapshot.evolutionItems.rewardTokenRemainder, 0);
   assert.equal(snapshot.evolutionItems.tokenPerItemPoint, 10000);
+});
+
+test('initial replay token events do not accrue item points or training exp', () => {
+  const state = createState({ worker: 25 });
+  state.mergeSeenPokemonIds([25]);
+  const pikachu = state.adoptOwnedPokemon({ speciesId: 25 }).pokemon;
+  state.evolutionItems.itemPoints = 0;
+  state.evolutionItems.rewardTokenRemainder = 0;
+
+  state.applyEvent({
+    type: EVENT_TYPES.AGENT_SEEN,
+    agentId: 'worker',
+    ts: 20,
+    meta: { projectId: 'project-a', sessionId: 'session-a' }
+  });
+  state.applyEvent({
+    type: EVENT_TYPES.ASSISTANT_OUTPUT,
+    agentId: 'worker',
+    ts: 21,
+    meta: { totalTokens: 700000, replay: true }
+  });
+
+  const snapshot = state.snapshot();
+  const restoredPikachu = snapshot.ownedPokemon.find((pokemon) => pokemon.id === pikachu.id);
+  assert.equal(snapshot.agents[0].totalTokens, 700000);
+  assert.equal(snapshot.evolutionItems.itemPoints, 0);
+  assert.equal(snapshot.evolutionItems.rewardTokenRemainder, 0);
+  assert.equal(restoredPikachu.totalTrainingExp, 0);
+  assert.equal(snapshot.trainingEvents.length, 0);
 });
 
 test('evolution item draw table uses v2 weights', () => {
