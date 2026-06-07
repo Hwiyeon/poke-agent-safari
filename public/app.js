@@ -43,6 +43,489 @@
     } catch (_) {}
   }
 
+  let activeUiLanguage = readStoredLanguage();
+
+  const UI_TEXT = {
+    en: {
+      tagline: 'Live local activity from Claude Code and Codex transcripts',
+      uiLanguage: 'UI language',
+      uiLanguageEnglish: 'UI language: English',
+      uiLanguageKorean: 'UI language: Korean',
+      pokedex: 'Pokedex',
+      pokedexTitle: 'Safari Pokedex',
+      promoStudio: 'Promo Studio',
+      promoStudioSubtitle: 'Custom scene builder',
+      hardReset: 'Hard Reset',
+      dashboardInfo: 'Dashboard info',
+      active: 'Active',
+      lastUpdate: 'Last Update',
+      tokensUsed: 'Tokens Used',
+      area: 'Area',
+      allAreas: 'All Areas',
+      unknownArea: 'Unknown Area',
+      pokedexSort: 'Pokedex sort',
+      pokedexSortNumber: 'Number',
+      pokedexSortArea: 'Area',
+      pokedexSortRarity: 'Rarity',
+      selectedArea: 'selected area',
+      agentsOutsideArea: 'Agents outside {area}',
+      myPokemon: 'My Pokemon',
+      openMyPokemonDetails: 'Open My Pokemon details',
+      myPokemonParty: 'My Pokemon party',
+      ownedShort: '{count} owned',
+      ownedPokemonCount: '{count} owned Pokemon',
+      agents: 'Agents',
+      noAgentsYet: 'No agents yet.',
+      safariLog: 'Safari Log',
+      viewAll: 'View All',
+      close: 'Close',
+      back: 'Back',
+      useCustomScene: 'Use custom scene',
+      addRoot: 'Add Root',
+      reset: 'Reset',
+      downloadPng: 'Download PNG',
+      buildPromoScene: 'Build a custom promo-ready scene in mock mode.',
+      party: 'Party',
+      inventory: 'Inventory',
+      itemRules: 'Item Rules',
+      evolutionItemWallet: 'Evolution item wallet',
+      itemPointProgress: 'Item point progress',
+      points: 'Points',
+      draw: 'Draw',
+      target: 'Target',
+      tickets: 'Tickets',
+      sell: 'Sell',
+      nextPoint: 'Next point',
+      claimTarget: 'Claim Target',
+      pokemonBox: 'Pokemon Box',
+      recruitPokemon: 'Recruit Pokemon',
+      recruit: 'Recruit',
+      recruitView: 'Recruit view',
+      available: 'Available',
+      action: 'Action',
+      confirm: 'Confirm',
+      yes: 'Yes',
+      no: 'No',
+      ok: 'OK',
+      item: 'Item',
+      currentPoints: 'Current points',
+      plannedSpend: 'Planned spend',
+      afterRecruit: 'After recruit',
+      pokedexRegistered: 'Pokedex registered',
+      newPokedexEntry: 'New Pokedex entry',
+      before: 'Before',
+      after: 'After',
+      consumes: 'Consumes',
+      actionFailed: 'Action failed.',
+      itemRulesPoints: '{tokens} total tokens = 1 point. Cached input tokens count.',
+      itemRulesDraw: 'Costs {cost} pts. Success rate is 30%.',
+      itemRulesTarget: 'Successful draws have a 15% chance to hit the selected target item.',
+      itemRulesTickets: 'If a successful targeted draw misses the target, target ticket +1. Spend {cost} tickets to claim the target.',
+      itemRulesSell: 'Sell gives +{value} pts. Point buying is disabled.',
+      noTarget: 'No target',
+      noEvolutionItems: 'No evolution items available.',
+      noDiscoveredPokemon: 'No discovered Pokemon available yet.',
+      emptyPartySlot: 'Empty party slot',
+      emptyPartySpot: 'Empty party spot',
+      noBoxedPokemon: 'No boxed Pokemon yet.',
+      itemCount: '{count} items',
+      dragToArrange: 'Drag to arrange',
+      boxedCount: '{count} boxed',
+      discoveredCount: '{count} / {total} discovered',
+      availableCount: '{count} available',
+      availablePokedexCount: '{count} / {total} available',
+      seen: 'seen',
+      newEntryShort: 'new',
+      need: 'Need',
+      spent: 'Spent',
+      recruitCost: 'Recruit cost',
+      drawResult: 'Draw Result',
+      itemResult: 'Item Result',
+      buyResult: 'Buy Result',
+      claimResult: 'Claim Result',
+      sellResult: 'Sell Result',
+      evolutionResult: 'Evolution Result',
+      recruitResult: 'Recruit Result',
+      drawRequestSent: 'Draw request was sent.',
+      requestSent: 'Request was sent.',
+      noItemThisTime: 'No item this time.',
+      youDrewItem: 'You drew {item}.',
+      boughtItem: 'Bought {item}.',
+      claimedItem: 'Claimed {item}.',
+      soldItem: 'Sold {item}. +{value} pts gained.',
+      evolutionRequestSent: 'Evolution request was sent.',
+      evolvedInto: '{from} evolved into {to}.',
+      evolved: '{from} evolved.',
+      recruitPrompt: 'Recruit {pokemon} for {cost} pts?',
+      recruitSpawnPrompt: 'Recruit {pokemon} (spawns in {area}) for {cost} pts?',
+      recruitedPokemon: 'Recruited {pokemon}.',
+      sellPrompt: 'Sell {item} for +{value} pts?',
+      claimPrompt: 'Claim {item} for {cost} tickets?',
+      evolvePrompt: 'Evolve {from} into {to}?',
+      selectedEvolution: 'the selected evolution',
+      releasePrompt: 'Release {pokemon} from My Pokemon?',
+      thisPokemon: 'this Pokemon',
+      nicknamePrompt: 'Pokemon nickname',
+      hardResetPrompt: 'Reset {mode}{source} state, safari log, My Pokemon, evolution items, and discovered Pokedex progress?',
+      promoResetPrompt: 'Reset the custom promo scene to the default starter setup?',
+      hardResetFailed: 'hard reset failed: {status}',
+      failedToLoadState: 'Failed to load state: {message}',
+      noSafariRecords: 'No safari log records yet.',
+      safariRecords: '{count} safari records',
+      subagentHistory: 'Sub-agent History',
+      noSubhistory: 'No boxed sub-agent history yet.',
+      records: '{count} records',
+      oneRecord: '1 record',
+      parent: 'Parent',
+      depth: 'Depth',
+      live: 'Live',
+      finished: 'Finished',
+      tokens: 'Tokens',
+      tools: 'Tools',
+      started: 'Started',
+      ended: 'Ended',
+      lastSeen: 'Last seen',
+      duration: 'Duration',
+      project: 'Project',
+      session: 'Session',
+      lastCommand: 'Last command',
+      lastActivity: 'Last Activity',
+      lastTool: 'Last tool',
+      toolsRun: 'Tools run',
+      context: 'Context',
+      visibleSubs: 'Visible subs',
+      subagents: 'Sub-agents',
+      subHistory: 'Sub history',
+      openSubagentHistory: 'Open Sub-agent History',
+      lastQuery: 'Last query',
+      show: 'Show',
+      hide: 'Hide',
+      showSubagentHierarchy: 'Show sub-agent hierarchy',
+      hideSubagentHierarchy: 'Hide sub-agent hierarchy',
+      agentInfo: 'Agent Info',
+      archiveInfo: 'Archive Info',
+      trainerMemo: 'Trainer Memo',
+      metInProjectAt: 'Met in {project} at {time}.',
+      totalToken: 'Total token',
+      type: 'Type',
+      name: 'Name',
+      model: 'Model',
+      uptime: 'Uptime',
+      id: 'ID',
+      archive: 'Archive',
+      restore: 'Restore',
+      manuallyArchived: 'Manually archived - restores on next query',
+      alreadyAdopted: 'Already adopted into My Pokemon',
+      endedAt: 'Ended {time}',
+      durationValue: 'Duration {duration}',
+      subHistoryCount: 'Sub-history ({count})',
+      recruitForPts: 'Recruit for {cost} pts',
+      needPtsToRecruit: 'Need {cost} pts to recruit',
+      adoptButton: 'Adopt ({cost} pts)',
+      noProject: 'No project',
+      unassigned: 'unassigned',
+      training: 'Training',
+      fromProject: 'From {project}',
+      boxed: 'Boxed',
+      box: 'Box',
+      release: 'Release',
+      holdEvo: 'Hold Evo',
+      allowEvo: 'Allow Evo',
+      evolve: 'Evolve',
+      canEvolve: 'Can evolve',
+      needsItem: 'Needs {item}',
+      evolvesAtLevel: 'Evolves at Lv.{level}',
+      pathsReady: '{count} paths ready',
+      evolutionPaths: '{count} evolution paths',
+      promoSummary: '{roots} root agent{rootPlural}, {subagents} sub-agent{subPlural}, {boxed} boxed.',
+      noPromoAgents: 'No custom agents yet. Add a root Pokemon to start composing a promo scene.',
+      rootAgent: 'Root Agent {count}',
+      subagent: 'Sub-agent {count}',
+      remove: 'Remove',
+      pokemon: 'Pokemon',
+      level: 'Level',
+      status: 'Status',
+      expTokenAuto: 'Token total updates automatically.',
+      expConverted: 'EXP is converted into token totals.',
+      configured: '{count} configured',
+      addSubagent: 'Add Sub-agent',
+      rootAgentLabel: 'Root Agent',
+      subagentLabel: 'Sub-agent',
+      unknown: 'Unknown',
+      noRecord: 'No record',
+      rateNoData: '{provider} {period}: no data',
+      rateRemaining: '{provider} {period}: {remaining}% remaining',
+      rateLeft: '{time} left',
+      rateResets: 'resets {time}',
+      codexBudget: 'Codex Budget',
+      claudeBudget: 'Claude Budget',
+      budget: 'Budget',
+      spawnArea: 'Spawn area: {area}',
+      outsideSelectedArea: 'selected area',
+      statusIdle: 'Idle',
+      statusThinking: 'Thinking',
+      statusToolRunning: 'Tool-Running',
+      statusOutputting: 'Outputting',
+      statusWaiting: 'Waiting',
+      statusSleeping: 'Sleeping',
+      statusArchived: 'Archived'
+    },
+    ko: {
+      tagline: 'Claude Code와 Codex transcript의 로컬 활동을 실시간으로 보여줍니다',
+      uiLanguage: 'UI 언어',
+      uiLanguageEnglish: 'UI 언어: 영어',
+      uiLanguageKorean: 'UI 언어: 한국어',
+      pokedex: '도감',
+      pokedexTitle: 'Safari 도감',
+      promoStudio: 'Promo Studio',
+      promoStudioSubtitle: '커스텀 장면 빌더',
+      hardReset: '전체 초기화',
+      dashboardInfo: '대시보드 정보',
+      active: 'Active',
+      lastUpdate: '마지막 업데이트',
+      tokensUsed: '사용 토큰',
+      area: '지역',
+      allAreas: '전체 지역',
+      unknownArea: '미확인 지역',
+      pokedexSort: '도감 정렬',
+      pokedexSortNumber: '번호순',
+      pokedexSortArea: '지역순',
+      pokedexSortRarity: '레어도 순',
+      selectedArea: '선택 지역',
+      agentsOutsideArea: 'Agents outside {area}',
+      myPokemon: '내 포켓몬',
+      openMyPokemonDetails: '내 포켓몬 상세 열기',
+      myPokemonParty: '내 포켓몬 파티',
+      ownedShort: '{count} 보유',
+      ownedPokemonCount: '내 포켓몬 {count}마리',
+      agents: 'Agents',
+      noAgentsYet: 'No agents yet.',
+      safariLog: '만난 포켓몬',
+      viewAll: '전체 보기',
+      close: '닫기',
+      back: '뒤로',
+      useCustomScene: '커스텀 장면 사용',
+      addRoot: '루트 추가',
+      reset: '초기화',
+      downloadPng: 'PNG 다운로드',
+      buildPromoScene: 'Mock 모드에서 배포용 장면을 구성합니다.',
+      party: '파티',
+      inventory: '인벤토리',
+      itemRules: '아이템 규칙',
+      evolutionItemWallet: '진화 아이템 지갑',
+      itemPointProgress: '아이템 포인트 진행도',
+      points: '포인트',
+      draw: '뽑기',
+      target: '타깃',
+      tickets: '티켓',
+      sell: '판매',
+      nextPoint: '다음 포인트',
+      claimTarget: '타깃 확정',
+      pokemonBox: '포켓몬 박스',
+      recruitPokemon: '포켓몬 영입',
+      recruit: '영입',
+      recruitView: '영입 보기',
+      available: '영입 가능',
+      action: '작업',
+      confirm: '확인',
+      yes: '예',
+      no: '아니오',
+      ok: '확인',
+      item: '아이템',
+      currentPoints: '현재 포인트',
+      plannedSpend: '소모 예정',
+      afterRecruit: '사용 후 예상',
+      pokedexRegistered: '도감 등록됨',
+      newPokedexEntry: '도감 신규 등록',
+      before: '진화 전',
+      after: '진화 후',
+      consumes: '소모',
+      actionFailed: '작업에 실패했습니다.',
+      itemRulesPoints: '{tokens} total tokens마다 1 point를 얻습니다. 캐시된 입력 토큰도 포함됩니다.',
+      itemRulesDraw: '{cost} pts를 사용합니다. 성공률은 30%입니다.',
+      itemRulesTarget: '뽑기 성공 시 선택한 타깃 아이템이 나올 확률은 15%입니다.',
+      itemRulesTickets: '타깃 뽑기에 성공했지만 타깃이 아니면 티켓 +1. {cost} tickets로 타깃을 확정 획득합니다.',
+      itemRulesSell: '판매하면 +{value} pts를 얻습니다. 일반 포인트 구매는 비활성화되어 있습니다.',
+      noTarget: '타깃 없음',
+      noEvolutionItems: '사용 가능한 진화 아이템이 없습니다.',
+      noDiscoveredPokemon: '아직 영입 가능한 발견 포켓몬이 없습니다.',
+      emptyPartySlot: '빈 파티 슬롯',
+      emptyPartySpot: '빈 파티 자리',
+      noBoxedPokemon: '박스에 보관된 포켓몬이 없습니다.',
+      itemCount: '{count}개 아이템',
+      dragToArrange: '드래그해서 정렬',
+      boxedCount: '박스 {count}마리',
+      discoveredCount: '{count} / {total} 발견',
+      availableCount: '{count}마리 가능',
+      availablePokedexCount: '{count} / {total} 가능',
+      seen: '만남',
+      newEntryShort: '신규',
+      need: '필요',
+      spent: '사용',
+      recruitCost: '영입 비용',
+      drawResult: '뽑기 결과',
+      itemResult: '아이템 결과',
+      buyResult: '구매 결과',
+      claimResult: '확정 획득 결과',
+      sellResult: '판매 결과',
+      evolutionResult: '진화 결과',
+      recruitResult: '영입 결과',
+      drawRequestSent: '뽑기 요청을 보냈습니다.',
+      requestSent: '요청을 보냈습니다.',
+      noItemThisTime: '이번에는 아이템이 나오지 않았습니다.',
+      youDrewItem: '{item} 획득!',
+      boughtItem: '{item} 구매 완료.',
+      claimedItem: '{item} 확정 획득 완료.',
+      soldItem: '{item} 판매 완료. +{value} pts 획득.',
+      evolutionRequestSent: '진화 요청을 보냈습니다.',
+      evolvedInto: '{from} -> {to} 진화 완료.',
+      evolved: '{from} 진화 완료.',
+      recruitPrompt: '{pokemon}을(를) {cost} pts로 영입할까요?',
+      recruitSpawnPrompt: '{pokemon} ({area} 출현)을(를) {cost} pts로 영입할까요?',
+      recruitedPokemon: '{pokemon} 영입 완료.',
+      sellPrompt: '{item}을(를) 판매하고 +{value} pts를 받을까요?',
+      claimPrompt: '{item}을(를) {cost} tickets로 확정 획득할까요?',
+      evolvePrompt: '{from}을(를) {to}(으)로 진화할까요?',
+      selectedEvolution: '선택한 진화',
+      releasePrompt: '{pokemon}을(를) 내 포켓몬에서 방생할까요?',
+      thisPokemon: '이 포켓몬',
+      nicknamePrompt: '포켓몬 닉네임',
+      hardResetPrompt: '{mode}{source} 상태, 만난 포켓몬, 내 포켓몬, 진화 아이템, 도감 진행도를 초기화할까요?',
+      promoResetPrompt: '커스텀 Promo Studio 장면을 기본 스타터 구성으로 초기화할까요?',
+      hardResetFailed: '전체 초기화 실패: {status}',
+      failedToLoadState: '상태를 불러오지 못했습니다: {message}',
+      noSafariRecords: '아직 만난 포켓몬 기록이 없습니다.',
+      safariRecords: '만난 포켓몬 기록 {count}개',
+      subagentHistory: 'Sub-agent History',
+      noSubhistory: 'No boxed sub-agent history yet.',
+      records: '{count} records',
+      oneRecord: '1 record',
+      parent: 'Parent',
+      depth: 'Depth',
+      live: 'Live',
+      finished: 'Finished',
+      tokens: 'Tokens',
+      tools: 'Tools',
+      started: 'Started',
+      ended: 'Ended',
+      lastSeen: 'Last seen',
+      duration: 'Duration',
+      project: 'Project',
+      session: 'Session',
+      lastCommand: 'Last command',
+      lastActivity: 'Last Activity',
+      lastTool: 'Last tool',
+      toolsRun: 'Tools run',
+      context: 'Context',
+      visibleSubs: 'Visible subs',
+      subagents: 'Sub-agents',
+      subHistory: 'Sub history',
+      openSubagentHistory: 'Open Sub-agent History',
+      lastQuery: 'Last query',
+      show: 'Show',
+      hide: 'Hide',
+      showSubagentHierarchy: 'Show sub-agent hierarchy',
+      hideSubagentHierarchy: 'Hide sub-agent hierarchy',
+      agentInfo: 'Agent Info',
+      archiveInfo: 'Archive Info',
+      trainerMemo: 'Trainer Memo',
+      metInProjectAt: 'Met in {project} at {time}.',
+      totalToken: 'Total token',
+      type: 'Type',
+      name: '이름',
+      model: 'Model',
+      uptime: 'Uptime',
+      id: 'ID',
+      archive: 'Archive',
+      restore: 'Restore',
+      manuallyArchived: 'Manually archived - restores on next query',
+      alreadyAdopted: '이미 내 포켓몬으로 영입됨',
+      endedAt: 'Ended {time}',
+      durationValue: 'Duration {duration}',
+      subHistoryCount: 'Sub-history ({count})',
+      recruitForPts: 'Recruit for {cost} pts',
+      needPtsToRecruit: 'Need {cost} pts to recruit',
+      adoptButton: '영입 ({cost} pts)',
+      noProject: 'No project',
+      unassigned: 'unassigned',
+      training: '훈련',
+      fromProject: '{project}에서 만남',
+      boxed: '박스',
+      box: '박스',
+      release: '방생',
+      holdEvo: '진화 보류',
+      allowEvo: '진화 허용',
+      evolve: '진화',
+      canEvolve: '진화 가능',
+      needsItem: '{item} 필요',
+      evolvesAtLevel: 'Lv.{level}에 진화',
+      pathsReady: '{count}개 경로 준비됨',
+      evolutionPaths: '진화 경로 {count}개',
+      promoSummary: '{roots} root agent{rootPlural}, {subagents} sub-agent{subPlural}, {boxed} boxed.',
+      noPromoAgents: 'No custom agents yet. Add a root Pokemon to start composing a promo scene.',
+      rootAgent: 'Root Agent {count}',
+      subagent: 'Sub-agent {count}',
+      remove: 'Remove',
+      pokemon: '포켓몬',
+      level: '레벨',
+      status: 'Status',
+      expTokenAuto: '토큰 합계가 자동으로 업데이트됩니다.',
+      expConverted: 'EXP는 토큰 합계로 변환됩니다.',
+      configured: '{count} configured',
+      addSubagent: 'Sub-agent 추가',
+      rootAgentLabel: 'Root Agent',
+      subagentLabel: 'Sub-agent',
+      unknown: '미확인',
+      noRecord: 'No record',
+      rateNoData: '{provider} {period}: 데이터 없음',
+      rateRemaining: '{provider} {period}: {remaining}% 남음',
+      rateLeft: '{time} 남음',
+      rateResets: '{time} 리셋',
+      codexBudget: 'Codex Budget',
+      claudeBudget: 'Claude Budget',
+      budget: 'Budget',
+      spawnArea: '출현 지역: {area}',
+      outsideSelectedArea: '선택 지역',
+      statusIdle: 'Idle',
+      statusThinking: 'Thinking',
+      statusToolRunning: 'Tool-Running',
+      statusOutputting: 'Outputting',
+      statusWaiting: 'Waiting',
+      statusSleeping: 'Sleeping',
+      statusArchived: 'Archived'
+    }
+  };
+
+  function currentLanguage() {
+    return activeUiLanguage === 'ko' ? 'ko' : 'en';
+  }
+
+  function t(key, params) {
+    var lang = currentLanguage();
+    var dict = UI_TEXT[lang] || UI_TEXT.en;
+    var text = Object.prototype.hasOwnProperty.call(dict, key) ? dict[key] : UI_TEXT.en[key];
+    if (text === undefined) return key;
+    return String(text).replace(/\{([a-zA-Z0-9_]+)\}/g, function (_, name) {
+      return params && params[name] !== undefined ? String(params[name]) : '';
+    });
+  }
+
+  function applyStaticTranslations(root) {
+    var host = root || document;
+    var textNodes = host.querySelectorAll('[data-i18n]');
+    Array.prototype.forEach.call(textNodes, function (node) {
+      node.textContent = t(node.getAttribute('data-i18n'));
+    });
+    var ariaNodes = host.querySelectorAll('[data-i18n-aria]');
+    Array.prototype.forEach.call(ariaNodes, function (node) {
+      node.setAttribute('aria-label', t(node.getAttribute('data-i18n-aria')));
+    });
+    var titleNodes = host.querySelectorAll('[data-i18n-title]');
+    Array.prototype.forEach.call(titleNodes, function (node) {
+      node.setAttribute('title', t(node.getAttribute('data-i18n-title')));
+    });
+  }
+
   let vscodeRequestSeq = 0;
   const vscodePendingRequests = {};
 
@@ -451,6 +934,7 @@
   const ownedRecruitPokedexEl = document.getElementById('owned-recruit-pokedex');
   const ownedRecruitSummaryEl = document.getElementById('owned-recruit-summary');
   const ownedRecruitGridEl = document.getElementById('owned-recruit-grid');
+  const ownedCurrentPointsEl = document.getElementById('owned-current-points');
   const ownedProgressEl = document.getElementById('owned-progress');
   const ownedModalEl = document.getElementById('owned-modal');
   const ownedBackdropEl = document.getElementById('owned-backdrop');
@@ -490,6 +974,7 @@
   const pokedexCloseEl = document.getElementById('pokedex-close');
   const pokedexSummaryEl = document.getElementById('pokedex-summary');
   const pokedexGridEl = document.getElementById('pokedex-grid');
+  const pokedexSortEl = document.getElementById('pokedex-sort');
   const pokedexLangButtonEl = document.getElementById('pokedex-lang-button');
   const pokedexLangOptionsEl = document.getElementById('pokedex-lang-options');
   const rateLimitsWrapEl = document.getElementById('rate-limits-wrap');
@@ -506,7 +991,8 @@
     boxHistoryOpen: false,
     subhistoryOpen: false,
     subhistoryParentId: null,
-    pokedexLanguage: readStoredLanguage(),
+    pokedexSort: 'number',
+    pokedexLanguage: activeUiLanguage,
     pokedexLanguageMenuOpen: false,
     collapsedSubtrees: {},
     promoStudioOpen: false,
@@ -519,6 +1005,70 @@
       if (AREA_DEFS[i].id === areaId) return AREA_DEFS[i];
     }
     return null;
+  }
+
+  function areaLabelKo(areaId) {
+    return {
+      mountain: '\uc0b0\uc545',
+      cave: '\ub3d9\uad74',
+      forest: '\uc232',
+      ruin: '\uc720\uc801',
+      rough_terrain: '\ud5d8\uc9c0',
+      grassland: '\ucd08\uc6d0',
+      urban: '\ub3c4\uc2dc',
+      waters_edge: '\ubb3c\uac00',
+      sea: '\ubc14\ub2e4'
+    }[areaId] || null;
+  }
+
+  function localizedUnknownAreaLabel() {
+    return t('unknownArea');
+  }
+
+  function localizedAllAreasLabel() {
+    return t('allAreas');
+  }
+
+  function localizedAreaLabel(areaOrId) {
+    var area = null;
+    if (typeof areaOrId === 'number') {
+      area = AREA_DEFS[areaOrId] || AREAS[areaOrId] || null;
+    } else if (typeof areaOrId === 'string') {
+      area = areaDefById(areaOrId);
+    } else {
+      area = areaOrId || null;
+    }
+    if (!area) return localizedUnknownAreaLabel();
+    if (uiState.pokedexLanguage === 'ko') {
+      return areaLabelKo(area.id) || area.label || localizedUnknownAreaLabel();
+    }
+    return area.label || localizedUnknownAreaLabel();
+  }
+
+  function localizedAreaControlLabel() {
+    return t('area');
+  }
+
+  function localizedOutsideAreaLabel(area) {
+    var areaName = area ? localizedAreaLabel(area) : t('outsideSelectedArea');
+    return t('agentsOutsideArea', { area: areaName });
+  }
+
+  function localizedStatusText(status) {
+    var normalized = String(status || 'Idle').toLowerCase().replace(/[_\s]+/g, '-');
+    if (normalized === 'idle') return t('statusIdle');
+    if (normalized === 'thinking') return t('statusThinking');
+    if (normalized === 'tool' || normalized === 'tool-running' || normalized === 'tool-use' || normalized === 'tooling') return t('statusToolRunning');
+    if (normalized === 'outputting') return t('statusOutputting');
+    if (normalized === 'waiting') return t('statusWaiting');
+    if (normalized === 'sleeping') return t('statusSleeping');
+    if (normalized === 'archived') return t('statusArchived');
+    return String(status || t('statusIdle'));
+  }
+
+  function formatSecondsAgo(seconds) {
+    var safeSeconds = Math.max(0, Math.floor(Number(seconds) || 0));
+    return currentLanguage() === 'ko' ? safeSeconds + '초 전' : safeSeconds + 's ago';
   }
 
   function selectedAreaIndex() {
@@ -857,10 +1407,12 @@
   }
 
   // ── Weighted Pokemon spawn by rarity tier ──
-  // Tier weights: Common spawns ~40x more often than Legendary
+  // Tier weights: choose rarity first, then choose uniformly within that rarity.
+  var TIER_IDS = [1, 2, 3, 4, 5];
   var TIER_WEIGHTS = { 1: 40, 2: 25, 3: 15, 4: 5, 5: 1 };
   var pokemonPool = [];       // weighted array of pokemon IDs
   var pokemonPoolReady = false;
+  var pokemonTierPools = {};  // tier number -> [pokemon_id, ...]
   var agentPokemonCache = {}; // agentId → pokemon_id (stable assignment)
   var subagentPokemonCache = {}; // subagent agentId → rendered pokemon_id
   var pokemonHabitat = {};    // pokemon_id → habitat string (e.g. 'cave', 'forest')
@@ -872,6 +1424,56 @@
   // Per-area weighted pools: areaIndex → [pokemon_id, ...]
   var areaPoolMap = {};
 
+  function pickPokemonFromTierPools(agentId, tierPools) {
+    var speciesPoolsByTier = {};
+    var effectiveWeights = {};
+    for (var i = 0; i < TIER_IDS.length; i++) {
+      var tier = TIER_IDS[i];
+      var speciesPool = tierPools && tierPools[tier];
+      speciesPoolsByTier[tier] = Array.isArray(speciesPool) ? speciesPool : [];
+      effectiveWeights[tier] = speciesPoolsByTier[tier].length > 0 ? TIER_WEIGHTS[tier] || 1 : 0;
+    }
+
+    for (var missingIndex = 0; missingIndex < TIER_IDS.length; missingIndex++) {
+      var missingTier = TIER_IDS[missingIndex];
+      if (speciesPoolsByTier[missingTier].length > 0) continue;
+      var missingWeight = TIER_WEIGHTS[missingTier] || 1;
+      for (var lowerTier = missingTier - 1; lowerTier >= 1; lowerTier--) {
+        if (speciesPoolsByTier[lowerTier] && speciesPoolsByTier[lowerTier].length > 0) {
+          effectiveWeights[lowerTier] += missingWeight;
+          break;
+        }
+      }
+    }
+
+    var entries = [];
+    for (var entryIndex = 0; entryIndex < TIER_IDS.length; entryIndex++) {
+      var entryTier = TIER_IDS[entryIndex];
+      if (speciesPoolsByTier[entryTier].length === 0 || effectiveWeights[entryTier] <= 0) continue;
+      entries.push({
+        tier: entryTier,
+        speciesPool: speciesPoolsByTier[entryTier],
+        weight: effectiveWeights[entryTier]
+      });
+    }
+    if (entries.length === 0) return null;
+
+    var totalWeight = 0;
+    for (var j = 0; j < entries.length; j++) totalWeight += entries[j].weight;
+    var roll = hashCode(String(agentId) + ':tier') % totalWeight;
+    var selected = entries[entries.length - 1];
+    for (var k = 0; k < entries.length; k++) {
+      if (roll < entries[k].weight) {
+        selected = entries[k];
+        break;
+      }
+      roll -= entries[k].weight;
+    }
+
+    var speciesIndex = hashCode(String(agentId) + ':species:' + selected.tier) % selected.speciesPool.length;
+    return selected.speciesPool[speciesIndex];
+  }
+
   (function loadPokemonData() {
     var xhr = new XMLHttpRequest();
       xhr.open('GET', dataUrl('pokemon_data.json'));
@@ -881,10 +1483,14 @@
         var data = JSON.parse(xhr.responseText);
         var pool = [];
         var areaPools = {};
+        var tierPools = {};
         for (var i = 0; i < data.pokemon.length; i++) {
           var p = data.pokemon[i];
           if (p.pokemon_id < POKEDEX_MIN || p.pokemon_id > POKEDEX_MAX) continue;
-          var w = TIER_WEIGHTS[p.final_tier] || 1;
+          var tier = Number.isInteger(p.final_tier) && p.final_tier >= 1 && p.final_tier <= 5 ? p.final_tier : 1;
+          var w = TIER_WEIGHTS[tier] || 1;
+          if (!tierPools[tier]) tierPools[tier] = [];
+          tierPools[tier].push(p.pokemon_id);
           for (var j = 0; j < w; j++) {
             pool.push(p.pokemon_id);
           }
@@ -912,6 +1518,7 @@
         }
         pokemonPool = pool;
         areaPoolMap = areaPools;
+        pokemonTierPools = tierPools;
         pokemonPoolReady = true;
         renderLanguageDependentViews();
       } catch (e) {
@@ -945,15 +1552,25 @@
     if (forced) return forced;
     if (agentPokemonCache[agentId]) return agentPokemonCache[agentId];
     if (pokemonPoolReady && pokemonPool.length > 0) {
-      // Use hash to pick deterministically from weighted pool
-      var idx = hashCode(agentId) % pokemonPool.length;
-      var id = pokemonPool[idx];
+      // Use hash to pick deterministically from tier-first rarity pools.
+      var id = pickPokemonFromTierPools(agentId, pokemonTierPools);
+      if (!id) {
+        var idx = hashCode(agentId) % pokemonPool.length;
+        id = pokemonPool[idx];
+      }
       agentPokemonCache[agentId] = id;
       return id;
     }
     // Data not loaded yet — return temp value without caching so it gets
     // re-evaluated once the pool is ready on the next render cycle.
     return (hashCode(agentId) % POKEDEX_TOTAL) + POKEDEX_MIN;
+  }
+
+  function validPokemonId(value) {
+    var pokemonId = Number(value);
+    return Number.isInteger(pokemonId) && pokemonId >= POKEDEX_MIN && pokemonId <= POKEDEX_MAX
+      ? pokemonId
+      : null;
   }
 
   function pickHistoricalAgent(candidates, beforeTs) {
@@ -1113,13 +1730,12 @@
 
   function getRenderPokemonId(agent) {
     if (!agent) return POKEDEX_MIN;
-    var renderedPokemonId = Number(agent.renderedPokemonId);
-    if (Number.isInteger(renderedPokemonId) && renderedPokemonId >= POKEDEX_MIN && renderedPokemonId <= POKEDEX_MAX) {
-      return renderedPokemonId;
-    }
-    if (agent.forcedPokemonId) {
-      return agent.forcedPokemonId;
-    }
+    var renderedPokemonId = validPokemonId(agent.renderedPokemonId);
+    if (renderedPokemonId) return renderedPokemonId;
+    var forcedPokemonId = validPokemonId(agent.forcedPokemonId);
+    if (forcedPokemonId) return forcedPokemonId;
+    var assignedPokemonId = validPokemonId(agent.assignedPokemonId);
+    if (assignedPokemonId) return assignedPokemonId;
     if (!agent.parentId) {
       return getPokemonId(agent.agentId);
     }
@@ -1146,7 +1762,7 @@
   }
 
   function formatPokemonName(name) {
-    if (!name) return 'Unknown';
+    if (!name) return t('unknown');
     return String(name)
       .split('-')
       .map(function (part) {
@@ -1157,7 +1773,7 @@
   }
 
   function getPokemonName(pokemonId) {
-    return pokemonNames[pokemonId] || ('Pokemon ' + pokemonId);
+    return pokemonNames[pokemonId] || (t('pokemon') + ' ' + pokemonId);
   }
 
   function pokemonDisplayName(pokemonId) {
@@ -1173,8 +1789,9 @@
     document.documentElement.lang = isKo ? 'ko' : 'en';
     pokedexLangButtonEl.textContent = isKo ? 'KO' : 'EN';
     pokedexLangButtonEl.setAttribute('aria-expanded', uiState.pokedexLanguageMenuOpen ? 'true' : 'false');
-    pokedexLangButtonEl.setAttribute('aria-label', isKo ? 'Pokemon names: Korean' : 'Pokemon names: English');
+    pokedexLangButtonEl.setAttribute('aria-label', isKo ? t('uiLanguageKorean') : t('uiLanguageEnglish'));
     if (pokedexLangOptionsEl) {
+      pokedexLangOptionsEl.setAttribute('aria-label', t('uiLanguage'));
       pokedexLangOptionsEl.classList.toggle('open', uiState.pokedexLanguageMenuOpen);
       var options = pokedexLangOptionsEl.querySelectorAll('[data-pokedex-language]');
       Array.prototype.forEach.call(options, function (option) {
@@ -1191,6 +1808,8 @@
   }
 
   function renderLanguageDependentViews() {
+    applyStaticTranslations();
+    updateFilterOptions();
     renderAgentList();
     renderBoxList();
     renderOwnedPokemon();
@@ -1213,6 +1832,7 @@
       return;
     }
     uiState.pokedexLanguage = nextLanguage;
+    activeUiLanguage = nextLanguage;
     storeLanguage(nextLanguage);
     syncPokedexLanguageMenu();
     renderLanguageDependentViews();
@@ -1281,9 +1901,137 @@
     var tier = pokemonRarityTiers[pokemonId];
     if (!label && !tier) return null;
     return {
-      label: label || 'Unknown',
+      label: label || t('unknown'),
       tier: tier || 0
     };
+  }
+
+  function pokemonRarityBadgeHtml(pokemonId, className) {
+    var rarity = getPokemonRarity(pokemonId);
+    if (!rarity) return '';
+    return '<span class="pokedex-rarity-badge tier-' + escapeHtml(String(rarity.tier)) + (className ? ' ' + escapeHtml(className) : '') + '">' + escapeHtml(rarity.label) + '</span>';
+  }
+
+  function normalizePokedexSort(value) {
+    return value === 'area' || value === 'rarity' ? value : 'number';
+  }
+
+  function pokemonIdCompare(a, b) {
+    return a - b;
+  }
+
+  function pokedexAreaSortValue(pokemonId) {
+    var areaIndex = getPokemonAreaIndex(pokemonId);
+    return areaIndex >= 0 ? areaIndex : AREA_DEFS.length;
+  }
+
+  function pokedexRaritySortValue(pokemonId) {
+    var tier = pokemonRarityTiers[pokemonId];
+    return Number.isInteger(tier) ? tier : 0;
+  }
+
+  function pokedexGroupKey(pokemonId) {
+    var sort = normalizePokedexSort(uiState.pokedexSort);
+    if (sort === 'area') {
+      return 'area:' + pokedexAreaSortValue(pokemonId);
+    }
+    if (sort === 'rarity') {
+      return 'rarity:' + pokedexRaritySortValue(pokemonId);
+    }
+    return '';
+  }
+
+  function pokedexGroupLabel(pokemonId) {
+    var sort = normalizePokedexSort(uiState.pokedexSort);
+    if (sort === 'area') {
+      var areaIndex = getPokemonAreaIndex(pokemonId);
+      return areaIndex >= 0 && AREA_DEFS[areaIndex]
+        ? localizedAreaLabel(AREA_DEFS[areaIndex])
+        : localizedUnknownAreaLabel();
+    }
+    if (sort === 'rarity') {
+      var rarity = getPokemonRarity(pokemonId);
+      return rarity ? rarity.label : t('unknown');
+    }
+    return '';
+  }
+
+  function pokedexGroupIconHtml(pokemonId) {
+    var sort = normalizePokedexSort(uiState.pokedexSort);
+    if (sort === 'area') {
+      var areaMeta = pokemonSpawnAreaMeta(pokemonId);
+      return '<span class="pokedex-group-icon pokedex-group-area-icon" style="' + escapeHtml(spawnAreaChipStyle(areaMeta)) + '" aria-hidden="true">' +
+        '<span class="spawn-area-icon"></span>' +
+        '</span>';
+    }
+    if (sort === 'rarity') {
+      var tier = pokedexRaritySortValue(pokemonId);
+      var tierText = tier > 0 ? ('T' + tier) : '?';
+      return '<span class="pokedex-rarity-badge tier-' + escapeHtml(String(tier)) + ' pokedex-group-rarity-mark" aria-hidden="true">' + escapeHtml(tierText) + '</span>';
+    }
+    return '';
+  }
+
+  function pokedexGroupHeaderHtml(pokemonId) {
+    var sort = normalizePokedexSort(uiState.pokedexSort);
+    if (sort === 'number') return '';
+    var classes = ['pokedex-group-header', 'pokedex-group-' + sort];
+    if (sort === 'rarity') {
+      classes.push('tier-' + pokedexRaritySortValue(pokemonId));
+    }
+    return '<div class="' + classes.join(' ') + '" role="heading" aria-level="3">' +
+      '<span class="pokedex-group-inner">' +
+      pokedexGroupIconHtml(pokemonId) +
+      '<span class="pokedex-group-label">' + escapeHtml(pokedexGroupLabel(pokemonId)) + '</span>' +
+      '</span>' +
+      '</div>';
+  }
+
+  function comparePokedexPokemon(a, b) {
+    var sort = normalizePokedexSort(uiState.pokedexSort);
+    if (sort === 'area') {
+      var areaDiff = pokedexAreaSortValue(a) - pokedexAreaSortValue(b);
+      if (areaDiff) return areaDiff;
+      return pokemonIdCompare(a, b);
+    }
+    if (sort === 'rarity') {
+      var aRarity = pokedexRaritySortValue(a);
+      var bRarity = pokedexRaritySortValue(b);
+      if (!aRarity && bRarity) return 1;
+      if (aRarity && !bRarity) return -1;
+      var rarityDiff = aRarity - bRarity;
+      if (rarityDiff) return rarityDiff;
+      return pokemonIdCompare(a, b);
+    }
+    return pokemonIdCompare(a, b);
+  }
+
+  function sortedPokedexPokemonIds() {
+    var ids = [];
+    for (var pokemonId = POKEDEX_MIN; pokemonId <= POKEDEX_MAX; pokemonId++) {
+      ids.push(pokemonId);
+    }
+    ids.sort(comparePokedexPokemon);
+    return ids;
+  }
+
+  function syncPokedexSortControl() {
+    if (!pokedexSortEl) return;
+    uiState.pokedexSort = normalizePokedexSort(uiState.pokedexSort);
+    pokedexSortEl.value = uiState.pokedexSort;
+    pokedexSortEl.setAttribute('aria-label', t('pokedexSort'));
+  }
+
+  function setPokedexSort(sort) {
+    var nextSort = normalizePokedexSort(sort);
+    if (uiState.pokedexSort === nextSort) {
+      syncPokedexSortControl();
+      return;
+    }
+    uiState.pokedexSort = nextSort;
+    if (pokedexGridEl) pokedexGridEl.scrollTop = 0;
+    hidePokedexTooltip();
+    renderPokedex();
   }
 
   function pokedexMatchingAgents(pokemonId) {
@@ -1357,20 +2105,7 @@
   function pokedexHabitatLabel(pokemonId) {
     var areaIndex = getPokemonAreaIndex(pokemonId);
     if (areaIndex >= 0 && AREA_DEFS[areaIndex]) {
-      if (uiState.pokedexLanguage === 'ko') {
-        return {
-          mountain: '\uc0b0\uc545',
-          cave: '\ub3d9\uad74',
-          forest: '\uc232',
-          ruin: '\uc720\uc801',
-          rough_terrain: '\ud5d8\uc9c0',
-          grassland: '\ucd08\uc6d0',
-          urban: '\ub3c4\uc2dc',
-          waters_edge: '\ubb3c\uac00',
-          sea: '\ubc14\ub2e4'
-        }[AREA_DEFS[areaIndex].id] || AREA_DEFS[areaIndex].label;
-      }
-      return AREA_DEFS[areaIndex].label;
+      return localizedAreaLabel(AREA_DEFS[areaIndex]);
     }
 
     var rawHabitat = pokemonHabitat[pokemonId];
@@ -1378,6 +2113,65 @@
       return uiState.pokedexLanguage === 'ko' ? '\ubbf8\ud655\uc778' : 'Unknown';
     }
     return formatPokemonName(String(rawHabitat).replace(/_/g, '-'));
+  }
+
+  function areaColorCss(area) {
+    var color = area && typeof area.color === 'string' ? area.color.replace(/[^0-9a-fA-F]/g, '') : '';
+    if (color.length !== 6) return '#8f98a4';
+    return '#' + color.toUpperCase();
+  }
+
+  function areaColorRgb(area) {
+    var color = areaColorCss(area).slice(1);
+    return {
+      r: parseInt(color.slice(0, 2), 16),
+      g: parseInt(color.slice(2, 4), 16),
+      b: parseInt(color.slice(4, 6), 16)
+    };
+  }
+
+  function areaColorRgba(area, alpha) {
+    var rgb = areaColorRgb(area);
+    return 'rgba(' + rgb.r + ', ' + rgb.g + ', ' + rgb.b + ', ' + alpha + ')';
+  }
+
+  function pokemonSpawnAreaMeta(pokemonId) {
+    var areaIndex = getPokemonAreaIndex(pokemonId);
+    if (areaIndex >= 0 && AREA_DEFS[areaIndex]) {
+      var area = AREA_DEFS[areaIndex];
+      return {
+        known: true,
+        id: area.id,
+        label: pokedexHabitatLabel(pokemonId),
+        color: areaColorCss(area),
+        soft: areaColorRgba(area, 0.22),
+        border: areaColorRgba(area, 0.62)
+      };
+    }
+    return {
+      known: false,
+      id: 'unknown',
+      label: localizedUnknownAreaLabel(),
+      color: '#8f98a4',
+      soft: 'rgba(143, 152, 164, 0.18)',
+      border: 'rgba(143, 152, 164, 0.48)'
+    };
+  }
+
+  function agentSpawnAreaMeta(agent) {
+    return pokemonSpawnAreaMeta(getRenderPokemonId(agent));
+  }
+
+  function spawnAreaChipStyle(meta) {
+    return '--spawn-area-color:' + meta.color + ';--spawn-area-soft:' + meta.soft + ';--spawn-area-border:' + meta.border + ';';
+  }
+
+  function spawnAreaChipHtml(meta, className) {
+    var title = t('spawnArea', { area: meta.label });
+    return '<span class="spawn-area-chip ' + escapeHtml(className || '') + '" style="' + escapeHtml(spawnAreaChipStyle(meta)) + '" title="' + escapeHtml(title) + '" aria-label="' + escapeHtml(title) + '">' +
+      '<span class="spawn-area-icon" aria-hidden="true"></span>' +
+      '<span class="spawn-area-label">' + escapeHtml(meta.label) + '</span>' +
+      '</span>';
   }
 
   function pokedexTooltipLabels() {
@@ -1658,7 +2452,7 @@
     }
 
     getSpriteUrl(agent, sleeping) {
-      const id = getPokemonId(agent.agentId);
+      const id = getRenderPokemonId(agent);
       if (this.failedIds.has(id)) return null;
       var spec = pokemonSpriteSpec(sleeping);
       var folder = spec.folder;
@@ -2262,12 +3056,21 @@
 
   function updateFilterOptions() {
     if (!areaFilterEl) return;
-    areaFilterEl.innerHTML = '<option value="all">All Areas</option>';
+    var areaControl = areaFilterEl.closest ? areaFilterEl.closest('.control') : null;
+    var areaControlText = areaControl ? areaControl.querySelector('span') : null;
+    if (areaControlText) areaControlText.textContent = localizedAreaControlLabel();
+    areaFilterEl.setAttribute('aria-label', localizedAreaControlLabel());
+    areaFilterEl.innerHTML = '';
+    var allOpt = document.createElement('option');
+    allOpt.value = 'all';
+    allOpt.textContent = localizedAllAreasLabel();
+    if (uiState.areaFilter === 'all') allOpt.selected = true;
+    areaFilterEl.appendChild(allOpt);
     for (var j = 0; j < AREA_DEFS.length; j++) {
       var area = AREA_DEFS[j];
       var opt = document.createElement('option');
       opt.value = area.id;
-      opt.textContent = area.label;
+      opt.textContent = localizedAreaLabel(area);
       if (area.id === uiState.areaFilter) opt.selected = true;
       areaFilterEl.appendChild(opt);
     }
@@ -2346,7 +3149,7 @@
     var subhistoryCount = subhistoryFamilyCount(agent.agentId);
     var uptime = formatUptime(agent.createdAt);
     var secsAgo = Math.max(0, Math.floor((Date.now() - agent.lastSeen) / 1000));
-    var visibleChildLabel = childCount + ' sub' + (childCount === 1 ? '' : 's');
+    var visibleChildLabel = currentLanguage() === 'ko' ? '하위 ' + childCount : childCount + ' sub' + (childCount === 1 ? '' : 's');
     var isCollapsed = isSubtreeCollapsed(agent.agentId, depth, childCount, collapsedIds);
     var adopted = ownedPokemonForEncounter(agent);
 
@@ -2368,7 +3171,7 @@
     html += '</div>';
     html += '<span class="poke-slot-name" title="' + escapeHtml(fullLabel) + '">' + escapeHtml(name) + '</span>';
     html += '</div>';
-    html += '<span class="poke-slot-status">' + escapeHtml(agent.status) + '</span>';
+    html += '<span class="poke-slot-status">' + escapeHtml(localizedStatusText(agent.status)) + '</span>';
     html += '</div>';
 
     if (depth > 0 || childCount > 0) {
@@ -2377,13 +3180,13 @@
         html += '<span class="poke-subagent-badge">SUB</span>';
         html += '<span class="poke-depth-badge">D' + depth + '</span>';
         if (parentName) {
-          html += '<span class="poke-parent-pill" title="Parent: ' + escapeHtml(parentName) + '">Parent ' + escapeHtml(parentName) + '</span>';
+          html += '<span class="poke-parent-pill" title="' + escapeHtml(t('parent') + ': ' + parentName) + '">' + escapeHtml(t('parent') + ' ' + parentName) + '</span>';
         }
       }
       if (childCount > 0) {
         html += '<span class="poke-children-pill">' + escapeHtml(visibleChildLabel) + '</span>';
-        html += '<button class="poke-hierarchy-toggle' + (isCollapsed ? ' collapsed' : '') + '" type="button" data-action="toggle-subtree" data-agent-id="' + escapeHtml(agent.agentId) + '" data-depth="' + depth + '" aria-expanded="' + String(!isCollapsed) + '" title="' + (isCollapsed ? 'Show sub-agent hierarchy' : 'Hide sub-agent hierarchy') + '">';
-        html += '<span class="poke-hierarchy-toggle-label">' + (isCollapsed ? 'Show' : 'Hide') + '</span>';
+        html += '<button class="poke-hierarchy-toggle' + (isCollapsed ? ' collapsed' : '') + '" type="button" data-action="toggle-subtree" data-agent-id="' + escapeHtml(agent.agentId) + '" data-depth="' + depth + '" aria-expanded="' + String(!isCollapsed) + '" title="' + escapeHtml(isCollapsed ? t('showSubagentHierarchy') : t('hideSubagentHierarchy')) + '">';
+        html += '<span class="poke-hierarchy-toggle-label">' + escapeHtml(isCollapsed ? t('show') : t('hide')) + '</span>';
         html += '</button>';
       }
       html += '</div>';
@@ -2412,44 +3215,44 @@
 
     html += '<div class="poke-slot-details">';
     html += '<div class="detail-row detail-title"><span class="detail-value">' + escapeHtml(fullLabel) + '</span></div>';
-    html += '<div class="detail-row"><span class="detail-label">ID</span><span class="detail-value">' + escapeHtml(toShortId(agent.agentId)) + '</span></div>';
+    html += '<div class="detail-row"><span class="detail-label">' + escapeHtml(t('id')) + '</span><span class="detail-value">' + escapeHtml(toShortId(agent.agentId)) + '</span></div>';
     if (depth > 0) {
-      html += '<div class="detail-row"><span class="detail-label">Depth</span><span class="detail-value">' + depth + '</span></div>';
-      html += '<div class="detail-row"><span class="detail-label">Parent</span><span class="detail-value">' + escapeHtml(parentName || '-') + '</span></div>';
+      html += '<div class="detail-row"><span class="detail-label">' + escapeHtml(t('depth')) + '</span><span class="detail-value">' + depth + '</span></div>';
+      html += '<div class="detail-row"><span class="detail-label">' + escapeHtml(t('parent')) + '</span><span class="detail-value">' + escapeHtml(parentName || '-') + '</span></div>';
     }
     if (agent.model) {
-      html += '<div class="detail-row"><span class="detail-label">Model</span><span class="detail-value">' + escapeHtml(modelName || agent.model) + '</span></div>';
+      html += '<div class="detail-row"><span class="detail-label">' + escapeHtml(t('model')) + '</span><span class="detail-value">' + escapeHtml(modelName || agent.model) + '</span></div>';
     }
-    html += '<div class="detail-row"><span class="detail-label">Started</span><span class="detail-value">' + formatTime(agent.createdAt) + '</span></div>';
-    html += '<div class="detail-row"><span class="detail-label">Uptime</span><span class="detail-value">' + escapeHtml(uptime) + '</span></div>';
-    html += '<div class="detail-row"><span class="detail-label">Last seen</span><span class="detail-value">' + secsAgo + 's ago</span></div>';
-    html += '<div class="detail-row"><span class="detail-label">Last tool</span><span class="detail-value">' + escapeHtml(agent.lastTool || '-') + '</span></div>';
-    html += '<div class="detail-row"><span class="detail-label">Tools run</span><span class="detail-value">' + (agent.counters.toolStarts || 0) + '</span></div>';
-    html += '<div class="detail-row"><span class="detail-label">Context</span><span class="detail-value">' + formatContextK(contextRemaining) + ' / ' + formatContextK(contextMax) + '</span></div>';
-    html += '<div class="detail-row"><span class="detail-label">Tokens</span><span class="detail-value">' + formatTokenCount(xp.totalTokens) + '</span></div>';
-    html += '<div class="detail-row"><span class="detail-label">Project</span><span class="detail-value">' + escapeHtml(agent.projectId) + '</span></div>';
-    html += '<div class="detail-row"><span class="detail-label">Session</span><span class="detail-value">' + escapeHtml(agent.sessionId) + '</span></div>';
+    html += '<div class="detail-row"><span class="detail-label">' + escapeHtml(t('started')) + '</span><span class="detail-value">' + formatTime(agent.createdAt) + '</span></div>';
+    html += '<div class="detail-row"><span class="detail-label">' + escapeHtml(t('uptime')) + '</span><span class="detail-value">' + escapeHtml(uptime) + '</span></div>';
+    html += '<div class="detail-row"><span class="detail-label">' + escapeHtml(t('lastSeen')) + '</span><span class="detail-value">' + escapeHtml(formatSecondsAgo(secsAgo)) + '</span></div>';
+    html += '<div class="detail-row"><span class="detail-label">' + escapeHtml(t('lastTool')) + '</span><span class="detail-value">' + escapeHtml(agent.lastTool || '-') + '</span></div>';
+    html += '<div class="detail-row"><span class="detail-label">' + escapeHtml(t('toolsRun')) + '</span><span class="detail-value">' + (agent.counters.toolStarts || 0) + '</span></div>';
+    html += '<div class="detail-row"><span class="detail-label">' + escapeHtml(t('context')) + '</span><span class="detail-value">' + formatContextK(contextRemaining) + ' / ' + formatContextK(contextMax) + '</span></div>';
+    html += '<div class="detail-row"><span class="detail-label">' + escapeHtml(t('tokens')) + '</span><span class="detail-value">' + formatTokenCount(xp.totalTokens) + '</span></div>';
+    html += '<div class="detail-row"><span class="detail-label">' + escapeHtml(t('project')) + '</span><span class="detail-value">' + escapeHtml(agent.projectId) + '</span></div>';
+    html += '<div class="detail-row"><span class="detail-label">' + escapeHtml(t('session')) + '</span><span class="detail-value">' + escapeHtml(agent.sessionId) + '</span></div>';
     if (childCount > 0) {
-      html += '<div class="detail-row"><span class="detail-label">Visible subs</span><span class="detail-value">' + childCount + '</span></div>';
+      html += '<div class="detail-row"><span class="detail-label">' + escapeHtml(t('visibleSubs')) + '</span><span class="detail-value">' + childCount + '</span></div>';
     }
     if (agent.childrenIds && agent.childrenIds.length > 0) {
-      html += '<div class="detail-row"><span class="detail-label">Sub-agents</span><span class="detail-value">' + agent.childrenIds.length + '</span></div>';
+      html += '<div class="detail-row"><span class="detail-label">' + escapeHtml(t('subagents')) + '</span><span class="detail-value">' + agent.childrenIds.length + '</span></div>';
     }
     if (subhistoryCount > 0) {
-      html += '<div class="detail-row"><span class="detail-label">Sub history</span><span class="detail-value">' + subhistoryCount + '</span></div>';
-      html += '<button class="box-detail-btn" data-action="open-subhistory" data-agent-id="' + escapeHtml(agent.agentId) + '">Open Sub-agent History</button>';
+      html += '<div class="detail-row"><span class="detail-label">' + escapeHtml(t('subHistory')) + '</span><span class="detail-value">' + subhistoryCount + '</span></div>';
+      html += '<button class="box-detail-btn" data-action="open-subhistory" data-agent-id="' + escapeHtml(agent.agentId) + '">' + escapeHtml(t('openSubagentHistory')) + '</button>';
     }
     if (lastCommand) {
-      html += '<div class="detail-command" title="' + escapeHtml(lastCommand) + '"><span class="detail-label">Last command</span><span class="detail-value">' + escapeHtml(lastCommand) + '</span></div>';
+      html += '<div class="detail-command" title="' + escapeHtml(lastCommand) + '"><span class="detail-label">' + escapeHtml(t('lastCommand')) + '</span><span class="detail-value">' + escapeHtml(lastCommand) + '</span></div>';
     }
     if (agent.lastUserQuery) {
-      html += '<div class="detail-row detail-query"><span class="detail-label">Last query</span><span class="detail-value">' + escapeHtml(agent.lastUserQuery) + '</span></div>';
+      html += '<div class="detail-row detail-query"><span class="detail-label">' + escapeHtml(t('lastQuery')) + '</span><span class="detail-value">' + escapeHtml(agent.lastUserQuery) + '</span></div>';
     }
     if (!agent.isPromoCustom || !agent.parentId) {
       if (!adopted) {
         html += renderAdoptAgentButton(agent);
       }
-      html += '<button class="box-btn" data-action="box" data-agent-id="' + escapeHtml(agent.agentId) + '">Archive</button>';
+      html += '<button class="box-btn" data-action="box" data-agent-id="' + escapeHtml(agent.agentId) + '">' + escapeHtml(t('archive')) + '</button>';
     }
     html += '</div>';
 
@@ -2777,8 +3580,8 @@
     html += '</div>';
     html += renderHistoryStats(agent, 'subhistory-lineage-stats');
     html += '<div class="subhistory-lineage-bottom">';
-    html += '<span class="subhistory-lineage-type">' + escapeHtml(agent.subagentType || (kind === 'parent' ? 'Parent' : 'Sub-agent')) + '</span>';
-    html += '<span class="subhistory-lineage-time">' + escapeHtml(agent.isLive ? 'Live' : formatTime(timeValue)) + '</span>';
+    html += '<span class="subhistory-lineage-type">' + escapeHtml(agent.subagentType || (kind === 'parent' ? t('parent') : t('subagentLabel'))) + '</span>';
+    html += '<span class="subhistory-lineage-time">' + escapeHtml(agent.isLive ? t('live') : formatTime(timeValue)) + '</span>';
     html += '</div>';
     html += '</div>';
     html += '</div>';
@@ -2794,7 +3597,7 @@
 
     var html = '<div class="subhistory-columns">';
     html += '<section class="subhistory-column">';
-    html += '<div class="subhistory-column-title">Parent</div>';
+    html += '<div class="subhistory-column-title">' + escapeHtml(t('parent')) + '</div>';
     html += renderSubhistoryCard(parent, 'parent');
     html += '</section>';
 
@@ -2802,7 +3605,7 @@
       var generation = generations[depth] || [];
       if (generation.length === 0) continue;
       html += '<section class="subhistory-column">';
-      html += '<div class="subhistory-column-title">Depth ' + depth + '</div>';
+      html += '<div class="subhistory-column-title">' + escapeHtml(t('depth')) + ' ' + depth + '</div>';
       for (var i = 0; i < generation.length; i++) {
         html += renderSubhistoryCard(generation[i], 'child');
       }
@@ -2825,8 +3628,8 @@
       html += '<span class="subhistory-time">' + escapeHtml(formatTime(agent.doneAt)) + '</span>';
       html += '</div>';
       html += '<div class="subhistory-meta">';
-      html += '<span>' + escapeHtml(agent.subagentType || 'Sub-agent') + '</span>';
-      html += '<span>Tools ' + (agent.counters.toolStarts || 0) + '</span>';
+      html += '<span>' + escapeHtml(agent.subagentType || t('subagentLabel')) + '</span>';
+      html += '<span>' + escapeHtml(t('tools')) + ' ' + (agent.counters.toolStarts || 0) + '</span>';
       html += '<span>TOK ' + formatTokenCount(agent.totalTokens || 0) + '</span>';
       html += '<span>' + escapeHtml(formatDuration(agent.createdAt, agent.doneAt)) + '</span>';
       html += '</div>';
@@ -2848,14 +3651,14 @@
   function renderSubhistoryModal() {
     var parentId = uiState.subhistoryParentId;
     var items = parentId ? subhistoryLineageForParent(parentId) : [];
-    var label = parentId ? parentHistoryLabel(parentId) : 'Sub-agent History';
-    var countLabel = items.length === 1 ? '1 record' : items.length + ' records';
+    var label = parentId ? parentHistoryLabel(parentId) : t('subagentHistory');
+    var countLabel = items.length === 1 ? t('oneRecord') : t('records', { count: items.length });
     appState.subhistoryEntryByKey = new Map();
     subhistoryTitleEl.textContent = label;
     subhistorySummaryEl.textContent = countLabel;
     subhistoryGridEl.innerHTML = items.length
       ? renderSubhistoryColumns(parentId)
-      : '<div class="box-empty">No boxed sub-agent history yet.</div>';
+      : '<div class="box-empty">' + escapeHtml(t('noSubhistory')) + '</div>';
   }
 
   function pokemonSpriteUrl(agent, sleeping) {
@@ -2921,7 +3724,7 @@
   }
 
   function localizedActionText(en, ko) {
-    return uiState.pokedexLanguage === 'ko' ? ko : en;
+    return currentLanguage() === 'ko' ? ko : en;
   }
 
   function pokemonSpriteBySpeciesId(speciesId) {
@@ -2931,7 +3734,7 @@
   function actionItemVisualHtml(visual) {
     if (!visual || !visual.itemId) return '';
     var itemName = visual.name || evolutionItemLabel(visual.itemId);
-    var label = visual.label || localizedActionText('Item', '아이템');
+    var label = visual.label || t('item');
     var detail = visual.detail || '';
     return [
       '<div class="action-item-showcase">',
@@ -2947,13 +3750,51 @@
 
   function actionPointsVisualHtml(visual) {
     var value = visual && visual.value ? visual.value : '0 pts';
-    var label = visual && visual.label ? visual.label : localizedActionText('Points', '포인트');
+    var label = visual && visual.label ? visual.label : t('points');
     return [
       '<div class="action-points-showcase">',
       '<div class="action-points-badge">' + escapeHtml(value) + '</div>',
       '<span>' + escapeHtml(label) + '</span>',
       '</div>'
     ].join('');
+  }
+
+  function actionRecruitVisualHtml(visual) {
+    if (!visual || !visual.pokemonId) return '';
+    var name = visual.name || pokemonDisplayName(visual.pokemonId);
+    var currentPoints = Math.max(0, Number(visual.currentPoints) || 0);
+    var pointCost = Math.max(0, Number(visual.pointCost) || 0);
+    var afterPoints = Math.max(0, Number.isFinite(Number(visual.afterPoints)) ? Number(visual.afterPoints) : currentPoints - pointCost);
+    var discovered = !!visual.discovered;
+    var discoveryText = discovered
+      ? t('pokedexRegistered')
+      : t('newPokedexEntry');
+    var rows = [
+      { label: t('currentPoints'), value: formatTokenCount(currentPoints) },
+      { label: t('plannedSpend'), value: '-' + formatTokenCount(pointCost), tone: 'cost', note: discoveryText },
+      { label: t('afterRecruit'), value: formatTokenCount(afterPoints), tone: 'after' }
+    ];
+    var html = '';
+    html += '<div class="action-recruit-showcase">';
+    html += '<div class="action-recruit-hero">';
+    html += '<img src="' + escapeHtml(pokemonSpriteBySpeciesId(visual.pokemonId)) + '" alt="" loading="lazy" />';
+    html += '<div class="action-recruit-hero-text">';
+    html += '<span class="action-recruit-discovery' + (discovered ? ' discovered' : ' new') + '">' + escapeHtml(discoveryText) + '</span>';
+    html += '<strong>' + escapeHtml(name) + '</strong>';
+    html += '</div>';
+    html += '</div>';
+    html += '<div class="action-recruit-ledger">';
+    for (var i = 0; i < rows.length; i++) {
+      var row = rows[i];
+      html += '<div class="action-recruit-row' + (row.tone ? ' ' + row.tone : '') + '">';
+      html += '<span class="action-recruit-label">' + escapeHtml(row.label) + '</span>';
+      html += '<span class="action-recruit-value">' + escapeHtml(row.value) + ' pts</span>';
+      if (row.note) html += '<span class="action-recruit-note">' + escapeHtml(row.note) + '</span>';
+      html += '</div>';
+    }
+    html += '</div>';
+    html += '</div>';
+    return html;
   }
 
   function actionEvolutionVisualHtml(visual) {
@@ -2963,13 +3804,13 @@
     var html = '';
     html += '<div class="action-evolution-showcase">';
     html += '<div class="action-pokemon-card">';
-    html += '<span>' + escapeHtml(localizedActionText('Before', '진화 전')) + '</span>';
+    html += '<span>' + escapeHtml(t('before')) + '</span>';
     html += '<img src="' + escapeHtml(pokemonSpriteBySpeciesId(visual.beforeSpeciesId)) + '" alt="" loading="lazy" />';
     html += '<strong>' + escapeHtml(beforeName) + '</strong>';
     html += '</div>';
     html += '<div class="action-evolution-arrow" aria-hidden="true"></div>';
     html += '<div class="action-pokemon-card">';
-    html += '<span>' + escapeHtml(localizedActionText('After', '진화 후')) + '</span>';
+    html += '<span>' + escapeHtml(t('after')) + '</span>';
     html += '<img src="' + escapeHtml(pokemonSpriteBySpeciesId(visual.afterSpeciesId)) + '" alt="" loading="lazy" />';
     html += '<strong>' + escapeHtml(afterName) + '</strong>';
     html += '</div>';
@@ -2977,7 +3818,7 @@
       var itemName = visual.itemName || evolutionItemLabel(visual.itemId);
       html += '<div class="action-consume-strip">';
       html += '<img src="' + escapeHtml(itemSpriteUrl(visual.itemId)) + '" alt="" loading="lazy" />';
-      html += '<span>' + escapeHtml(localizedActionText('Consumes', '소모')) + ': ' + escapeHtml(itemName) + '</span>';
+      html += '<span>' + escapeHtml(t('consumes')) + ': ' + escapeHtml(itemName) + '</span>';
       html += '</div>';
     }
     html += '</div>';
@@ -2988,6 +3829,7 @@
     if (!visual || !visual.type) return '';
     if (visual.type === 'item') return actionItemVisualHtml(visual);
     if (visual.type === 'points') return actionPointsVisualHtml(visual);
+    if (visual.type === 'recruit') return actionRecruitVisualHtml(visual);
     if (visual.type === 'evolution') return actionEvolutionVisualHtml(visual);
     return '';
   }
@@ -3017,25 +3859,26 @@
     var visualHtml = actionVisualHtml(config && config.visual);
     if (actionPanelEl) {
       actionPanelEl.classList.toggle('evolution', !!(config && config.visual && config.visual.type === 'evolution'));
+      actionPanelEl.classList.toggle('recruit', !!(config && config.visual && config.visual.type === 'recruit'));
     }
     if (actionVisualEl) {
       actionVisualEl.innerHTML = visualHtml;
       actionVisualEl.hidden = !visualHtml;
     }
-    actionTitleEl.textContent = (config && config.title) || localizedActionText('Action', '작업');
+    actionTitleEl.textContent = (config && config.title) || t('action');
     actionMessageEl.textContent = (config && config.message) || '';
     actionMessageEl.classList.toggle('error', !!(config && config.isError));
     actionCancelEl.hidden = !isConfirm;
-    actionCancelEl.textContent = (config && config.cancelText) || localizedActionText('No', '아니오');
-    actionConfirmEl.textContent = (config && config.confirmText) || (isConfirm ? localizedActionText('Yes', '예') : localizedActionText('OK', '확인'));
+    actionCancelEl.textContent = (config && config.cancelText) || t('no');
+    actionConfirmEl.textContent = (config && config.confirmText) || (isConfirm ? t('yes') : t('ok'));
     setActionButtonContent(
       actionConfirmEl,
-      (config && config.confirmText) || (isConfirm ? localizedActionText('Yes', '예') : localizedActionText('OK', '확인')),
+      (config && config.confirmText) || (isConfirm ? t('yes') : t('ok')),
       isConfirm ? 'yes' : 'ok'
     );
     setActionButtonContent(
       actionCancelEl,
-      (config && config.cancelText) || localizedActionText('No', '아니오'),
+      (config && config.cancelText) || t('no'),
       'no'
     );
     actionModalEl.hidden = false;
@@ -3055,7 +3898,7 @@
       message: localizedActionText(messageEn, messageKo),
       visual: options.visual || null,
       isError: !!options.isError,
-      confirmText: localizedActionText('OK', '확인')
+      confirmText: t('ok')
     });
   }
 
@@ -3064,15 +3907,15 @@
     return openActionDialog({
       mode: 'confirm',
       visual: options.visual || null,
-      title: localizedActionText('Confirm', '확인'),
-      message: localizedActionText(messageEn, messageKo),
-      confirmText: localizedActionText('Yes', '예'),
-      cancelText: localizedActionText('No', '아니오')
+      title: t('confirm'),
+      message: options.message || localizedActionText(messageEn, messageKo),
+      confirmText: t('yes'),
+      cancelText: t('no')
     });
   }
 
   function actionErrorMessage(result) {
-    return result && result.error ? result.error : localizedActionText('Action failed.', '작업에 실패했습니다.');
+    return result && result.error ? result.error : t('actionFailed');
   }
 
   function agentPanelName(agent) {
@@ -3100,7 +3943,7 @@
   function formatRemainingShort(epoch) {
     if (!epoch) return '-';
     var diffMs = epoch * 1000 - Date.now();
-    if (diffMs <= 0) return 'now';
+    if (diffMs <= 0) return currentLanguage() === 'ko' ? '지금' : 'now';
     var totalMin = Math.floor(diffMs / 60000);
     var h = Math.floor(totalMin / 60);
     var m = totalMin % 60;
@@ -3111,18 +3954,18 @@
   function formatResetAtShort(epoch) {
     if (!epoch) return '-';
     var d = new Date(epoch * 1000);
-    var MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-    var mo = MONTHS[d.getMonth()];
-    var day = d.getDate();
-    var hh = String(d.getHours()).padStart(2, '0');
-    var mm = String(d.getMinutes()).padStart(2, '0');
-    return mo + ' ' + day + ' ' + hh + ':' + mm;
+    return d.toLocaleString(currentLanguage() === 'ko' ? 'ko-KR' : 'en-US', {
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
   }
 
   function rateLimitProviderLabel(provider) {
-    if (provider === 'codex') return 'Codex Budget';
-    if (provider === 'claude') return 'Claude Budget';
-    return 'Budget';
+    if (provider === 'codex') return t('codexBudget');
+    if (provider === 'claude') return t('claudeBudget');
+    return t('budget');
   }
 
   function rateLimitProviderOrder(snapshot) {
@@ -3160,14 +4003,14 @@
       : 0;
     var color = hasValue ? hpBarColor(remain / 100) : '#777';
     var pctText = hasValue ? remain.toFixed(1) + '%' : '-';
-    var tooltip = providerLabel + ' ' + periodLabel + ': no data';
+    var tooltip = t('rateNoData', { provider: providerLabel, period: periodLabel });
 
     if (hasValue) {
-      tooltip = providerLabel + ' ' + periodLabel + ': ' + remain.toFixed(1) + '% remaining';
+      tooltip = t('rateRemaining', { provider: providerLabel, period: periodLabel, remaining: remain.toFixed(1) });
       if (resetKind === 'remaining') {
-        tooltip += '\n' + formatRemainingShort(rateLimit.resets_at) + ' left';
+        tooltip += '\n' + t('rateLeft', { time: formatRemainingShort(rateLimit.resets_at) });
       } else {
-        tooltip += '\nresets ' + formatResetAtShort(rateLimit.resets_at);
+        tooltip += '\n' + t('rateResets', { time: formatResetAtShort(rateLimit.resets_at) });
       }
     }
 
@@ -3589,7 +4432,7 @@
     renderPokedex();
     agents = filteredAgents();
     activeCountEl.textContent = String(snapshot.activeAgentCount || 0);
-    lastUpdateEl.textContent = new Date(snapshot.lastUpdate || Date.now()).toLocaleTimeString();
+    lastUpdateEl.textContent = formatTime(snapshot.lastUpdate || Date.now());
     tokenTotalEl.textContent = formatTokenCount(filteredTokenTotal(agents));
     updateRateLimits(snapshot);
   }
@@ -3618,7 +4461,7 @@
     var html = '';
     for (var i = 0; i < PROMO_STATUSES.length; i++) {
       var status = PROMO_STATUSES[i];
-      html += '<option value="' + escapeHtml(status) + '"' + (status === selectedStatus ? ' selected' : '') + '>' + escapeHtml(status) + '</option>';
+      html += '<option value="' + escapeHtml(status) + '"' + (status === selectedStatus ? ' selected' : '') + '>' + escapeHtml(localizedStatusText(status)) + '</option>';
     }
     return html;
   }
@@ -3631,18 +4474,18 @@
     html += '<article class="promo-scene-card subagent-card" data-root-id="' + escapeHtml(rootId) + '" data-sub-id="' + escapeHtml(subagent.id) + '">';
     html += '<div class="promo-scene-card-head">';
     html += '<div class="promo-scene-card-title-wrap">';
-    html += '<h3 class="promo-scene-card-title">Sub-agent ' + (index + 1) + '</h3>';
+    html += '<h3 class="promo-scene-card-title">' + escapeHtml(t('subagent', { count: index + 1 })) + '</h3>';
     html += '<p class="promo-scene-card-subtitle">' + subtitle + '</p>';
     html += '</div>';
-    html += '<button class="promo-scene-remove" type="button" data-action="remove-subagent" data-root-id="' + escapeHtml(rootId) + '" data-sub-id="' + escapeHtml(subagent.id) + '">Remove</button>';
+    html += '<button class="promo-scene-remove" type="button" data-action="remove-subagent" data-root-id="' + escapeHtml(rootId) + '" data-sub-id="' + escapeHtml(subagent.id) + '">' + escapeHtml(t('remove')) + '</button>';
     html += '</div>';
     html += '<div class="promo-scene-fields">';
-    html += '<label class="promo-field-wide"><span class="promo-field-label">Name</span><input type="text" data-root-id="' + escapeHtml(rootId) + '" data-sub-id="' + escapeHtml(subagent.id) + '" data-field="label" value="' + escapeHtml(subagent.label || '') + '" maxlength="40" /></label>';
-    html += '<label class="promo-field-wide"><span class="promo-field-label">Pokemon</span><select data-root-id="' + escapeHtml(rootId) + '" data-sub-id="' + escapeHtml(subagent.id) + '" data-field="pokemonId">' + promoPokemonOptionsHtml(subagent.pokemonId) + '</select></label>';
-    html += '<label class="promo-field"><span class="promo-field-label">Level</span><input type="number" min="1" max="100" data-root-id="' + escapeHtml(rootId) + '" data-sub-id="' + escapeHtml(subagent.id) + '" data-field="level" value="' + stats.level + '" /></label>';
-    html += '<label class="promo-field"><span class="promo-field-label">EXP</span><input type="number" min="0" max="' + expMax + '" data-root-id="' + escapeHtml(rootId) + '" data-sub-id="' + escapeHtml(subagent.id) + '" data-field="exp" value="' + stats.intoLevel + '" /><span class="promo-field-note">Token total updates automatically.</span></label>';
+    html += '<label class="promo-field-wide"><span class="promo-field-label">' + escapeHtml(t('name')) + '</span><input type="text" data-root-id="' + escapeHtml(rootId) + '" data-sub-id="' + escapeHtml(subagent.id) + '" data-field="label" value="' + escapeHtml(subagent.label || '') + '" maxlength="40" /></label>';
+    html += '<label class="promo-field-wide"><span class="promo-field-label">' + escapeHtml(t('pokemon')) + '</span><select data-root-id="' + escapeHtml(rootId) + '" data-sub-id="' + escapeHtml(subagent.id) + '" data-field="pokemonId">' + promoPokemonOptionsHtml(subagent.pokemonId) + '</select></label>';
+    html += '<label class="promo-field"><span class="promo-field-label">' + escapeHtml(t('level')) + '</span><input type="number" min="1" max="100" data-root-id="' + escapeHtml(rootId) + '" data-sub-id="' + escapeHtml(subagent.id) + '" data-field="level" value="' + stats.level + '" /></label>';
+    html += '<label class="promo-field"><span class="promo-field-label">EXP</span><input type="number" min="0" max="' + expMax + '" data-root-id="' + escapeHtml(rootId) + '" data-sub-id="' + escapeHtml(subagent.id) + '" data-field="exp" value="' + stats.intoLevel + '" /><span class="promo-field-note">' + escapeHtml(t('expTokenAuto')) + '</span></label>';
     html += '<label class="promo-field"><span class="promo-field-label">HP %</span><input type="number" min="0" max="100" data-root-id="' + escapeHtml(rootId) + '" data-sub-id="' + escapeHtml(subagent.id) + '" data-field="hp" value="' + stats.hp + '" /></label>';
-    html += '<label class="promo-field"><span class="promo-field-label">Status</span><select data-root-id="' + escapeHtml(rootId) + '" data-sub-id="' + escapeHtml(subagent.id) + '" data-field="status">' + promoStatusOptionsHtml(subagent.status) + '</select></label>';
+    html += '<label class="promo-field"><span class="promo-field-label">' + escapeHtml(t('status')) + '</span><select data-root-id="' + escapeHtml(rootId) + '" data-sub-id="' + escapeHtml(subagent.id) + '" data-field="status">' + promoStatusOptionsHtml(subagent.status) + '</select></label>';
     html += '</div>';
     html += '<div class="promo-scene-stats">';
     html += '<span class="promo-scene-chip">TOK ' + formatTokenCount(stats.totalTokens) + '</span>';
@@ -3661,21 +4504,21 @@
     html += '<article class="promo-scene-card" data-root-id="' + escapeHtml(root.id) + '">';
     html += '<div class="promo-scene-card-head">';
     html += '<div class="promo-scene-card-title-wrap">';
-    html += '<h3 class="promo-scene-card-title">Root Agent ' + (index + 1) + '</h3>';
-    html += '<p class="promo-scene-card-subtitle">#' + String(root.pokemonId).padStart(3, '0') + ' ' + escapeHtml(pokemonDisplayName(root.pokemonId)) + ' · ' + subagents.length + ' sub-agent' + (subagents.length === 1 ? '' : 's') + '</p>';
+    html += '<h3 class="promo-scene-card-title">' + escapeHtml(t('rootAgent', { count: index + 1 })) + '</h3>';
+    html += '<p class="promo-scene-card-subtitle">#' + String(root.pokemonId).padStart(3, '0') + ' ' + escapeHtml(pokemonDisplayName(root.pokemonId)) + ' - ' + subagents.length + ' ' + escapeHtml(t('subagents')) + '</p>';
     html += '</div>';
     html += '<div class="promo-scene-card-actions">';
-    html += '<button class="promo-scene-box" type="button" data-action="box-root" data-root-id="' + escapeHtml(root.id) + '">Box</button>';
-    html += '<button class="promo-scene-remove" type="button" data-action="remove-root" data-root-id="' + escapeHtml(root.id) + '">Remove</button>';
+    html += '<button class="promo-scene-box" type="button" data-action="box-root" data-root-id="' + escapeHtml(root.id) + '">' + escapeHtml(t('box')) + '</button>';
+    html += '<button class="promo-scene-remove" type="button" data-action="remove-root" data-root-id="' + escapeHtml(root.id) + '">' + escapeHtml(t('remove')) + '</button>';
     html += '</div>';
     html += '</div>';
     html += '<div class="promo-scene-fields">';
-    html += '<label class="promo-field-wide"><span class="promo-field-label">Name</span><input type="text" data-root-id="' + escapeHtml(root.id) + '" data-field="label" value="' + escapeHtml(root.label || '') + '" maxlength="40" /></label>';
-    html += '<label class="promo-field-wide"><span class="promo-field-label">Pokemon</span><select data-root-id="' + escapeHtml(root.id) + '" data-field="pokemonId">' + promoPokemonOptionsHtml(root.pokemonId) + '</select></label>';
-    html += '<label class="promo-field"><span class="promo-field-label">Level</span><input type="number" min="1" max="100" data-root-id="' + escapeHtml(root.id) + '" data-field="level" value="' + stats.level + '" /></label>';
-    html += '<label class="promo-field"><span class="promo-field-label">EXP</span><input type="number" min="0" max="' + expMax + '" data-root-id="' + escapeHtml(root.id) + '" data-field="exp" value="' + stats.intoLevel + '" /><span class="promo-field-note">EXP is converted into token totals.</span></label>';
+    html += '<label class="promo-field-wide"><span class="promo-field-label">' + escapeHtml(t('name')) + '</span><input type="text" data-root-id="' + escapeHtml(root.id) + '" data-field="label" value="' + escapeHtml(root.label || '') + '" maxlength="40" /></label>';
+    html += '<label class="promo-field-wide"><span class="promo-field-label">' + escapeHtml(t('pokemon')) + '</span><select data-root-id="' + escapeHtml(root.id) + '" data-field="pokemonId">' + promoPokemonOptionsHtml(root.pokemonId) + '</select></label>';
+    html += '<label class="promo-field"><span class="promo-field-label">' + escapeHtml(t('level')) + '</span><input type="number" min="1" max="100" data-root-id="' + escapeHtml(root.id) + '" data-field="level" value="' + stats.level + '" /></label>';
+    html += '<label class="promo-field"><span class="promo-field-label">EXP</span><input type="number" min="0" max="' + expMax + '" data-root-id="' + escapeHtml(root.id) + '" data-field="exp" value="' + stats.intoLevel + '" /><span class="promo-field-note">' + escapeHtml(t('expConverted')) + '</span></label>';
     html += '<label class="promo-field"><span class="promo-field-label">HP %</span><input type="number" min="0" max="100" data-root-id="' + escapeHtml(root.id) + '" data-field="hp" value="' + stats.hp + '" /></label>';
-    html += '<label class="promo-field"><span class="promo-field-label">Status</span><select data-root-id="' + escapeHtml(root.id) + '" data-field="status">' + promoStatusOptionsHtml(root.status) + '</select></label>';
+    html += '<label class="promo-field"><span class="promo-field-label">' + escapeHtml(t('status')) + '</span><select data-root-id="' + escapeHtml(root.id) + '" data-field="status">' + promoStatusOptionsHtml(root.status) + '</select></label>';
     html += '</div>';
     html += '<div class="promo-scene-stats">';
     html += '<span class="promo-scene-chip">TOK ' + formatTokenCount(stats.totalTokens) + '</span>';
@@ -3684,8 +4527,8 @@
     html += '</div>';
     html += '<section class="promo-scene-subagents">';
     html += '<div class="promo-scene-subagents-head">';
-    html += '<div><h4 class="promo-scene-subagents-title">Sub-agents</h4><div class="promo-scene-subagents-count">' + subagents.length + ' configured</div></div>';
-    html += '<button class="promo-studio-btn promo-scene-add-subagent" type="button" data-action="add-subagent" data-root-id="' + escapeHtml(root.id) + '">Add Sub-agent</button>';
+    html += '<div><h4 class="promo-scene-subagents-title">' + escapeHtml(t('subagents')) + '</h4><div class="promo-scene-subagents-count">' + escapeHtml(t('configured', { count: subagents.length })) + '</div></div>';
+    html += '<button class="promo-studio-btn promo-scene-add-subagent" type="button" data-action="add-subagent" data-root-id="' + escapeHtml(root.id) + '">' + escapeHtml(t('addSubagent')) + '</button>';
     html += '</div>';
     html += '<div class="promo-scene-subagents-list">';
     for (var i = 0; i < subagents.length; i++) {
@@ -3711,7 +4554,13 @@
     promoStudioPanelEl.hidden = !uiState.promoStudioOpen;
     promoStudioEnabledEl.checked = !!uiState.promoStudioEnabled;
     var counts = promoSceneCounts();
-    promoStudioSummaryEl.textContent = counts.roots + ' root agent' + (counts.roots === 1 ? '' : 's') + ', ' + counts.subagents + ' sub-agent' + (counts.subagents === 1 ? '' : 's') + ', ' + counts.boxed + ' boxed.';
+    promoStudioSummaryEl.textContent = t('promoSummary', {
+      roots: counts.roots,
+      rootPlural: counts.roots === 1 ? '' : 's',
+      subagents: counts.subagents,
+      subPlural: counts.subagents === 1 ? '' : 's',
+      boxed: counts.boxed
+    });
     if (!shouldRebuildList) {
       return;
     }
@@ -3719,7 +4568,7 @@
       return;
     }
     if (!counts.roots) {
-      promoStudioListEl.innerHTML = '<div class="promo-scene-empty">No custom agents yet. Add a root Pokemon to start composing a promo scene.</div>';
+      promoStudioListEl.innerHTML = '<div class="promo-scene-empty">' + escapeHtml(t('noPromoAgents')) + '</div>';
       return;
     }
     var html = '';
@@ -3866,7 +4715,7 @@
     var agents = listedAgents();
 
     if (agents.length === 0) {
-      agentListEl.innerHTML = '<div class="poke-slot" style="cursor:default;justify-content:center">No agents yet.</div>';
+      agentListEl.innerHTML = '<div class="poke-slot" style="cursor:default;justify-content:center">' + escapeHtml(t('noAgentsYet')) + '</div>';
       return;
     }
 
@@ -3915,7 +4764,7 @@
 
       if (roomIndex !== currentRoom) {
         currentRoom = roomIndex;
-        var roomLabel = AREAS[roomIndex] ? AREAS[roomIndex].label : 'Area ?';
+        var roomLabel = AREAS[roomIndex] ? localizedAreaLabel(AREAS[roomIndex]) : localizedUnknownAreaLabel();
         html += '<div class="room-header">' + escapeHtml(roomLabel) + '</div>';
       }
 
@@ -4033,21 +4882,21 @@
     html += '<span class="map-tooltip-exp-nums">' + formatTokenCount(xp.intoLevel) + '/' + formatTokenCount(xp.needed) + '</span>';
     html += '</div>';
     html += '<div class="map-tooltip-details">';
-    html += '<div class="detail-row"><span class="detail-label">Status</span><span class="detail-value">' + escapeHtml(agent.status) + '</span></div>';
-    html += '<div class="detail-row"><span class="detail-label">Started</span><span class="detail-value">' + formatTime(agent.createdAt) + '</span></div>';
-    html += '<div class="detail-row"><span class="detail-label">Last tool</span><span class="detail-value">' + escapeHtml(agent.lastTool || '-') + '</span></div>';
-    html += '<div class="detail-row"><span class="detail-label">Tools run</span><span class="detail-value">' + (agent.counters.toolStarts || 0) + '</span></div>';
-    html += '<div class="detail-row"><span class="detail-label">Tokens</span><span class="detail-value">' + formatTokenCount(xp.totalTokens) + '</span></div>';
+    html += '<div class="detail-row"><span class="detail-label">' + escapeHtml(t('status')) + '</span><span class="detail-value">' + escapeHtml(localizedStatusText(agent.status)) + '</span></div>';
+    html += '<div class="detail-row"><span class="detail-label">' + escapeHtml(t('started')) + '</span><span class="detail-value">' + formatTime(agent.createdAt) + '</span></div>';
+    html += '<div class="detail-row"><span class="detail-label">' + escapeHtml(t('lastTool')) + '</span><span class="detail-value">' + escapeHtml(agent.lastTool || '-') + '</span></div>';
+    html += '<div class="detail-row"><span class="detail-label">' + escapeHtml(t('toolsRun')) + '</span><span class="detail-value">' + (agent.counters.toolStarts || 0) + '</span></div>';
+    html += '<div class="detail-row"><span class="detail-label">' + escapeHtml(t('tokens')) + '</span><span class="detail-value">' + formatTokenCount(xp.totalTokens) + '</span></div>';
     var secsAgo = Math.max(0, Math.floor((Date.now() - agent.lastSeen) / 1000));
-    html += '<div class="detail-row"><span class="detail-label">Last seen</span><span class="detail-value">' + secsAgo + 's ago</span></div>';
+    html += '<div class="detail-row"><span class="detail-label">' + escapeHtml(t('lastSeen')) + '</span><span class="detail-value">' + escapeHtml(formatSecondsAgo(secsAgo)) + '</span></div>';
     html += '</div>';
     if (lastCommand) {
-      html += '<div class="map-tooltip-command" title="' + escapeHtml(lastCommand) + '"><span class="map-tooltip-command-label">Last command</span><span class="map-tooltip-command-value">' + escapeHtml(lastCommand) + '</span></div>';
+      html += '<div class="map-tooltip-command" title="' + escapeHtml(lastCommand) + '"><span class="map-tooltip-command-label">' + escapeHtml(t('lastCommand')) + '</span><span class="map-tooltip-command-value">' + escapeHtml(lastCommand) + '</span></div>';
     }
     if (agent.lastUserQuery) {
       html += '<div class="map-tooltip-query">' + escapeHtml(agent.lastUserQuery) + '</div>';
     }
-    html += '<button class="map-tooltip-box-btn" data-action="box" data-agent-id="' + escapeHtml(agent.agentId) + '">Archive</button>';
+    html += '<button class="map-tooltip-box-btn" data-action="box" data-agent-id="' + escapeHtml(agent.agentId) + '">' + escapeHtml(t('archive')) + '</button>';
 
     mapTooltipEl.innerHTML = html;
     mapTooltipEl.style.display = 'block';
@@ -4115,17 +4964,17 @@
     html += '</div>';
     html += '<div class="box-tooltip-details">';
     html += '<div class="detail-row"><span class="detail-label">ID</span><span class="detail-value">' + escapeHtml(toShortId(agent.agentId)) + '</span></div>';
-    html += '<div class="detail-row"><span class="detail-label">Started</span><span class="detail-value">' + formatTime(agent.createdAt) + '</span></div>';
-    html += '<div class="detail-row"><span class="detail-label">Ended</span><span class="detail-value">' + formatTime(agent.doneAt) + '</span></div>';
-    html += '<div class="detail-row"><span class="detail-label">Duration</span><span class="detail-value">' + duration + '</span></div>';
-    html += '<div class="detail-row"><span class="detail-label">Tools run</span><span class="detail-value">' + (agent.counters.toolStarts || 0) + '</span></div>';
-    html += '<div class="detail-row"><span class="detail-label">Tokens</span><span class="detail-value">' + formatTokenCount(xp.totalTokens) + '</span></div>';
+    html += '<div class="detail-row"><span class="detail-label">' + escapeHtml(t('started')) + '</span><span class="detail-value">' + formatTime(agent.createdAt) + '</span></div>';
+    html += '<div class="detail-row"><span class="detail-label">' + escapeHtml(t('ended')) + '</span><span class="detail-value">' + formatTime(agent.doneAt) + '</span></div>';
+    html += '<div class="detail-row"><span class="detail-label">' + escapeHtml(t('duration')) + '</span><span class="detail-value">' + duration + '</span></div>';
+    html += '<div class="detail-row"><span class="detail-label">' + escapeHtml(t('toolsRun')) + '</span><span class="detail-value">' + (agent.counters.toolStarts || 0) + '</span></div>';
+    html += '<div class="detail-row"><span class="detail-label">' + escapeHtml(t('tokens')) + '</span><span class="detail-value">' + formatTokenCount(xp.totalTokens) + '</span></div>';
     if (agent.subagentType) {
-      html += '<div class="detail-row"><span class="detail-label">Type</span><span class="detail-value">' + escapeHtml(agent.subagentType) + '</span></div>';
+      html += '<div class="detail-row"><span class="detail-label">' + escapeHtml(t('type')) + '</span><span class="detail-value">' + escapeHtml(agent.subagentType) + '</span></div>';
     }
     html += '</div>';
     if (lastCommand) {
-      html += '<div class="box-tooltip-command" title="' + escapeHtml(lastCommand) + '"><span class="box-tooltip-command-label">Last command</span><span class="box-tooltip-command-value">' + escapeHtml(lastCommand) + '</span></div>';
+      html += '<div class="box-tooltip-command" title="' + escapeHtml(lastCommand) + '"><span class="box-tooltip-command-label">' + escapeHtml(t('lastCommand')) + '</span><span class="box-tooltip-command-value">' + escapeHtml(lastCommand) + '</span></div>';
     }
 
     boxTooltipEl.innerHTML = html;
@@ -4148,14 +4997,14 @@
   }
 
   function formatSummaryDate(ts) {
-    if (!ts) return 'No record';
+    if (!ts) return t('noRecord');
     var d = new Date(ts);
     var months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
     return d.getDate() + ' ' + months[d.getMonth()] + ', ' + d.getFullYear();
   }
 
   function formatSummaryDateTime(ts) {
-    if (!ts) return 'No record';
+    if (!ts) return t('noRecord');
     var d = new Date(ts);
     var y = d.getFullYear();
     var mo = String(d.getMonth() + 1).padStart(2, '0');
@@ -4171,10 +5020,10 @@
   }
 
   function tooltipRoleLabel(agent) {
-    if (!agent) return 'Agent';
-    if (agent.parentId) return agent.subagentType || 'Sub-agent';
+    if (!agent) return t('agents');
+    if (agent.parentId) return agent.subagentType || t('subagentLabel');
     if (agent.subagentType) return agent.subagentType;
-    return 'Root Agent';
+    return t('rootAgentLabel');
   }
 
   function tooltipStatusClass(status) {
@@ -4182,9 +5031,9 @@
   }
 
   function tooltipAreaLabel(agent) {
-    if (!agent) return 'Unknown Area';
+    if (!agent) return localizedUnknownAreaLabel();
     var areaIndex = getAreaIndex(agent);
-    return AREAS[areaIndex] ? AREAS[areaIndex].label : 'Unknown Area';
+    return AREAS[areaIndex] ? localizedAreaLabel(AREAS[areaIndex]) : localizedUnknownAreaLabel();
   }
 
   function buildAgentSummaryTooltip(agent, options) {
@@ -4198,12 +5047,12 @@
     var xp = agentLevelProgress(agent);
     var agentName = tooltipAgentName(agent);
     var fullLabel = agentLabel(agent);
-    var statusText = archived ? 'Archived' : (agent.status || 'Idle');
+    var statusText = archived ? t('statusArchived') : localizedStatusText(agent.status || 'Idle');
     var projName = shortProjectName(agent.projectId || 'unknown');
     var metAtText = formatSummaryDateTime(agent.createdAt);
-    var lastActivity = commandText(agent.activity || statusText || 'Idle');
+    var lastActivity = commandText(agent.activity || statusText || t('statusIdle'));
     var lastCommand = commandText(agent.lastCommand);
-    var noteText = summarizeCommand(lastCommand || 'No command yet', 116);
+    var noteText = summarizeCommand(lastCommand || (currentLanguage() === 'ko' ? '아직 명령 없음' : 'No command yet'), 116);
     var activityText = summarizeCommand(lastActivity, 96);
     var contextStats = agentContextStats(agent);
     var contextMax = contextStats.contextMax;
@@ -4213,29 +5062,33 @@
     var modelLabel = agentTypeLabel(agent, contextMax);
     var memoLines = [];
     var lastSeenText = '-';
-    var lastSeenLabel = 'Last seen';
+    var lastSeenLabel = t('lastSeen');
     var rows = [
-      { label: 'Name', value: agentName, wrap: true },
+      { label: t('name'), value: agentName, wrap: true },
       { label: 'HP', kind: 'meter', meterTone: 'hp', value: formatContextK(contextRemaining) + '/' + formatContextK(contextMax), pct: barPct, color: barColor },
-      { label: 'EXP', kind: 'meter', meterTone: 'exp', value: formatTokenCount(xp.intoLevel) + '/' + formatTokenCount(xp.needed), subvalue: 'Total token', subvalueDetail: formatTokenCount(xp.totalTokens), pct: xp.progress },
-      { label: 'Type', value: modelLabel, pill: true, tone: 'type' }
+      { label: 'EXP', kind: 'meter', meterTone: 'exp', value: formatTokenCount(xp.intoLevel) + '/' + formatTokenCount(xp.needed), subvalue: t('totalToken'), subvalueDetail: formatTokenCount(xp.totalTokens), pct: xp.progress },
+      { label: t('type'), value: modelLabel, pill: true, tone: 'type' }
     ];
 
     if (archived && agent.doneAt) {
       lastSeenText = formatTime(agent.doneAt);
-      lastSeenLabel = 'Ended';
+      lastSeenLabel = t('ended');
     } else if (agent.lastSeen) {
-      lastSeenText = Math.max(0, Math.floor((Date.now() - agent.lastSeen) / 1000)) + 's ago';
+      lastSeenText = formatSecondsAgo(Math.max(0, Math.floor((Date.now() - agent.lastSeen) / 1000)));
     }
 
-    memoLines.push({ html: 'Met in <span class="summary-tooltip-project-accent">' + escapeHtml(projName) + '</span> at ' + escapeHtml(metAtText) + '.', accent: false });
+    memoLines.push({ html: t('metInProjectAt', { project: '<span class="summary-tooltip-project-accent">' + escapeHtml(projName) + '</span>', time: escapeHtml(metAtText) }), accent: false });
 
     var rarity = getPokemonRarity(getRenderPokemonId(agent));
+    var areaMeta = agentSpawnAreaMeta(agent);
 
     var html = '';
     html += '<div class="summary-tooltip-shell' + (archived ? ' archived' : ' live') + '">';
     html += '<div class="summary-tooltip-topbar">';
-    html += '<span class="summary-tooltip-window-title">' + (archived ? 'Archive Info' : 'Agent Info') + '</span>';
+    html += '<div class="summary-tooltip-topbar-main">';
+    html += spawnAreaChipHtml(areaMeta, 'summary-tooltip-area-chip');
+    html += '<span class="summary-tooltip-window-title">' + escapeHtml(archived ? t('archiveInfo') : t('agentInfo')) + '</span>';
+    html += '</div>';
     if (rarity) {
       html += '<span class="pokedex-rarity-badge tier-' + rarity.tier + '">' + escapeHtml(rarity.label) + '</span>';
     }
@@ -4247,7 +5100,7 @@
     html += '<span class="summary-tooltip-agent-name" title="' + escapeHtml(speciesName) + '">' + escapeHtml(speciesName) + '</span>';
     html += '</div>';
     html += '<div class="summary-tooltip-portrait">';
-    html += '<span class="summary-tooltip-status summary-status-' + tooltipStatusClass(statusText) + '">' + escapeHtml(statusText) + '</span>';
+    html += '<span class="summary-tooltip-status summary-status-' + tooltipStatusClass(agent.status || (archived ? 'archived' : 'idle')) + '">' + escapeHtml(statusText) + '</span>';
     html += '<img class="summary-tooltip-sprite" src="' + escapeHtml(spriteUrl) + '" />';
     html += '</div>';
     html += '</div>';
@@ -4278,7 +5131,7 @@
     html += '</div>';
     html += '<div class="summary-tooltip-memo">';
     html += '<div class="summary-tooltip-memo-head">';
-    html += '<span class="summary-tooltip-memo-title">Trainer Memo</span>';
+    html += '<span class="summary-tooltip-memo-title">' + escapeHtml(t('trainerMemo')) + '</span>';
     html += '</div>';
     html += '<div class="summary-tooltip-memo-body">';
     for (var j = 0; j < memoLines.length; j++) {
@@ -4290,7 +5143,7 @@
     if (noteText || lastActivity) {
       html += '<div class="summary-tooltip-note">';
       html += '<div class="summary-tooltip-note-head">';
-      html += '<span class="summary-tooltip-note-label">Last Command</span>';
+      html += '<span class="summary-tooltip-note-label">' + escapeHtml(t('lastCommand')) + '</span>';
       html += '<span class="summary-tooltip-note-meta">' + escapeHtml(lastSeenLabel + ' ' + lastSeenText) + '</span>';
       html += '</div>';
       if (noteText) {
@@ -4298,14 +5151,14 @@
       }
       if (lastActivity) {
         html += '<div class="summary-tooltip-note-head is-secondary">';
-        html += '<span class="summary-tooltip-note-label is-secondary">Last Activity</span>';
+        html += '<span class="summary-tooltip-note-label is-secondary">' + escapeHtml(t('lastActivity')) + '</span>';
         html += '</div>';
         html += '<span class="summary-tooltip-note-value is-secondary">' + escapeHtml(activityText) + '</span>';
       }
       html += '</div>';
     }
     if (allowBoxAction) {
-      html += '<button class="summary-tooltip-box-btn map-tooltip-box-btn" data-action="box" data-agent-id="' + escapeHtml(agent.agentId) + '">Archive</button>';
+      html += '<button class="summary-tooltip-box-btn map-tooltip-box-btn" data-action="box" data-agent-id="' + escapeHtml(agent.agentId) + '">' + escapeHtml(t('archive')) + '</button>';
     }
     html += '</div>';
     html += '</div>';
@@ -4541,19 +5394,19 @@
     var html = '';
     html += '<div class="subhistory-tooltip-head">';
     html += '<div class="subhistory-tooltip-title">' + escapeHtml(label) + '</div>';
-    html += '<div class="subhistory-tooltip-subtitle">' + escapeHtml(agent.subagentType || 'Sub-agent') + (agent.isLive ? ' • Live' : ' • Finished') + '</div>';
+    html += '<div class="subhistory-tooltip-subtitle">' + escapeHtml(agent.subagentType || t('subagentLabel')) + (agent.isLive ? ' • ' + escapeHtml(t('live')) : ' • ' + escapeHtml(t('finished'))) + '</div>';
     html += '</div>';
     html += '<div class="subhistory-tooltip-details">';
-    html += '<div class="subhistory-tooltip-item"><span class="subhistory-tooltip-label">Tokens</span><span class="subhistory-tooltip-value">' + formatTokenCount(agent.totalTokens || 0) + '</span></div>';
-    html += '<div class="subhistory-tooltip-item"><span class="subhistory-tooltip-label">Tools</span><span class="subhistory-tooltip-value">' + (agent.counters.toolStarts || 0) + '</span></div>';
-    html += '<div class="subhistory-tooltip-item"><span class="subhistory-tooltip-label">Started</span><span class="subhistory-tooltip-value">' + escapeHtml(formatTime(agent.createdAt)) + '</span></div>';
-    html += '<div class="subhistory-tooltip-item"><span class="subhistory-tooltip-label">' + (agent.isLive ? 'Last seen' : 'Ended') + '</span><span class="subhistory-tooltip-value">' + escapeHtml(formatTime(endTs)) + '</span></div>';
-    html += '<div class="subhistory-tooltip-item"><span class="subhistory-tooltip-label">Duration</span><span class="subhistory-tooltip-value">' + escapeHtml(duration) + '</span></div>';
-    html += '<div class="subhistory-tooltip-item"><span class="subhistory-tooltip-label">Project</span><span class="subhistory-tooltip-value">' + escapeHtml(agent.projectId || '-') + '</span></div>';
-    html += '<div class="subhistory-tooltip-item"><span class="subhistory-tooltip-label">Session</span><span class="subhistory-tooltip-value">' + escapeHtml(agent.sessionId || '-') + '</span></div>';
+    html += '<div class="subhistory-tooltip-item"><span class="subhistory-tooltip-label">' + escapeHtml(t('tokens')) + '</span><span class="subhistory-tooltip-value">' + formatTokenCount(agent.totalTokens || 0) + '</span></div>';
+    html += '<div class="subhistory-tooltip-item"><span class="subhistory-tooltip-label">' + escapeHtml(t('tools')) + '</span><span class="subhistory-tooltip-value">' + (agent.counters.toolStarts || 0) + '</span></div>';
+    html += '<div class="subhistory-tooltip-item"><span class="subhistory-tooltip-label">' + escapeHtml(t('started')) + '</span><span class="subhistory-tooltip-value">' + escapeHtml(formatTime(agent.createdAt)) + '</span></div>';
+    html += '<div class="subhistory-tooltip-item"><span class="subhistory-tooltip-label">' + escapeHtml(agent.isLive ? t('lastSeen') : t('ended')) + '</span><span class="subhistory-tooltip-value">' + escapeHtml(formatTime(endTs)) + '</span></div>';
+    html += '<div class="subhistory-tooltip-item"><span class="subhistory-tooltip-label">' + escapeHtml(t('duration')) + '</span><span class="subhistory-tooltip-value">' + escapeHtml(duration) + '</span></div>';
+    html += '<div class="subhistory-tooltip-item"><span class="subhistory-tooltip-label">' + escapeHtml(t('project')) + '</span><span class="subhistory-tooltip-value">' + escapeHtml(agent.projectId || '-') + '</span></div>';
+    html += '<div class="subhistory-tooltip-item"><span class="subhistory-tooltip-label">' + escapeHtml(t('session')) + '</span><span class="subhistory-tooltip-value">' + escapeHtml(agent.sessionId || '-') + '</span></div>';
     html += '</div>';
     if (lastCommand) {
-      html += '<div class="subhistory-tooltip-command" title="' + escapeHtml(lastCommand) + '"><span class="subhistory-tooltip-command-label">Last command</span><span class="subhistory-tooltip-command-value">' + escapeHtml(lastCommand) + '</span></div>';
+      html += '<div class="subhistory-tooltip-command" title="' + escapeHtml(lastCommand) + '"><span class="subhistory-tooltip-command-label">' + escapeHtml(t('lastCommand')) + '</span><span class="subhistory-tooltip-command-value">' + escapeHtml(lastCommand) + '</span></div>';
     }
     if (agent.lastUserQuery) {
       html += '<div class="subhistory-tooltip-query">' + escapeHtml(agent.lastUserQuery) + '</div>';
@@ -4599,18 +5452,18 @@
         html += '<div class="box-item-name-row">';
         html += '<span class="box-item-name" title="' + escapeHtml(agentLabel(agent)) + '">' + escapeHtml(label) + '</span>';
         if (agent.manuallyBoxed) {
-          html += '<span class="box-item-manual-badge" title="Manually archived - restores on next query">HOLD</span>';
+          html += '<span class="box-item-manual-badge" title="' + escapeHtml(t('manuallyArchived')) + '">HOLD</span>';
         }
         if (adopted) {
-          html += '<span class="box-item-manual-badge adopted" title="Already adopted into My Pokemon">ADOPTED</span>';
+          html += '<span class="box-item-manual-badge adopted" title="' + escapeHtml(t('alreadyAdopted')) + '">ADOPTED</span>';
         }
         html += '</div>';
         html += '</div>';
         html += '</div>';
         html += renderHistoryStats(agent, 'box-item-stats');
         html += '<div class="box-item-meta">' + escapeHtml(agent.sessionId || '-') + '</div>';
-        html += '<div class="box-item-meta">Ended ' + escapeHtml(formatTime(agent.doneAt)) + '</div>';
-        html += '<div class="box-item-meta">Duration ' + escapeHtml(duration) + '</div>';
+        html += '<div class="box-item-meta">' + escapeHtml(t('endedAt', { time: formatTime(agent.doneAt) })) + '</div>';
+        html += '<div class="box-item-meta">' + escapeHtml(t('durationValue', { duration: duration })) + '</div>';
         if (lastCommand) {
           html += '<div class="box-item-command" title="' + escapeHtml(lastCommand) + '"><span class="box-item-command-label">CMD</span><span class="box-item-command-value">' + escapeHtml(summarizeCommand(lastCommand, 56)) + '</span></div>';
         }
@@ -4618,7 +5471,7 @@
           html += '<div class="box-item-actions">';
           if (subhistoryCount > 0) {
             html += '<button class="box-detail-btn" data-action="open-subhistory" data-agent-id="' + escapeHtml(agent.agentId) + '">';
-            html += 'Sub-history (' + subhistoryCount + ')';
+            html += escapeHtml(t('subHistoryCount', { count: subhistoryCount }));
             html += '</button>';
           } else {
             html += '<span class="box-item-action-spacer" aria-hidden="true"></span>';
@@ -4630,7 +5483,7 @@
         }
         html += '</div>';
       }
-      html += '<button class="unbox-btn" data-action="unbox" data-agent-id="' + escapeHtml(agent.agentId) + '" title="Restore">&#x2191;</button>';
+      html += '<button class="unbox-btn" data-action="unbox" data-agent-id="' + escapeHtml(agent.agentId) + '" title="' + escapeHtml(t('restore')) + '">&#x2191;</button>';
       html += '</div>';
     }
 
@@ -4645,7 +5498,7 @@
     boxCountEl.textContent = String(boxed.length);
     boxListEl.innerHTML = renderBoxItems(boxed.slice(-60), {
       compact: true,
-      emptyMessage: 'No safari log records yet.'
+      emptyMessage: t('noSafariRecords')
     });
   }
 
@@ -4666,16 +5519,16 @@
   function renderBoxHistory() {
     if (!uiState.boxHistoryOpen) return;
     var boxed = appState.snapshot.boxedAgents || [];
-    boxHistorySummaryEl.textContent = boxed.length + ' safari records';
+    boxHistorySummaryEl.textContent = t('safariRecords', { count: boxed.length });
     boxHistoryGridEl.innerHTML = renderBoxItems(boxed, {
       compact: false,
       withDetails: true,
-      emptyMessage: 'No safari log records yet.'
+      emptyMessage: t('noSafariRecords')
     });
   }
 
   function ownedDisplayName(pokemon) {
-    if (!pokemon) return 'Pokemon';
+    if (!pokemon) return t('pokemon');
     return pokemon.nickname || pokemonDisplayName(pokemon.speciesId);
   }
 
@@ -4737,80 +5590,80 @@
 
   function showDrawActionResult(result) {
     if (!result || !result.ok) {
-      showActionPopup('Draw Result', '뽑기 결과', actionErrorMessage(result), actionErrorMessage(result));
+      showActionPopup(t('drawResult'), t('drawResult'), actionErrorMessage(result), actionErrorMessage(result));
       return;
     }
     if (result.pending) {
-      showActionPopup('Draw Result', '뽑기 결과', 'Draw request was sent.', '뽑기 요청을 보냈습니다.');
+      showActionPopup(t('drawResult'), t('drawResult'), t('drawRequestSent'), t('drawRequestSent'));
       return;
     }
     if (!result.success) {
       showActionPopup(
-        'Draw Result',
-        '뽑기 결과',
-        'No item this time.',
-        '이번에는 아이템이 나오지 않았습니다.'
+        t('drawResult'),
+        t('drawResult'),
+        t('noItemThisTime'),
+        t('noItemThisTime')
       );
       return;
     }
     if (result.success) {
       var itemName = evolutionItemLabel(result.itemId);
       showActionPopup(
-        'Draw Result',
-        '뽑기 결과',
-        'You drew ' + itemName + '.',
-        itemName + ' 획득!',
-        { visual: { type: 'item', itemId: result.itemId, name: itemName, label: localizedActionText('Draw Item', '뽑은 아이템') } }
+        t('drawResult'),
+        t('drawResult'),
+        t('youDrewItem', { item: itemName }),
+        t('youDrewItem', { item: itemName }),
+        { visual: { type: 'item', itemId: result.itemId, name: itemName, label: t('drawResult') } }
       );
       return;
-      showActionPopup('Draw Result', '뽑기 결과', 'You drew ' + itemName + '.', itemName + ' 획득!');
+      showActionPopup(t('drawResult'), t('drawResult'), t('youDrewItem', { item: itemName }), t('youDrewItem', { item: itemName }));
     } else {
-      showActionPopup('Draw Result', '뽑기 결과', 'No item this time.', '이번에는 아이템이 나오지 않았습니다.');
+      showActionPopup(t('drawResult'), t('drawResult'), t('noItemThisTime'), t('noItemThisTime'));
     }
   }
 
   function showItemActionResult(action, result, itemId) {
     var itemName = evolutionItemLabel((result && result.itemId) || itemId);
     if (!result || !result.ok) {
-      showActionPopup('Item Result', '아이템 결과', actionErrorMessage(result), actionErrorMessage(result));
+      showActionPopup(t('itemResult'), t('itemResult'), actionErrorMessage(result), actionErrorMessage(result));
       return;
     }
     if (result.pending) {
-      showActionPopup('Item Result', '아이템 결과', 'Request was sent.', '요청을 보냈습니다.');
+      showActionPopup(t('itemResult'), t('itemResult'), t('requestSent'), t('requestSent'));
       return;
     }
     if (action === 'buy') {
       showActionPopup(
-        'Buy Result',
-        '구매 결과',
-        'Bought ' + itemName + '.',
-        itemName + ' 구매 완료.',
-        { visual: { type: 'item', itemId: (result && result.itemId) || itemId, name: itemName, label: localizedActionText('Purchased', '구매한 아이템') } }
+        t('buyResult'),
+        t('buyResult'),
+        t('boughtItem', { item: itemName }),
+        t('boughtItem', { item: itemName }),
+        { visual: { type: 'item', itemId: (result && result.itemId) || itemId, name: itemName, label: t('buyResult') } }
       );
       return;
-      showActionPopup('Buy Result', '구매 결과', 'Bought ' + itemName + '.', itemName + ' 구매 완료.');
+      showActionPopup(t('buyResult'), t('buyResult'), t('boughtItem', { item: itemName }), t('boughtItem', { item: itemName }));
     } else if (action === 'claim') {
       showActionPopup(
-        'Claim Result',
-        '확정 획득 결과',
-        'Claimed ' + itemName + '.',
-        itemName + ' 확정 획득 완료.',
-        { visual: { type: 'item', itemId: (result && result.itemId) || itemId, name: itemName, label: localizedActionText('Claimed', '확정 획득') } }
+        t('claimResult'),
+        t('claimResult'),
+        t('claimedItem', { item: itemName }),
+        t('claimedItem', { item: itemName }),
+        { visual: { type: 'item', itemId: (result && result.itemId) || itemId, name: itemName, label: t('claimTarget') } }
       );
       return;
-      showActionPopup('Claim Result', '확정 획득 결과', 'Claimed ' + itemName + '.', itemName + ' 확정 획득 완료.');
+      showActionPopup(t('claimResult'), t('claimResult'), t('claimedItem', { item: itemName }), t('claimedItem', { item: itemName }));
     } else if (action === 'sell') {
       var sellValue = (result && result.evolutionItems && result.evolutionItems.itemSellPointValue) ||
         evolutionItemState().itemSellPointValue || 10;
       showActionPopup(
-        'Sell Result',
-        '판매 결과',
-        'Sold ' + itemName + '. +' + sellValue + ' pts gained.',
-        itemName + ' 판매 완료. +' + sellValue + ' pts 획득.',
-        { visual: { type: 'item', itemId: (result && result.itemId) || itemId, name: itemName, label: localizedActionText('Sold', '판매한 아이템'), detail: '+' + sellValue + ' pts' } }
+        t('sellResult'),
+        t('sellResult'),
+        t('soldItem', { item: itemName, value: sellValue }),
+        t('soldItem', { item: itemName, value: sellValue }),
+        { visual: { type: 'item', itemId: (result && result.itemId) || itemId, name: itemName, label: t('sell'), detail: '+' + sellValue + ' pts' } }
       );
       return;
-      showActionPopup('Sell Result', '판매 결과', 'Sold ' + itemName + '. +' + sellValue + ' pts gained.', itemName + ' 판매 완료. +' + sellValue + ' pts 획득.');
+      showActionPopup(t('sellResult'), t('sellResult'), t('soldItem', { item: itemName, value: sellValue }), t('soldItem', { item: itemName, value: sellValue }));
     }
   }
 
@@ -4821,18 +5674,18 @@
       : targetSpeciesId;
     var afterName = afterSpeciesId ? pokemonDisplayName(afterSpeciesId) : '';
     if (!result || !result.ok) {
-      showActionPopup('Evolution Result', '진화 결과', actionErrorMessage(result), actionErrorMessage(result));
+      showActionPopup(t('evolutionResult'), t('evolutionResult'), actionErrorMessage(result), actionErrorMessage(result));
       return;
     }
     if (result.pending) {
-      showActionPopup('Evolution Result', '진화 결과', 'Evolution request was sent.', '진화 요청을 보냈습니다.');
+      showActionPopup(t('evolutionResult'), t('evolutionResult'), t('evolutionRequestSent'), t('evolutionRequestSent'));
       return;
     }
     showActionPopup(
-      'Evolution Result',
-      '진화 결과',
-      beforeName + (afterName ? ' evolved into ' + afterName + '.' : ' evolved.'),
-      beforeName + (afterName ? ' -> ' + afterName + ' 진화 완료.' : ' 진화 완료.'),
+      t('evolutionResult'),
+      t('evolutionResult'),
+      afterName ? t('evolvedInto', { from: beforeName, to: afterName }) : t('evolved', { from: beforeName }),
+      afterName ? t('evolvedInto', { from: beforeName, to: afterName }) : t('evolved', { from: beforeName }),
       {
         visual: {
           type: 'evolution',
@@ -4846,10 +5699,10 @@
     );
     return;
     showActionPopup(
-      'Evolution Result',
-      '진화 결과',
-      beforeName + (afterName ? ' evolved into ' + afterName + '.' : ' evolved.'),
-      beforeName + (afterName ? ' -> ' + afterName + ' 진화 완료.' : ' 진화 완료.')
+      t('evolutionResult'),
+      t('evolutionResult'),
+      afterName ? t('evolvedInto', { from: beforeName, to: afterName }) : t('evolved', { from: beforeName }),
+      afterName ? t('evolvedInto', { from: beforeName, to: afterName }) : t('evolved', { from: beforeName })
     );
   }
 
@@ -4881,13 +5734,13 @@
   function evolutionStatusText(evolution) {
     if (!evolution) return '';
     if (evolution.candidateCount > 1) {
-      if (evolution.canEvolve) return evolution.candidateCount + ' paths ready';
-      return evolution.candidateCount + ' evolution paths';
+      if (evolution.canEvolve) return t('pathsReady', { count: evolution.candidateCount });
+      return t('evolutionPaths', { count: evolution.candidateCount });
     }
     if (evolution.method === 'item') {
-      return evolution.canEvolve ? 'Can evolve' : 'Needs ' + evolutionItemLabel(evolution.itemId);
+      return evolution.canEvolve ? t('canEvolve') : t('needsItem', { item: evolutionItemLabel(evolution.itemId) });
     }
-    return evolution.canEvolve ? 'Can evolve' : 'Evolves at Lv.' + evolution.requiredLevel;
+    return evolution.canEvolve ? t('canEvolve') : t('evolvesAtLevel', { level: evolution.requiredLevel });
   }
 
   function renderEvolutionTargetSelect(pokemon, evolution) {
@@ -4925,7 +5778,7 @@
     var selected = pokemon.assignedProjectId || '';
     var projects = ownedProjectOptions(selected);
     var html = '<select class="owned-project-select" data-owned-field="project" data-owned-id="' + escapeHtml(pokemon.id) + '">';
-    html += '<option value="">No project</option>';
+    html += '<option value="">' + escapeHtml(t('noProject')) + '</option>';
     for (var i = 0; i < projects.length; i++) {
       html += '<option value="' + escapeHtml(projects[i]) + '"' + (projects[i] === selected ? ' selected' : '') + '>';
       html += escapeHtml(shortProjectName(projects[i]));
@@ -4936,7 +5789,7 @@
   }
 
   function renderOwnedTrainingLabel(pokemon) {
-    return pokemon && pokemon.assignedProjectId ? shortProjectName(pokemon.assignedProjectId) : 'No project';
+    return pokemon && pokemon.assignedProjectId ? shortProjectName(pokemon.assignedProjectId) : t('noProject');
   }
 
   function renderOwnedExpRow(stats, extraClass) {
@@ -4969,35 +5822,35 @@
     html += '</div>';
     html += renderOwnedExpRow(stats);
     html += '<div class="owned-card-meta">';
-    html += '<span>' + (isParty ? 'Party' : 'Boxed') + '</span>';
+    html += '<span>' + escapeHtml(isParty ? t('party') : t('boxed')) + '</span>';
     if (pokemon.sourceProjectId) {
-      html += '<span>From ' + escapeHtml(shortProjectName(pokemon.sourceProjectId)) + '</span>';
+      html += '<span>' + escapeHtml(t('fromProject', { project: shortProjectName(pokemon.sourceProjectId) })) + '</span>';
     }
     if (evolution) {
       html += '<span>' + escapeHtml(evolutionStatusText(evolution)) + '</span>';
     }
     html += '</div>';
     html += '<div class="owned-project-row">';
-    html += '<span>Training</span>' + renderOwnedProjectSelect(pokemon);
+    html += '<span>' + escapeHtml(t('training')) + '</span>' + renderOwnedProjectSelect(pokemon);
     html += '</div>';
     if (options.actions !== false) {
       html += '<div class="owned-card-actions">';
-      html += '<button type="button" data-owned-action="nickname" data-owned-id="' + escapeHtml(pokemon.id) + '">Name</button>';
+      html += '<button type="button" data-owned-action="nickname" data-owned-id="' + escapeHtml(pokemon.id) + '">' + escapeHtml(t('name')) + '</button>';
       if (isParty) {
-        html += '<button type="button" data-owned-action="box" data-owned-id="' + escapeHtml(pokemon.id) + '">Box</button>';
+        html += '<button type="button" data-owned-action="box" data-owned-id="' + escapeHtml(pokemon.id) + '">' + escapeHtml(t('box')) + '</button>';
       } else {
-        html += '<button type="button" data-owned-action="party" data-owned-id="' + escapeHtml(pokemon.id) + '">Party</button>';
+        html += '<button type="button" data-owned-action="party" data-owned-id="' + escapeHtml(pokemon.id) + '">' + escapeHtml(t('party')) + '</button>';
         if (options.release !== false) {
-          html += '<button type="button" class="owned-release-btn" data-owned-action="release" data-owned-id="' + escapeHtml(pokemon.id) + '">Release</button>';
+          html += '<button type="button" class="owned-release-btn" data-owned-action="release" data-owned-id="' + escapeHtml(pokemon.id) + '">' + escapeHtml(t('release')) + '</button>';
         }
       }
       if (evolution) {
         html += '<button type="button" data-owned-action="holdEvolution" data-owned-id="' + escapeHtml(pokemon.id) + '" data-held="' + (pokemon.evolutionHeld ? 'false' : 'true') + '">';
-        html += pokemon.evolutionHeld ? 'Allow Evo' : 'Hold Evo';
+        html += escapeHtml(pokemon.evolutionHeld ? t('allowEvo') : t('holdEvo'));
         html += '</button>';
         html += renderEvolutionTargetSelect(pokemon, evolution);
         html += '<button type="button" data-owned-action="evolve" data-owned-id="' + escapeHtml(pokemon.id) + '"' + (evolution.canEvolve ? '' : ' disabled') + '>';
-        html += 'Evolve';
+        html += escapeHtml(t('evolve'));
         html += '</button>';
       }
       html += '</div>';
@@ -5036,24 +5889,24 @@
     html += '</div>';
     html += renderOwnedExpRow(stats, 'owned-party-exp-row');
     html += '<div class="owned-party-meta">';
-    html += '<span>Training: ' + escapeHtml(renderOwnedTrainingLabel(pokemon)) + '</span>';
+    html += '<span>' + escapeHtml(t('training')) + ': ' + escapeHtml(renderOwnedTrainingLabel(pokemon)) + '</span>';
     if (evolution) {
       html += '<span>' + escapeHtml(evolutionStatusText(evolution)) + '</span>';
     }
     html += '</div>';
     html += '<div class="owned-project-row owned-party-project-row">';
-    html += '<span>Project</span>' + renderOwnedProjectSelect(pokemon);
+    html += '<span>' + escapeHtml(t('project')) + '</span>' + renderOwnedProjectSelect(pokemon);
     html += '</div>';
     if (evolution) {
       html += '<div class="owned-party-actions">';
       html += renderEvolutionTargetSelect(pokemon, evolution);
       html += '<button class="owned-party-evolve-btn" type="button" data-owned-action="evolve" data-owned-id="' + escapeHtml(pokemon.id) + '"' + (evolution.canEvolve ? '' : ' disabled') + '>';
-      html += 'Evolve';
+      html += escapeHtml(t('evolve'));
       html += '</button>';
       html += '</div>';
     }
     html += '</div>';
-    html += '<button class="owned-party-box-btn" type="button" data-owned-action="box" data-owned-id="' + escapeHtml(pokemon.id) + '">Box</button>';
+    html += '<button class="owned-party-box-btn" type="button" data-owned-action="box" data-owned-id="' + escapeHtml(pokemon.id) + '">' + escapeHtml(t('box')) + '</button>';
     html += '</article>';
     return html;
   }
@@ -5159,11 +6012,11 @@
     var costInfo = recruitCostForAgent(agent);
     var canAfford = currentItemPointBalance() >= costInfo.pointCost;
     var title = canAfford
-      ? 'Recruit for ' + costInfo.pointCost + ' pts'
-      : 'Need ' + costInfo.pointCost + ' pts to recruit';
+      ? t('recruitForPts', { cost: costInfo.pointCost })
+      : t('needPtsToRecruit', { cost: costInfo.pointCost });
     return '<button class="box-detail-btn" data-action="adopt-agent" data-agent-id="' + escapeHtml(agent.agentId) + '"' +
       ' data-pokemon-id="' + escapeHtml(String(costInfo.pokemonId)) + '" data-point-cost="' + escapeHtml(String(costInfo.pointCost)) + '"' +
-      ' title="' + escapeHtml(title) + '"' + (canAfford ? '' : ' disabled') + '>Adopt (' + escapeHtml(String(costInfo.pointCost)) + ' pts)</button>';
+      ' title="' + escapeHtml(title) + '"' + (canAfford ? '' : ' disabled') + '>' + escapeHtml(t('adoptButton', { cost: costInfo.pointCost })) + '</button>';
   }
 
   function setOwnedRecruitMode(mode) {
@@ -5192,8 +6045,8 @@
     }
     if (ownedRecruitSummaryEl) {
       ownedRecruitSummaryEl.textContent = showPokedex
-        ? availableIds.length + ' / ' + POKEDEX_TOTAL + ' available'
-        : availableIds.length + ' available';
+        ? t('availablePokedexCount', { count: availableIds.length, total: POKEDEX_TOTAL })
+        : t('availableCount', { count: availableIds.length });
     }
     syncOwnedRecruitModeButtons();
     var html = '';
@@ -5204,21 +6057,28 @@
       var costInfo = recruitCostForPokemon(pokemonId, seen);
       var canAfford = itemPoints >= costInfo.pointCost;
       var cellClass = 'owned-recruit-cell' + (seen ? ' seen' : ' unseen') + (canAfford ? '' : ' unaffordable');
-      html += '<button class="' + cellClass + '" type="button" data-owned-action="recruit-species" data-pokemon-id="' + pokemonId + '"' + (canAfford ? '' : ' disabled') + '>';
+      var pokemonName = pokemonDisplayName(pokemonId);
+      var areaMeta = pokemonSpawnAreaMeta(pokemonId);
+      var rarity = getPokemonRarity(pokemonId);
+      var recruitLabel = '#' + String(pokemonId).padStart(3, '0') + ' ' + pokemonName + ', ' + (rarity ? rarity.label + ', ' : '') + t('spawnArea', { area: areaMeta.label }) + ', ' + costInfo.pointCost + ' pts, ' + (seen ? t('seen') : t('newEntryShort'));
+      html += '<button class="' + cellClass + '" type="button" data-owned-action="recruit-species" data-pokemon-id="' + pokemonId + '"' +
+        ' data-point-cost="' + escapeHtml(String(costInfo.pointCost)) + '" title="' + escapeHtml(recruitLabel) + '" aria-label="' + escapeHtml(recruitLabel) + '"' +
+        (canAfford ? '' : ' disabled') + '>';
+      html += '<span class="owned-recruit-top">';
       html += '<span class="owned-recruit-number">#' + String(pokemonId).padStart(3, '0') + '</span>';
-      html += '<span class="owned-recruit-name">' + escapeHtml(pokemonDisplayName(pokemonId)) + '</span>';
-      html += '<span class="owned-recruit-cost">' + escapeHtml(String(costInfo.pointCost)) + ' pts</span>';
-      html += '<span class="owned-recruit-tier">T' + escapeHtml(String(costInfo.tier)) + (seen ? ' seen' : ' new') + '</span>';
+      html += pokemonRarityBadgeHtml(pokemonId, 'owned-recruit-rarity');
+      html += '</span>';
       html += '<span class="owned-recruit-media">';
-      if (seen) {
-        html += '<img src="' + escapeHtml(spriteUrl('animated', pokemonId, 'gif')) + '" alt="" loading="lazy" />';
-      } else {
-        html += '<span class="owned-recruit-unknown">?</span>';
-      }
+      html += '<img src="' + escapeHtml(spriteUrl('animated', pokemonId, 'gif')) + '" alt="" loading="lazy" />';
+      html += '</span>';
+      html += '<span class="owned-recruit-name">' + escapeHtml(pokemonName) + '</span>';
+      html += '<span class="owned-recruit-bottom">';
+      html += '<span class="owned-recruit-cost"><b>' + escapeHtml(formatTokenCount(costInfo.pointCost)) + ' pts</b></span>';
+      html += spawnAreaChipHtml(areaMeta, 'owned-recruit-area-chip');
       html += '</span>';
       html += '</button>';
     }
-    ownedRecruitGridEl.innerHTML = html || '<div class="owned-empty">No discovered Pokemon available yet.</div>';
+    ownedRecruitGridEl.innerHTML = html || '<div class="owned-empty">' + escapeHtml(t('noDiscoveredPokemon')) + '</div>';
   }
 
   function ensureSelectedEvolutionItemId(itemState) {
@@ -5236,24 +6096,17 @@
 
   function renderEvolutionItemInfoContent(tokenPerPoint, drawCost, pickupClaimCost, sellValue) {
     if (!ownedItemInfoPopoverEl) return;
-    var isKo = uiState.pokedexLanguage === 'ko';
     if (ownedItemInfoEl) {
-      ownedItemInfoEl.setAttribute('aria-label', isKo ? '아이템 규칙' : 'Item rules');
+      ownedItemInfoEl.setAttribute('aria-label', t('itemRules'));
     }
-    var rows = isKo ? [
-      ['포인트', formatTokenCount(tokenPerPoint) + ' total tokens마다 1 point를 얻습니다. 캐시된 입력 토큰도 포함됩니다.'],
-      ['뽑기', drawCost + ' pts를 사용합니다. 성공률은 30%입니다.'],
-      ['Target', '뽑기 성공 시 선택한 target 아이템이 15% 확률로 나옵니다.'],
-      ['Tickets', 'Target을 설정한 뽑기가 성공했지만 target이 아니면 target ticket +1. ' + pickupClaimCost + ' tickets로 target을 확정 획득합니다.'],
-      ['Sell', 'Sell은 +' + sellValue + ' pts를 얻습니다. 일반 포인트 구매는 비활성화되어 있습니다.']
-    ] : [
-      ['Points', formatTokenCount(tokenPerPoint) + ' total tokens = 1 point. Cached input tokens count.'],
-      ['Draw', 'Costs ' + drawCost + ' pts. Success rate is 30%.'],
-      ['Target', 'Successful draws have a 15% chance to hit the selected target item.'],
-      ['Tickets', 'If a successful targeted draw misses the target, target ticket +1. Spend ' + pickupClaimCost + ' tickets to claim the target.'],
-      ['Sell', 'Sell gives +' + sellValue + ' pts. Point buying is disabled.']
+    var rows = [
+      [t('points'), t('itemRulesPoints', { tokens: formatTokenCount(tokenPerPoint) })],
+      [t('draw'), t('itemRulesDraw', { cost: drawCost })],
+      [t('target'), t('itemRulesTarget')],
+      [t('tickets'), t('itemRulesTickets', { cost: pickupClaimCost })],
+      [t('sell'), t('itemRulesSell', { value: sellValue })]
     ];
-    var html = '<h4>' + (isKo ? '아이템 규칙' : 'Item Rules') + '</h4><ul>';
+    var html = '<h4>' + escapeHtml(t('itemRules')) + '</h4><ul>';
     for (var i = 0; i < rows.length; i++) {
       html += '<li><b>' + escapeHtml(rows[i][0]) + '</b><span>' + escapeHtml(rows[i][1]) + '</span></li>';
     }
@@ -5279,7 +6132,7 @@
       return sum + (inventory[item.id] || 0);
     }, 0);
 
-    if (ownedItemSummaryEl) ownedItemSummaryEl.textContent = totalOwnedItems + ' items';
+    if (ownedItemSummaryEl) ownedItemSummaryEl.textContent = t('itemCount', { count: totalOwnedItems });
     if (ownedItemPointsEl) ownedItemPointsEl.textContent = formatTokenCount(itemState.itemPoints || 0);
     if (ownedPickupPointsEl) ownedPickupPointsEl.textContent = formatTokenCount(targetTickets);
     if (ownedItemProgressTextEl) {
@@ -5290,7 +6143,7 @@
     }
 
     if (ownedPickupSelectEl) {
-      var pickupHtml = '<option value="">' + (uiState.pokedexLanguage === 'ko' ? 'Target 없음' : 'No target') + '</option>';
+      var pickupHtml = '<option value="">' + escapeHtml(t('noTarget')) + '</option>';
       for (var i = 0; i < pool.length; i++) {
         pickupHtml += '<option value="' + escapeHtml(pool[i].id) + '"' + (pool[i].id === itemState.pickupItemId ? ' selected' : '') + '>';
         pickupHtml += escapeHtml(evolutionItemDisplayName(pool[i]));
@@ -5299,12 +6152,12 @@
       ownedPickupSelectEl.innerHTML = pickupHtml;
     }
 
-    if (ownedItemPullEl) ownedItemPullEl.textContent = 'Draw (' + drawCost + ' pts)';
+    if (ownedItemPullEl) ownedItemPullEl.textContent = t('draw') + ' (' + drawCost + ' pts)';
     if (ownedItemBuyEl) ownedItemBuyEl.hidden = true;
-    if (ownedItemSellEl) ownedItemSellEl.textContent = 'Sell (+' + sellValue + ' pts)';
+    if (ownedItemSellEl) ownedItemSellEl.textContent = t('sell') + ' (+' + sellValue + ' pts)';
     if (ownedItemClaimPickupEl) {
       ownedItemClaimPickupEl.innerHTML =
-        '<span>' + escapeHtml(localizedActionText('Claim Target', 'Target 획득')) + '</span>' +
+        '<span>' + escapeHtml(t('claimTarget')) + '</span>' +
         '<b>' + escapeHtml(String(pickupClaimCost)) + ' tickets</b>';
     }
     renderEvolutionItemInfoContent(tokenPerPoint, drawCost, pickupClaimCost, sellValue);
@@ -5326,7 +6179,7 @@
       html += '<b>x' + count + '</b>';
       html += '</button>';
     }
-    ownedItemInventoryEl.innerHTML = html || '<div class="owned-empty compact">No evolution items available.</div>';
+    ownedItemInventoryEl.innerHTML = html || '<div class="owned-empty compact">' + escapeHtml(t('noEvolutionItems')) + '</div>';
   }
 
   function renderOwnedPartyStrip(owned) {
@@ -5338,7 +6191,7 @@
     for (var slot = 0; slot < OWNED_PARTY_SIZE; slot++) {
       var member = party[slot];
       if (!member) {
-        html += '<button class="owned-strip-slot empty" type="button" data-owned-action="open-modal" title="Empty party slot">';
+        html += '<button class="owned-strip-slot empty" type="button" data-owned-action="open-modal" title="' + escapeHtml(t('emptyPartySlot')) + '">';
         html += '</button>';
         continue;
       }
@@ -5374,12 +6227,16 @@
     var party = owned.filter(function (pokemon) { return Number.isInteger(pokemon.partySlot); })
       .sort(function (a, b) { return a.partySlot - b.partySlot; });
     var boxed = owned.filter(function (pokemon) { return !Number.isInteger(pokemon.partySlot); });
-    if (ownedProgressEl) ownedProgressEl.textContent = owned.length + ' owned';
+    if (ownedProgressEl) ownedProgressEl.textContent = t('ownedShort', { count: owned.length });
+    if (ownedCurrentPointsEl) {
+      ownedCurrentPointsEl.textContent = formatTokenCount(currentItemPointBalance()) + ' pts';
+      ownedCurrentPointsEl.setAttribute('title', t('currentPoints'));
+    }
     renderOwnedPartyStrip(owned);
     if (!ownedModalEl) return;
-    ownedSummaryEl.textContent = owned.length + ' owned Pokemon';
-    ownedPartyCountEl.textContent = 'Drag to arrange';
-    ownedBoxCountEl.textContent = boxed.length + ' boxed';
+    ownedSummaryEl.textContent = t('ownedPokemonCount', { count: owned.length });
+    ownedPartyCountEl.textContent = t('dragToArrange');
+    ownedBoxCountEl.textContent = t('boxedCount', { count: boxed.length });
     renderEvolutionItemPanel();
 
     var partyHtml = '';
@@ -5388,7 +6245,7 @@
       if (member) {
         partyHtml += renderOwnedPartyCard(member, slot);
       } else {
-        partyHtml += '<div class="owned-party-empty" data-owned-drop-slot="' + slot + '" aria-label="Empty party spot"></div>';
+        partyHtml += '<div class="owned-party-empty" data-owned-drop-slot="' + slot + '" aria-label="' + escapeHtml(t('emptyPartySpot')) + '"></div>';
       }
     }
     ownedPartyGridEl.innerHTML = partyHtml;
@@ -5397,7 +6254,7 @@
     for (var j = 0; j < boxed.length; j++) {
       boxHtml += renderOwnedBoxTile(boxed[j]);
     }
-    ownedBoxGridEl.innerHTML = boxHtml || '<div class="owned-empty">No boxed Pokemon yet.</div>';
+    ownedBoxGridEl.innerHTML = boxHtml || '<div class="owned-empty">' + escapeHtml(t('noBoxedPokemon')) + '</div>';
     if (uiState.ownedRecruitOpen) {
       renderOwnedRecruitGrid();
     }
@@ -5422,7 +6279,7 @@
     var discovered = typeof pokedex.discoveredCount === 'number' ? pokedex.discoveredCount : seenIds.length;
     var total = typeof pokedex.totalCount === 'number' ? pokedex.totalCount : POKEDEX_TOTAL;
     pokedexProgressEl.textContent = discovered + ' / ' + total;
-    pokedexSummaryEl.textContent = discovered + ' / ' + total + ' discovered';
+    pokedexSummaryEl.textContent = t('discoveredCount', { count: discovered, total: total });
 
     var html = '';
     var scrollTop = pokedexGridEl.scrollTop;
@@ -5433,7 +6290,18 @@
     if (activeCell) {
       activePokemonId = parseInt(activeCell.getAttribute('data-pokemon-id'), 10) || null;
     }
-    for (var pokemonId = POKEDEX_MIN; pokemonId <= POKEDEX_MAX; pokemonId++) {
+    var pokemonIds = sortedPokedexPokemonIds();
+    var currentGroupKey = '';
+    var showGroupHeaders = normalizePokedexSort(uiState.pokedexSort) !== 'number';
+    for (var p = 0; p < pokemonIds.length; p++) {
+      var pokemonId = pokemonIds[p];
+      if (showGroupHeaders) {
+        var groupKey = pokedexGroupKey(pokemonId);
+        if (groupKey !== currentGroupKey) {
+          currentGroupKey = groupKey;
+          html += pokedexGroupHeaderHtml(pokemonId);
+        }
+      }
       var seen = !!seenLookup[pokemonId];
       html += '<div class="pokedex-cell' + (seen ? ' seen' : '') + '" data-pokemon-id="' + pokemonId + '" tabindex="0">';
       html += '<div class="pokedex-meta">';
@@ -5458,6 +6326,7 @@
       }
     }
     syncPokedexLanguageMenu();
+    syncPokedexSortControl();
   }
 
   function escapeHtml(value) {
@@ -5762,8 +6631,9 @@
     }
 
     var area = areaDefById(uiState.areaFilter);
-    var html = '<aside class="outside-area-rail" aria-label="Agents outside ' + escapeHtml(area ? area.label : 'selected area') + '">';
-    html += '<div class="outside-area-rail-head" title="Agents outside selected area"><b>' + agents.length + '</b></div>';
+    var outsideLabel = localizedOutsideAreaLabel(area);
+    var html = '<aside class="outside-area-rail" aria-label="' + escapeHtml(outsideLabel) + '">';
+    html += '<div class="outside-area-rail-head" title="' + escapeHtml(outsideLabel) + '"><b>' + agents.length + '</b></div>';
     html += '<div class="outside-area-rail-grid">';
     for (var i = 0; i < agents.length; i++) {
       var agent = agents[i];
@@ -6125,7 +6995,7 @@
     }
     if (promoResetEl) {
       promoResetEl.addEventListener('click', function () {
-        if (!window.confirm('Reset the custom promo scene to the default starter setup?')) return;
+        if (!window.confirm(t('promoResetPrompt'))) return;
         promoStudioState = createDefaultPromoStudioState();
         promoStudioState.enabled = uiState.promoStudioEnabled;
         resetPromoBoxState();
@@ -6198,12 +7068,12 @@
         if (!config.supportsHardReset) return;
         var mode = config.mode || (config.isMockMode ? 'mock' : 'watch');
         var source = config.source && config.source !== mode ? '/' + config.source : '';
-        if (!window.confirm('Reset ' + mode + source + ' state, safari log, My Pokemon, evolution items, and discovered Pokedex progress?')) return;
+        if (!window.confirm(t('hardResetPrompt', { mode: mode, source: source }))) return;
         hardResetBtnEl.disabled = true;
         try {
           var res = await transport.hardReset();
           if (res && res.ok === false) {
-            throw new Error('hard reset failed: ' + res.status);
+            throw new Error(t('hardResetFailed', { status: res.status }));
           }
           resetFilters();
           renderAgentList();
@@ -6221,34 +7091,45 @@
       if (!agentId) return;
       var agent = (appState.agentById && appState.agentById.get(agentId)) || boxedAgentById(agentId);
       var costInfo = agent ? recruitCostForAgent(agent) : {
-        pokemonName: 'Pokemon',
+        pokemonId: Number(btn.getAttribute('data-pokemon-id')) || null,
+        pokemonName: t('pokemon'),
         pointCost: Number(btn.getAttribute('data-point-cost')) || 0
       };
+      var currentPoints = currentItemPointBalance();
       var visual = {
-        type: 'points',
-        value: '-' + costInfo.pointCost + ' pts',
-        label: localizedActionText('Recruit cost', 'Recruit 비용')
+        type: 'recruit',
+        pokemonId: costInfo.pokemonId,
+        name: costInfo.pokemonName,
+        currentPoints: currentPoints,
+        pointCost: costInfo.pointCost,
+        afterPoints: currentPoints - costInfo.pointCost,
+        discovered: costInfo.discovered,
+        label: t('recruitCost')
       };
+      var promptText = t('recruitPrompt', { pokemon: costInfo.pokemonName, cost: costInfo.pointCost });
       if (!(await confirmActionPopup(
-        'Recruit ' + costInfo.pokemonName + ' for ' + costInfo.pointCost + ' pts?',
-        costInfo.pokemonName + '을(를) ' + costInfo.pointCost + ' pts로 recruit할까요?',
-        { visual: visual }
+        promptText,
+        promptText,
+        {
+          visual: visual,
+          message: promptText
+        }
       ))) return;
 
       btn.disabled = true;
       var result = await readActionResult(transport.owned('adopt', { agentId: agentId }));
       if (!result || !result.ok) {
-        showActionPopup('Recruit Result', 'Recruit 결과', actionErrorMessage(result), actionErrorMessage(result), { isError: true });
+        showActionPopup(t('recruitResult'), t('recruitResult'), actionErrorMessage(result), actionErrorMessage(result), { isError: true });
         btn.disabled = false;
         return;
       }
       var spent = result.recruitCost && Number(result.recruitCost.pointCost) ? Number(result.recruitCost.pointCost) : costInfo.pointCost;
       showActionPopup(
-        'Recruit Result',
-        'Recruit 결과',
-        'Recruited ' + costInfo.pokemonName + '.',
-        costInfo.pokemonName + ' recruit 완료.',
-        { visual: { type: 'points', value: '-' + spent + ' pts', label: localizedActionText('Spent', '사용') } }
+        t('recruitResult'),
+        t('recruitResult'),
+        t('recruitedPokemon', { pokemon: costInfo.pokemonName }),
+        t('recruitedPokemon', { pokemon: costInfo.pokemonName }),
+        { visual: { type: 'points', value: '-' + spent + ' pts', label: t('spent') } }
       );
     }
 
@@ -6461,7 +7342,7 @@
             break;
           }
         }
-        var nickname = window.prompt('Pokemon nickname', current);
+        var nickname = window.prompt(t('nicknamePrompt'), current);
         if (nickname === null) return;
         transport.owned('nickname', { id: id, nickname: nickname });
       } else if (action === 'party') {
@@ -6482,10 +7363,11 @@
         var fromLabel = ownedDisplayName(evolvingPokemon);
         var selectedEvolution = selectedEvolutionOption(evolutionInfo, targetSpeciesId);
         var evolutionItemId = selectedEvolution && selectedEvolution.itemId ? selectedEvolution.itemId : null;
-        var toLabel = targetSpeciesId ? pokemonDisplayName(targetSpeciesId) : localizedActionText('the selected evolution', '선택한 진화');
+        var toLabel = targetSpeciesId ? pokemonDisplayName(targetSpeciesId) : t('selectedEvolution');
+        var evolvePrompt = t('evolvePrompt', { from: fromLabel, to: toLabel });
         if (!(await confirmActionPopup(
-          'Evolve ' + fromLabel + ' into ' + toLabel + '?',
-          fromLabel + '을(를) ' + toLabel + '(으)로 진화시킬까요?'
+          evolvePrompt,
+          evolvePrompt
         , {
           visual: {
             type: 'evolution',
@@ -6509,8 +7391,8 @@
             break;
           }
         }
-        var label = target ? ownedDisplayName(target) : 'this Pokemon';
-        if (!window.confirm('Release ' + label + ' from My Pokemon?')) return;
+        var label = target ? ownedDisplayName(target) : t('thisPokemon');
+        if (!window.confirm(t('releasePrompt', { pokemon: label }))) return;
         transport.owned('release', { id: id });
       }
     }
@@ -6528,15 +7410,16 @@
         var itemState = evolutionItemState();
         var value = itemState.itemSellPointValue || 10;
         var itemName = evolutionItemLabel(uiState.selectedEvolutionItemId);
+        var sellPrompt = t('sellPrompt', { item: itemName, value: value });
         if (!(await confirmActionPopup(
-          'Sell ' + itemName + ' for +' + value + ' pts?',
-          itemName + '을(를) 판매하고 +' + value + ' pts를 받을까요?'
+          sellPrompt,
+          sellPrompt
         , {
           visual: {
             type: 'item',
             itemId: uiState.selectedEvolutionItemId,
             name: itemName,
-            label: localizedActionText('Sell', '판매'),
+            label: t('sell'),
             detail: '+' + value + ' pts'
           }
         }))) return;
@@ -6550,15 +7433,16 @@
         if (!itemState.pickupItemId) return;
         var cost = itemState.itemClaimTicketCost || itemState.itemBuyPickupPointCost || 20;
         var itemName = evolutionItemLabel(itemState.pickupItemId);
+        var claimPrompt = t('claimPrompt', { item: itemName, cost: cost });
         if (!(await confirmActionPopup(
-          'Claim ' + itemName + ' for ' + cost + ' tickets?',
-          itemName + '을(를) ' + cost + ' tickets로 확정 획득할까요?'
+          claimPrompt,
+          claimPrompt
         , {
           visual: {
             type: 'item',
             itemId: itemState.pickupItemId,
             name: itemName,
-            label: localizedActionText('Claim Target', 'Target 획득'),
+            label: t('claimTarget'),
             detail: cost + ' tickets'
           }
         }))) return;
@@ -6622,22 +7506,30 @@
       var discovered = isPokemonDiscovered(pokemonId);
       var costInfo = recruitCostForPokemon(pokemonId, discovered);
       var pokemonName = pokemonDisplayName(pokemonId);
+      var currentPoints = currentItemPointBalance();
+      var recruitPrompt = t('recruitPrompt', { pokemon: pokemonName, cost: costInfo.pointCost });
       if (!(await confirmActionPopup(
-        'Recruit ' + pokemonName + ' for ' + costInfo.pointCost + ' pts?',
-        pokemonName + '을(를) ' + costInfo.pointCost + ' pts로 recruit할까요?'
+        recruitPrompt,
+        recruitPrompt
       , {
+        message: recruitPrompt,
         visual: {
-          type: 'points',
-          value: '-' + costInfo.pointCost + ' pts',
-          label: localizedActionText('Recruit cost', 'Recruit 비용')
+          type: 'recruit',
+          pokemonId: pokemonId,
+          name: pokemonName,
+          currentPoints: currentPoints,
+          pointCost: costInfo.pointCost,
+          afterPoints: currentPoints - costInfo.pointCost,
+          discovered: discovered,
+          label: t('recruitCost')
         }
       }))) return;
       var result = await readActionResult(transport.owned('adopt', { speciesId: pokemonId, inParty: false }));
       if (!result || !result.ok) {
-        showActionPopup('Recruit Result', 'Recruit 결과', actionErrorMessage(result), actionErrorMessage(result));
+        showActionPopup(t('recruitResult'), t('recruitResult'), actionErrorMessage(result), actionErrorMessage(result));
         return;
       }
-      showActionPopup('Recruit Result', 'Recruit 결과', 'Recruited ' + pokemonName + '.', pokemonName + ' recruit 완료.');
+      showActionPopup(t('recruitResult'), t('recruitResult'), t('recruitedPokemon', { pokemon: pokemonName }), t('recruitedPokemon', { pokemon: pokemonName }));
       setOwnedRecruitOpen(false);
     });
     function handleOwnedChange(e) {
@@ -6698,6 +7590,11 @@
     pokedexBackdropEl.addEventListener('click', function () {
       setPokedexOpen(false);
     });
+    if (pokedexSortEl) {
+      pokedexSortEl.addEventListener('change', function () {
+        setPokedexSort(pokedexSortEl.value);
+      });
+    }
     if (pokedexLangButtonEl) {
       pokedexLangButtonEl.addEventListener('click', function (event) {
         event.stopPropagation();
@@ -6783,9 +7680,12 @@
 
   async function boot() {
     bindUi();
+    applyStaticTranslations();
+    syncPokedexLanguageMenu();
+    updateFilterOptions();
     setCanvasSize();
     try { await connectStateTransport(); } catch (e) {
-      agentListEl.innerHTML = '<div class="agent-card">Failed to load state: ' + escapeHtml(e.message) + '</div>';
+      agentListEl.innerHTML = '<div class="agent-card">' + escapeHtml(t('failedToLoadState', { message: e.message })) + '</div>';
     }
     requestAnimationFrame(render);
   }

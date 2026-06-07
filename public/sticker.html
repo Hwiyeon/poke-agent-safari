@@ -12,50 +12,51 @@
         <div class="title-copy">
           <span id="source-pill" class="source-pill">All</span>
           <strong>Agent Safari</strong>
+          <span id="sticker-current-points" class="title-points" title="Current points" data-i18n-title="currentPoints">0 pts</span>
         </div>
         <div class="title-tools">
           <div class="language-menu">
-            <button id="language-menu-button" class="language-menu-button" type="button" title="Pokemon name language" aria-label="Pokemon name language" aria-haspopup="true" aria-expanded="false">KO</button>
-            <div id="language-options" class="language-options" role="menu" aria-label="Pokemon name language">
-              <button type="button" role="menuitemradio" data-language-option="en" aria-checked="false">EN</button>
-              <button type="button" role="menuitemradio" data-language-option="ko" aria-checked="true">KO</button>
+            <button id="language-menu-button" class="language-menu-button" type="button" title="UI language" aria-label="UI language" aria-haspopup="true" aria-expanded="false">EN</button>
+            <div id="language-options" class="language-options" role="menu" aria-label="UI language" data-i18n-aria="uiLanguage">
+              <button type="button" role="menuitemradio" data-language-option="en" aria-checked="true">EN</button>
+              <button type="button" role="menuitemradio" data-language-option="ko" aria-checked="false">KO</button>
             </div>
           </div>
           <div class="window-actions">
-            <button id="expand-btn" type="button" title="Open dashboard" aria-label="Open dashboard">+</button>
-            <button id="minimize-btn" type="button" title="Minimize" aria-label="Minimize">_</button>
-            <button id="quit-btn" type="button" title="Quit" aria-label="Quit">x</button>
+            <button id="expand-btn" type="button" title="Open dashboard" aria-label="Open dashboard" data-i18n-title="openDashboard" data-i18n-aria="openDashboard">+</button>
+            <button id="minimize-btn" type="button" title="Minimize" aria-label="Minimize" data-i18n-title="minimize" data-i18n-aria="minimize">_</button>
+            <button id="quit-btn" type="button" title="Quit" aria-label="Quit" data-i18n-title="quit" data-i18n-aria="quit">x</button>
           </div>
         </div>
       </header>
 
       <main class="sticker-main">
-        <section class="limits-panel" aria-label="Usage budgets">
+        <section class="limits-panel" aria-label="Usage budgets" data-i18n-aria="usageBudgets">
           <div id="rate-limit-list" class="rate-limit-list"></div>
         </section>
 
-        <section class="owned-panel" aria-label="Party Pokemon">
+        <section class="owned-panel" aria-label="My Pokemon party" data-i18n-aria="myPokemonParty">
           <div class="section-head">
-            <span class="section-label">PARTY</span>
+            <span class="section-label" data-i18n="myPokemonCompact">MY POKEMON</span>
             <strong id="owned-count">0</strong>
           </div>
           <div id="owned-list" class="owned-row-list"></div>
         </section>
 
-        <section class="agents-panel" aria-label="Agents">
+        <section class="agents-panel" aria-label="Agents" data-i18n-aria="agents">
           <div class="section-head">
-            <span class="section-label">Agents</span>
+            <span class="section-label" data-i18n="agents">Agents</span>
             <strong id="agent-count">0</strong>
           </div>
           <div id="agent-list" class="agent-row-list"></div>
         </section>
 
-        <section class="status-grid" aria-label="Agent status counts">
-          <div><span id="active-count">0</span><small>active</small></div>
-          <div><span id="thinking-count">0</span><small>thinking</small></div>
-          <div><span id="tool-count">0</span><small>tool</small></div>
-          <div><span id="waiting-count">0</span><small>waiting</small></div>
-          <div><span id="sleeping-count">0</span><small>sleeping</small></div>
+        <section class="status-grid" aria-label="Agent status counts" data-i18n-aria="agentStatusCounts">
+          <div><span id="active-count">0</span><small data-i18n="statusActive">active</small></div>
+          <div><span id="thinking-count">0</span><small data-i18n="statusThinking">thinking</small></div>
+          <div><span id="tool-count">0</span><small data-i18n="statusTool">tool</small></div>
+          <div><span id="waiting-count">0</span><small data-i18n="statusWaiting">waiting</small></div>
+          <div><span id="sleeping-count">0</span><small data-i18n="statusSleeping">sleeping</small></div>
         </section>
 
         <footer class="sticker-footer">

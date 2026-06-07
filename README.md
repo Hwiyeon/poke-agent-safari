@@ -13,7 +13,7 @@ v0.2.0 turns the dashboard into a collection loop. You can recruit Pokemon into 
 ## Release Highlights
 
 - **Claude + Codex together:** `--source all` is now the default, with `--source claude` and `--source codex` still available.
-- **Installable CLI:** `npm install -g .` registers the `poke-as` command, which opens the Electron sticker by default.
+- **Installable CLI:** `npm install` registers the `poke-as` command for your user account, and `poke-as` opens the Electron sticker by default.
 - **My Pokemon:** recruit encountered or discovered Pokemon, manage a 6-slot party, box owned Pokemon, rename them, release them, and assign them to projects.
 - **Training:** owned Pokemon gain EXP from actual token usage. Pokemon assigned to a matching project receive higher training weight.
 - **Evolution items:** token usage earns item points, random draws produce evolution items, target tickets can claim a chosen item, and item evolutions consume the required item.
@@ -70,16 +70,16 @@ Clone and install:
 git clone git@github.com:Hwiyeon/poke-agent-safari.git
 cd poke-agent-safari
 npm install
-npm run setup:assets
+npm run setup
 ```
 
-Optional global CLI install:
+`npm install` runs a best-effort CLI registration automatically. `npm run setup` refreshes that `poke-as` command, creates or updates a sparse PokeAPI sprite checkout under `public/vendor/pokeapi-sprites`, copies required item sprites into `public/item-sprites`, and validates required map assets under `data/map_assets`.
+
+If shell permissions prevented command registration during install, rerun:
 
 ```bash
-npm install -g .
+npm run setup:cli
 ```
-
-`setup:assets` creates or updates a sparse PokeAPI sprite checkout under `public/vendor/pokeapi-sprites`, copies required item sprites into `public/item-sprites`, and validates required map assets under `data/map_assets`.
 
 On Ubuntu 22.04, Electron may also need the standard desktop runtime libraries:
 
@@ -191,8 +191,8 @@ ENABLE_POKEAPI_SPRITES
 
 Training rules:
 
-- `50` agent tokens become `1` owned Pokemon EXP before allocation.
-- Project-assigned Pokemon receive double allocation weight for matching project activity.
+- `10` agent tokens become `1` owned Pokemon EXP before allocation.
+- Project-assigned Pokemon receive allocation weight `5` for matching project activity.
 - Unassigned Pokemon can share general training.
 - Training events are persisted and included in dashboard snapshots.
 

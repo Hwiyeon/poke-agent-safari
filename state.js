@@ -47,7 +47,7 @@ const DEFAULT_MAX_TRAINING_EVENTS = 500;
 const DEFAULT_POKEMON_BOX_ID = 'box-default';
 const LEGACY_JOHTO_POKEDEX_MAX = 251;
 const PARTY_SIZE = 6;
-const TRAINING_TOKEN_DIVISOR = 50;
+const TRAINING_TOKEN_DIVISOR = 10;
 const RECRUIT_POINT_COSTS_DISCOVERED = Object.freeze({ 1: 100, 2: 300, 3: 700, 4: 1000, 5: 2000 });
 const RECRUIT_POINT_COSTS_UNDISCOVERED = Object.freeze({ 1: 500, 2: 1500, 3: 3500, 4: 5000, 5: 10000 });
 const DEFAULT_COUNTERS = Object.freeze({
@@ -1052,7 +1052,7 @@ class AgentState extends EventEmitter {
 
     for (const pokemon of trainablePokemon) {
       if (pokemon.assignedProjectId === agent.projectId) {
-        addWeight(pokemon.id, 2);
+        addWeight(pokemon.id, 5);
       } else if (!pokemon.assignedProjectId) {
         addWeight(pokemon.id, 1);
       }

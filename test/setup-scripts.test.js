@@ -13,6 +13,11 @@ const {
   GEN5_ICON_ANIMATED_DIR,
   POKEAPI_SPRITES_DIR
 } = require('../paths');
+const {
+  buildUnixShim,
+  buildWindowsCmdShim,
+  isDirOnPath
+} = require('../tools/setup_cli_command');
 
 const {
   REQUIRED_EVOLUTION_ITEM_SPRITES,
@@ -77,6 +82,7 @@ test('package files include setup and packaged runtime entry dependencies', () =
   for (const filePath of [
     'cli.js',
     'server.js',
+    'tools/setup_cli_command.js',
     'tools/setup_poke_assets.js',
     'data/map_assets/*.png',
     'public/item-sprites/*.png'
@@ -89,6 +95,31 @@ test('package exposes the poke-as executable', () => {
   assert.deepEqual(packageJson.bin, {
     'poke-as': './cli.js'
   });
+});
+
+test('cli setup shims invoke cli with forwarded args', () => {
+  const cliPath = 'C:\\Agent Safari\\cli.js';
+
+  assert.equal(buildWindowsCmdShim(cliPath), [
+    '@ECHO off',
+    'SETLOCAL',
+    'node "C:\\Agent Safari\\cli.js" %*',
+    ''
+  ].join('\r\n'));
+
+  assert.equal(buildUnixShim("/tmp/agent safari/cli's.js"), [
+    '#!/bin/sh',
+    "exec node '/tmp/agent safari/cli'\\''s.js' \"$@\"",
+    ''
+  ].join('\n'));
+});
+
+test('cli setup detects bin directory on PATH', () => {
+  const first = path.resolve('tmp', 'bin');
+  const second = path.resolve('other', 'bin');
+  const env = { PATH: [second, first].join(path.delimiter) };
+  assert.equal(isDirOnPath(first, env), true);
+  assert.equal(isDirOnPath(path.resolve('missing', 'bin'), env), false);
 });
 
 run();

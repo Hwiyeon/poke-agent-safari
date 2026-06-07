@@ -11,47 +11,47 @@
       <header class="top-bar">
         <div class="title-wrap">
           <h1>PokéAgent-Safari</h1>
-          <p>Live local activity from Claude Code and Codex transcripts</p>
+          <p data-i18n="tagline">Live local activity from Claude Code and Codex transcripts</p>
         </div>
         <div class="stats-wrap">
           <div class="pokedex-lang-menu header-lang-menu">
-            <button id="pokedex-lang-button" class="pokedex-lang-button" type="button" aria-haspopup="true" aria-expanded="false" aria-label="Pokemon name language">EN</button>
-            <div id="pokedex-lang-options" class="pokedex-lang-options" role="menu" aria-label="Pokemon name language">
+            <button id="pokedex-lang-button" class="pokedex-lang-button" type="button" aria-haspopup="true" aria-expanded="false" aria-label="UI language">EN</button>
+            <div id="pokedex-lang-options" class="pokedex-lang-options" role="menu" aria-label="UI language">
               <button type="button" role="menuitemradio" data-pokedex-language="en" aria-checked="true">EN</button>
               <button type="button" role="menuitemradio" data-pokedex-language="ko" aria-checked="false">KO</button>
             </div>
           </div>
           <button id="pokedex-toggle" class="pokedex-toggle" type="button">
-            <span class="pokedex-toggle-title">Pokedex</span>
+            <span class="pokedex-toggle-title" data-i18n="pokedex">Pokedex</span>
             <span id="pokedex-progress" class="pokedex-toggle-progress">0 / 649</span>
           </button>
           <button id="promo-studio-toggle" class="promo-studio-toggle" type="button" hidden>
-            <span class="promo-studio-toggle-title">Promo Studio</span>
-            <span class="promo-studio-toggle-subtitle">Custom scene builder</span>
+            <span class="promo-studio-toggle-title" data-i18n="promoStudio">Promo Studio</span>
+            <span class="promo-studio-toggle-subtitle" data-i18n="promoStudioSubtitle">Custom scene builder</span>
           </button>
-          <button id="hard-reset-btn" class="hard-reset-btn" type="button" hidden>Hard Reset</button>
+          <button id="hard-reset-btn" class="hard-reset-btn" type="button" hidden data-i18n="hardReset">Hard Reset</button>
           <div id="rate-limits-wrap" class="rate-limits-wrap" hidden></div>
           <div class="header-info">
-            <button class="header-info-button" type="button" aria-label="Dashboard info">
+            <button class="header-info-button" type="button" aria-label="Dashboard info" data-i18n-aria="dashboardInfo">
               <span aria-hidden="true">i</span>
             </button>
             <div class="header-info-popover" role="tooltip">
               <div class="info-stat">
-                <span class="label">Active</span>
+                <span class="label" data-i18n="active">Active</span>
                 <span id="active-count" class="value">0</span>
               </div>
               <div class="info-stat">
-                <span class="label">Last Update</span>
+                <span class="label" data-i18n="lastUpdate">Last Update</span>
                 <span id="last-update" class="value">-</span>
               </div>
               <div class="info-stat">
-                <span class="label">Tokens Used</span>
+                <span class="label" data-i18n="tokensUsed">Tokens Used</span>
                 <span id="token-total" class="value">0</span>
               </div>
             </div>
           </div>
           <label class="control">
-            <span>Area</span>
+            <span data-i18n="area">Area</span>
             <select id="area-filter">
               <option value="all">All</option>
             </select>
@@ -63,18 +63,21 @@
         <aside class="side-panel">
           <div class="side-party-panel">
             <div class="side-party-title-row">
-              <h2>My Pokemon</h2>
-              <button id="owned-toggle" class="side-party-detail" type="button" aria-label="Open My Pokemon details">i</button>
+              <h2 data-i18n="myPokemon">My Pokemon</h2>
+              <div class="side-party-actions">
+                <span id="owned-current-points" class="side-party-points" title="Current points" data-i18n-title="currentPoints">0 pts</span>
+                <button id="owned-toggle" class="side-party-detail" type="button" aria-label="Open My Pokemon details" data-i18n-aria="openMyPokemonDetails">i</button>
+              </div>
             </div>
-            <div id="owned-strip-grid" class="owned-strip-grid" aria-label="My Pokemon party"></div>
+            <div id="owned-strip-grid" class="owned-strip-grid" aria-label="My Pokemon party" data-i18n-aria="myPokemonParty"></div>
             <span id="owned-progress" class="owned-progress-text">0 owned</span>
           </div>
-          <h2>Agents</h2>
+          <h2 data-i18n="agents">Agents</h2>
           <div id="agent-list" class="agent-list"></div>
           <div class="box-panel">
             <div class="box-panel-head">
-              <h3 class="box-title">Safari Log <span id="box-count">0</span></h3>
-              <button id="box-history-toggle" class="box-history-toggle" type="button">View All</button>
+              <h3 class="box-title"><span data-i18n="safariLog">Safari Log</span> <span id="box-count">0</span></h3>
+              <button id="box-history-toggle" class="box-history-toggle" type="button" data-i18n="viewAll">View All</button>
             </div>
             <div id="box-list" class="box-list"></div>
           </div>
@@ -86,20 +89,20 @@
             <aside id="promo-studio-panel" class="promo-studio-panel" hidden>
               <div class="promo-studio-panel-head">
                 <div>
-                  <h2 class="promo-studio-title">Promo Studio</h2>
-                  <p id="promo-studio-summary" class="promo-studio-summary">Build a custom promo-ready scene in mock mode.</p>
+                  <h2 class="promo-studio-title" data-i18n="promoStudio">Promo Studio</h2>
+                  <p id="promo-studio-summary" class="promo-studio-summary" data-i18n="buildPromoScene">Build a custom promo-ready scene in mock mode.</p>
                 </div>
-                <button id="promo-studio-close" class="promo-studio-close" type="button" aria-label="Close Promo Studio">Close</button>
+                <button id="promo-studio-close" class="promo-studio-close" type="button" aria-label="Close Promo Studio" data-i18n-aria="close" data-i18n="close">Close</button>
               </div>
               <div class="promo-studio-toolbar">
                 <label class="promo-studio-switch">
                   <input id="promo-studio-enabled" type="checkbox" />
-                  <span>Use custom scene</span>
+                  <span data-i18n="useCustomScene">Use custom scene</span>
                 </label>
                 <div class="promo-studio-actions">
-                  <button id="promo-add-root" class="promo-studio-btn" type="button">Add Root</button>
-                  <button id="promo-reset" class="promo-studio-btn promo-studio-btn-muted" type="button">Reset</button>
-                  <button id="promo-export" class="promo-studio-btn promo-studio-btn-accent" type="button">Download PNG</button>
+                  <button id="promo-add-root" class="promo-studio-btn" type="button" data-i18n="addRoot">Add Root</button>
+                  <button id="promo-reset" class="promo-studio-btn promo-studio-btn-muted" type="button" data-i18n="reset">Reset</button>
+                  <button id="promo-export" class="promo-studio-btn promo-studio-btn-accent" type="button" data-i18n="downloadPng">Download PNG</button>
                 </div>
               </div>
               <div id="promo-studio-list" class="promo-studio-list"></div>
@@ -114,10 +117,20 @@
       <section class="pokedex-panel" role="dialog" aria-modal="true" aria-labelledby="pokedex-title">
         <div class="pokedex-panel-head">
           <div>
-            <h2 id="pokedex-title">Safari Pokédex</h2>
+            <h2 id="pokedex-title" data-i18n="pokedexTitle">Safari Pokedex</h2>
             <p id="pokedex-summary" class="pokedex-summary">0 / 649 discovered</p>
           </div>
-          <button id="pokedex-close" class="pokedex-close" type="button" aria-label="Close Pokedex">Close</button>
+          <div class="pokedex-panel-actions">
+            <label class="pokedex-sort-control">
+              <span data-i18n="pokedexSort">Sort</span>
+              <select id="pokedex-sort" aria-label="Pokedex sort">
+                <option value="number" data-i18n="pokedexSortNumber">Number</option>
+                <option value="area" data-i18n="pokedexSortArea">Area</option>
+                <option value="rarity" data-i18n="pokedexSortRarity">Rarity</option>
+              </select>
+            </label>
+            <button id="pokedex-close" class="pokedex-close" type="button" aria-label="Close Pokedex" data-i18n-aria="close" data-i18n="close">Close</button>
+          </div>
         </div>
         <div id="pokedex-grid" class="pokedex-grid"></div>
       </section>
@@ -128,10 +141,10 @@
       <section class="pokedex-panel box-history-panel" role="dialog" aria-modal="true" aria-labelledby="box-history-title">
         <div class="pokedex-panel-head">
           <div>
-            <h2 id="box-history-title">Safari Log</h2>
+            <h2 id="box-history-title" data-i18n="safariLog">Safari Log</h2>
             <p id="box-history-summary" class="pokedex-summary">0 safari records</p>
           </div>
-          <button id="box-history-close" class="pokedex-close" type="button" aria-label="Close Box History">Close</button>
+          <button id="box-history-close" class="pokedex-close" type="button" aria-label="Close Box History" data-i18n-aria="close" data-i18n="close">Close</button>
         </div>
         <div id="box-history-grid" class="box-history-grid"></div>
       </section>
@@ -142,39 +155,39 @@
       <section class="pokedex-panel owned-panel" role="dialog" aria-modal="true" aria-labelledby="owned-title">
         <div class="pokedex-panel-head">
           <div>
-            <h2 id="owned-title">My Pokemon</h2>
+            <h2 id="owned-title" data-i18n="myPokemon">My Pokemon</h2>
             <p id="owned-summary" class="pokedex-summary">0 owned</p>
           </div>
           <div class="owned-head-actions">
-            <button id="owned-recruit-toggle" class="owned-recruit-toggle" type="button">Recruit</button>
-            <button id="owned-close" class="pokedex-close" type="button" aria-label="Close My Pokemon">Close</button>
+            <button id="owned-recruit-toggle" class="owned-recruit-toggle" type="button" data-i18n="recruit">Recruit</button>
+            <button id="owned-close" class="pokedex-close" type="button" aria-label="Close My Pokemon" data-i18n-aria="close" data-i18n="close">Close</button>
           </div>
         </div>
         <div class="owned-content">
           <section class="owned-section">
             <div class="owned-section-head">
-              <h3>Party</h3>
+              <h3 data-i18n="party">Party</h3>
               <span id="owned-party-count">0 / 6</span>
             </div>
             <div id="owned-party-grid" class="owned-party-grid"></div>
           </section>
           <section class="owned-section owned-inventory-section">
             <div class="owned-section-head">
-              <h3>Inventory</h3>
+              <h3 data-i18n="inventory">Inventory</h3>
               <span id="owned-item-summary">0 items</span>
             </div>
             <div class="owned-item-panel">
-              <div class="owned-item-wallet" aria-label="Evolution item wallet">
+              <div class="owned-item-wallet" aria-label="Evolution item wallet" data-i18n-aria="evolutionItemWallet">
                 <div class="owned-points-card">
                   <div class="owned-points-head">
-                    <span>Points</span>
-                    <button id="owned-item-info" class="owned-item-info-btn" type="button" aria-label="Item rules" aria-expanded="false" aria-controls="owned-item-info-popover">i</button>
+                    <span data-i18n="points">Points</span>
+                    <button id="owned-item-info" class="owned-item-info-btn" type="button" aria-label="Item rules" data-i18n-aria="itemRules" aria-expanded="false" aria-controls="owned-item-info-popover">i</button>
                   </div>
                   <b id="owned-item-points" class="owned-points-value">0</b>
                 </div>
               </div>
               <div id="owned-item-info-popover" class="owned-item-info-popover" hidden>
-                <h4>Item Rules</h4>
+                <h4 data-i18n="itemRules">Item Rules</h4>
                 <ul>
                   <li><b>Points</b><span><b id="owned-info-token-per-point">10,000</b> total tokens = 1 point. Cached input tokens count.</span></li>
                   <li><b>Draw</b><span>Costs <b id="owned-info-draw-cost">250</b> pts. Success rate is 30%.</span></li>
@@ -183,9 +196,9 @@
                   <li><b>Sell</b><span>Sell gives +<b id="owned-info-sell-value">10</b> pts. Point buying is disabled.</span></li>
                 </ul>
               </div>
-              <div class="owned-item-progress" aria-label="Item point progress">
+              <div class="owned-item-progress" aria-label="Item point progress" data-i18n-aria="itemPointProgress">
                 <div class="owned-item-progress-row">
-                  <span>Next point</span>
+                  <span data-i18n="nextPoint">Next point</span>
                   <b id="owned-item-progress-text">0 / 10,000</b>
                 </div>
                 <div class="owned-item-progress-track">
@@ -199,12 +212,12 @@
                 </div>
                 <div class="owned-pickup-row">
                   <label class="owned-item-control">
-                    <span>Target</span>
+                    <span data-i18n="target">Target</span>
                     <select id="owned-pickup-select"></select>
                   </label>
-                  <span class="owned-pickup-points-pill">Tickets <b id="owned-pickup-points">0</b></span>
+                  <span class="owned-pickup-points-pill"><span data-i18n="tickets">Tickets</span> <b id="owned-pickup-points">0</b></span>
                   <button id="owned-item-claim-pickup" class="owned-item-action pickup" type="button">
-                    <span>Claim Target</span>
+                    <span data-i18n="claimTarget">Claim Target</span>
                     <b>20 tickets</b>
                   </button>
                 </div>
@@ -214,7 +227,7 @@
           </section>
           <section class="owned-section">
             <div class="owned-section-head">
-              <h3>Pokemon Box</h3>
+              <h3 data-i18n="pokemonBox">Pokemon Box</h3>
               <span id="owned-box-count">0 boxed</span>
             </div>
             <div id="owned-box-grid" class="owned-box-grid"></div>
@@ -223,15 +236,15 @@
         <div id="owned-recruit-panel" class="owned-recruit-panel" hidden>
           <div class="owned-recruit-head">
             <div>
-              <h3>Recruit Pokemon</h3>
+              <h3 data-i18n="recruitPokemon">Recruit Pokemon</h3>
               <p id="owned-recruit-summary" class="pokedex-summary">0 available</p>
             </div>
             <div class="owned-recruit-controls">
-              <div class="owned-recruit-mode" role="group" aria-label="Recruit view">
-                <button id="owned-recruit-available" class="active" type="button">Available</button>
-                <button id="owned-recruit-pokedex" type="button">Pokedex</button>
+              <div class="owned-recruit-mode" role="group" aria-label="Recruit view" data-i18n-aria="recruitView">
+                <button id="owned-recruit-available" class="active" type="button" data-i18n="available">Available</button>
+                <button id="owned-recruit-pokedex" type="button" data-i18n="pokedex">Pokedex</button>
               </div>
-              <button id="owned-recruit-close" class="pokedex-close" type="button" aria-label="Close Recruit Pokemon">Back</button>
+              <button id="owned-recruit-close" class="pokedex-close" type="button" aria-label="Close Recruit Pokemon" data-i18n-aria="close" data-i18n="back">Back</button>
             </div>
           </div>
           <div id="owned-recruit-grid" class="owned-recruit-grid"></div>
@@ -259,10 +272,10 @@
       <section class="pokedex-panel subhistory-panel" role="dialog" aria-modal="true" aria-labelledby="subhistory-title">
         <div class="pokedex-panel-head">
           <div>
-            <h2 id="subhistory-title">Sub-agent History</h2>
+            <h2 id="subhistory-title" data-i18n="subagentHistory">Sub-agent History</h2>
             <p id="subhistory-summary" class="pokedex-summary">0 records</p>
           </div>
-          <button id="subhistory-close" class="pokedex-close" type="button" aria-label="Close Sub-agent History">Close</button>
+          <button id="subhistory-close" class="pokedex-close" type="button" aria-label="Close Sub-agent History" data-i18n-aria="close" data-i18n="close">Close</button>
         </div>
         <div id="subhistory-grid" class="subhistory-modal-grid"></div>
       </section>

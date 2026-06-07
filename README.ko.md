@@ -13,7 +13,7 @@ v0.2.0에서는 대시보드가 수집/육성 루프로 확장되었습니다. �
 ## 릴리스 하이라이트
 
 - **Claude + Codex 통합:** `--source all`이 기본값입니다. `--source claude`, `--source codex`도 계속 사용할 수 있습니다.
-- **설치형 CLI:** `npm install -g .`로 `poke-as` 명령을 등록합니다. 기본 실행은 Electron sticker입니다.
+- **설치형 CLI:** `npm install`로 사용자 계정에 `poke-as` 명령을 등록합니다. 기본 실행은 Electron sticker입니다.
 - **My Pokemon:** encounter 또는 Pokedex에서 포켓몬을 영입하고, 6칸 party, Pokemon Box, 닉네임, release, 프로젝트 배정을 관리합니다.
 - **Training:** owned Pokemon은 실제 토큰 사용량으로 EXP를 얻습니다. 프로젝트가 일치하는 포켓몬은 더 높은 training weight를 받습니다.
 - **Evolution items:** 토큰 사용량으로 item point를 얻고, random draw로 진화 아이템을 얻고, target ticket으로 원하는 아이템을 확정 획득할 수 있습니다.
@@ -70,16 +70,16 @@ clone 후 설치합니다.
 git clone git@github.com:Hwiyeon/poke-agent-safari.git
 cd poke-agent-safari
 npm install
-npm run setup:assets
+npm run setup
 ```
 
-선택 사항: 전역 CLI 설치
+선택 사항: CLI shim만 다시 등록
 
 ```bash
-npm install -g .
+npm run setup:cli
 ```
 
-`setup:assets`는 `public/vendor/pokeapi-sprites` 아래에 sparse PokeAPI sprite checkout을 만들거나 갱신하고, 필요한 item sprite를 `public/item-sprites`로 복사하며, `data/map_assets`의 필수 지도 asset을 검증합니다.
+`npm install`은 `poke-as` 명령 등록을 best-effort로 자동 실행합니다. `npm run setup`은 CLI shim을 다시 등록하고, `public/vendor/pokeapi-sprites` 아래에 sparse PokeAPI sprite checkout을 만들거나 갱신하고, 필요한 item sprite를 `public/item-sprites`로 복사하며, `data/map_assets`의 필수 지도 asset을 검증합니다.
 
 Ubuntu 22.04에서는 Electron 실행을 위해 표준 데스크톱 runtime library가 필요할 수 있습니다.
 
@@ -191,8 +191,8 @@ ENABLE_POKEAPI_SPRITES
 
 Training rules:
 
-- agent 토큰 `50`개가 배분 전 owned Pokemon EXP `1`이 됩니다.
-- 프로젝트가 일치하는 배정 포켓몬은 allocation weight `2`를 받습니다.
+- agent 토큰 `10`개가 배분 전 owned Pokemon EXP `1`이 됩니다.
+- 프로젝트가 일치하는 배정 포켓몬은 allocation weight `5`를 받습니다.
 - 프로젝트가 없는 포켓몬은 일반 training share를 받을 수 있습니다.
 - training event는 저장되고 dashboard snapshot에 포함됩니다.
 

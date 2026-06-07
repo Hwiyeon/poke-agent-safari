@@ -5,6 +5,7 @@ const path = require('path');
 
 const POKEDEX_MIN = 1;
 const POKEDEX_MAX = 649;
+const TIER_IDS = Object.freeze([1, 2, 3, 4, 5]);
 const TIER_WEIGHTS = Object.freeze({ 1: 40, 2: 25, 3: 15, 4: 5, 5: 1 });
 const DATA_FILE = path.join(__dirname, 'data', 'pokemon_data.json');
 const EVOLUTION_PATHS_FILE = path.join(__dirname, 'data', 'evolution_paths.json');
@@ -56,13 +57,71 @@ function normalizeAreaId(areaId) {
   return AREA_IDS.includes(normalized) ? normalized : 'all';
 }
 
+function emptyTierPools() {
+  return Object.fromEntries(TIER_IDS.map((tier) => [tier, []]));
+}
+
+function pickPokemonFromTierPools(agentId, tierPools, maxPokemonId) {
+  const normalizedMax = Number(maxPokemonId);
+  const shouldFilterMax = Number.isInteger(normalizedMax) && normalizedMax >= POKEDEX_MIN && normalizedMax < POKEDEX_MAX;
+  const speciesPoolsByTier = {};
+  const effectiveWeights = {};
+
+  for (const tier of TIER_IDS) {
+    const pool = Array.isArray(tierPools && tierPools[tier]) ? tierPools[tier] : [];
+    speciesPoolsByTier[tier] = shouldFilterMax
+      ? pool.filter((pokemonId) => pokemonId <= normalizedMax)
+      : pool;
+    effectiveWeights[tier] = speciesPoolsByTier[tier].length > 0 ? TIER_WEIGHTS[tier] || 1 : 0;
+  }
+
+  for (const tier of TIER_IDS) {
+    if (speciesPoolsByTier[tier].length > 0) {
+      continue;
+    }
+    const missingWeight = TIER_WEIGHTS[tier] || 1;
+    for (let lowerTier = tier - 1; lowerTier >= 1; lowerTier -= 1) {
+      if (speciesPoolsByTier[lowerTier] && speciesPoolsByTier[lowerTier].length > 0) {
+        effectiveWeights[lowerTier] += missingWeight;
+        break;
+      }
+    }
+  }
+
+  const entries = TIER_IDS
+    .filter((tier) => speciesPoolsByTier[tier].length > 0 && effectiveWeights[tier] > 0)
+    .map((tier) => ({
+      tier,
+      speciesPool: speciesPoolsByTier[tier],
+      weight: effectiveWeights[tier]
+    }));
+
+  if (entries.length === 0) {
+    return null;
+  }
+
+  const totalWeight = entries.reduce((sum, entry) => sum + entry.weight, 0);
+  let roll = hashCode(`${agentId}:tier`) % totalWeight;
+  let selected = entries[entries.length - 1];
+  for (const entry of entries) {
+    if (roll < entry.weight) {
+      selected = entry;
+      break;
+    }
+    roll -= entry.weight;
+  }
+
+  const speciesIndex = hashCode(`${agentId}:species:${selected.tier}`) % selected.speciesPool.length;
+  return selected.speciesPool[speciesIndex];
+}
+
 function loadPokemonCatalog() {
   if (cachedCatalog) {
     return cachedCatalog;
   }
 
-  let weightedPool = [];
-  let areaWeightedPools = Object.fromEntries(AREA_IDS.map((areaId) => [areaId, []]));
+  let tierPools = emptyTierPools();
+  let areaTierPools = Object.fromEntries(AREA_IDS.map((areaId) => [areaId, emptyTierPools()]));
   let pokemonAreaIds = {};
   let pokemonRarityTiers = {};
 
@@ -75,35 +134,32 @@ function loadPokemonCatalog() {
         if (!Number.isInteger(pokemonId) || pokemonId < POKEDEX_MIN || pokemonId > POKEDEX_MAX) {
           continue;
         }
-        const weight = TIER_WEIGHTS[pokemon.final_tier] || 1;
         const tier = Number(pokemon.final_tier);
-        pokemonRarityTiers[pokemonId] = Number.isInteger(tier) && tier >= 1 && tier <= 5 ? tier : 1;
+        const normalizedTier = Number.isInteger(tier) && tier >= 1 && tier <= 5 ? tier : 1;
+        pokemonRarityTiers[pokemonId] = normalizedTier;
         const areaId = HABITAT_TO_AREA[pokemon.habitat] || null;
         if (areaId) {
           pokemonAreaIds[pokemonId] = areaId;
         }
-        for (let i = 0; i < weight; i += 1) {
-          weightedPool.push(pokemonId);
-          if (areaId && areaWeightedPools[areaId]) {
-            areaWeightedPools[areaId].push(pokemonId);
-          }
+        tierPools[normalizedTier].push(pokemonId);
+        if (areaId && areaTierPools[areaId]) {
+          areaTierPools[areaId][normalizedTier].push(pokemonId);
         }
       }
     }
   } catch (_) {
-    weightedPool = [];
-    areaWeightedPools = Object.fromEntries(AREA_IDS.map((areaId) => [areaId, []]));
+    tierPools = emptyTierPools();
+    areaTierPools = Object.fromEntries(AREA_IDS.map((areaId) => [areaId, emptyTierPools()]));
     pokemonAreaIds = {};
     pokemonRarityTiers = {};
   }
 
-  if (weightedPool.length === 0) {
-    for (let pokemonId = POKEDEX_MIN; pokemonId <= POKEDEX_MAX; pokemonId += 1) {
-      weightedPool.push(pokemonId);
-    }
-  }
-
-  cachedCatalog = { weightedPool, areaWeightedPools, pokemonAreaIds, pokemonRarityTiers };
+  cachedCatalog = {
+    tierPools,
+    areaTierPools,
+    pokemonAreaIds,
+    pokemonRarityTiers
+  };
   return cachedCatalog;
 }
 
@@ -125,20 +181,21 @@ function getPokemonIdForAgent(agentId, options = {}) {
   const catalog = loadPokemonCatalog();
   const maxPokemonId = Number(options.maxPokemonId);
   const areaId = normalizeAreaId(options.areaId);
-  let pool = areaId !== 'all' && catalog.areaWeightedPools[areaId] && catalog.areaWeightedPools[areaId].length > 0
-    ? catalog.areaWeightedPools[areaId]
-    : catalog.weightedPool;
-  if (Number.isInteger(maxPokemonId) && maxPokemonId >= POKEDEX_MIN && maxPokemonId < POKEDEX_MAX) {
-    pool = pool.filter((pokemonId) => pokemonId <= maxPokemonId);
-    if (pool.length === 0) {
-      pool = [];
-      for (let pokemonId = POKEDEX_MIN; pokemonId <= maxPokemonId; pokemonId += 1) {
-        pool.push(pokemonId);
-      }
-    }
+  const areaTierPools = areaId !== 'all' ? catalog.areaTierPools[areaId] : null;
+  let pokemonId = areaTierPools
+    ? pickPokemonFromTierPools(agentId, areaTierPools, maxPokemonId)
+    : null;
+  if (!pokemonId) {
+    pokemonId = pickPokemonFromTierPools(agentId, catalog.tierPools, maxPokemonId);
   }
-  const index = hashCode(String(agentId)) % pool.length;
-  return pool[index];
+  if (pokemonId) {
+    return pokemonId;
+  }
+
+  const fallbackMax = Number.isInteger(maxPokemonId) && maxPokemonId >= POKEDEX_MIN && maxPokemonId < POKEDEX_MAX
+    ? maxPokemonId
+    : POKEDEX_MAX;
+  return (hashCode(String(agentId)) % (fallbackMax - POKEDEX_MIN + 1)) + POKEDEX_MIN;
 }
 
 function loadEvolutionPaths() {

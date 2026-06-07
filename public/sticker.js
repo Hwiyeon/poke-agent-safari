@@ -7,14 +7,17 @@
   var PARTY_LIMIT = 6;
   var LANGUAGE_STORAGE_KEY = 'agent-safari-name-language';
   var LEGACY_LANGUAGE_STORAGE_KEY = 'agent-safari-sticker-name-language';
+  var TIER_IDS = [1, 2, 3, 4, 5];
   var TIER_WEIGHTS = { 1: 40, 2: 25, 3: 15, 4: 5, 5: 1 };
 
   var snapshot = null;
   var eventStream = null;
   var pollTimer = null;
+  var connectionStatus = 'connecting';
   var pokemonNames = {};
   var pokemonKoNames = {};
   var pokemonPool = [];
+  var pokemonTierPools = {};
   var pokemonPoolReady = false;
   var evolutionPaths = {};
   var nameLanguage = readStoredNameLanguage();
@@ -26,6 +29,7 @@
     languageOptions: document.getElementById('language-options'),
     activeCount: document.getElementById('active-count'),
     rateLimitList: document.getElementById('rate-limit-list'),
+    currentPoints: document.getElementById('sticker-current-points'),
     ownedCount: document.getElementById('owned-count'),
     ownedList: document.getElementById('owned-list'),
     agentCount: document.getElementById('agent-count'),
@@ -40,6 +44,124 @@
     minimizeBtn: document.getElementById('minimize-btn'),
     quitBtn: document.getElementById('quit-btn')
   };
+
+  var TEXT = {
+    en: {
+      uiLanguage: 'UI language',
+      uiLanguageEnglish: 'UI language: English',
+      uiLanguageKorean: 'UI language: Korean',
+      openDashboard: 'Open dashboard',
+      minimize: 'Minimize',
+      quit: 'Quit',
+      usageBudgets: 'Usage budgets',
+      all: 'All',
+      myPokemonParty: 'My Pokemon party',
+      myPokemonCompact: 'MY POKEMON',
+      currentPoints: 'Current points',
+      agents: 'Agents',
+      agentStatusCounts: 'Agent status counts',
+      statusActive: 'active',
+      statusThinking: 'thinking',
+      statusTool: 'tool',
+      statusWaiting: 'waiting',
+      statusSleeping: 'sleeping',
+      statusIdle: 'idle',
+      connecting: 'connecting',
+      online: 'online',
+      offline: 'offline',
+      unknown: 'unknown',
+      pokemon: 'Pokemon',
+      waitingForActivity: 'Waiting for activity',
+      unnamedAgent: 'Unnamed agent',
+      noBudgetData: 'No budget data yet',
+      noPartyPokemon: 'No party Pokemon yet',
+      noAgentsYet: 'No agents yet',
+      project: 'Project',
+      unassigned: 'unassigned',
+      tokens: 'Tokens',
+      seen: 'Seen',
+      archive: 'Archive',
+      archiveAgent: 'Archive agent',
+      updatedAt: 'updated {time}',
+      codexBudget: 'Codex Budget',
+      claudeBudget: 'Claude Budget',
+      budget: 'Budget',
+      rateNoData: '{provider} {period}: no data',
+      rateRemaining: '{provider} {period}: {remaining}% remaining',
+      rateLeft: '{time} left',
+      rateResets: 'resets {time}'
+    },
+    ko: {
+      uiLanguage: 'UI 언어',
+      uiLanguageEnglish: 'UI 언어: 영어',
+      uiLanguageKorean: 'UI 언어: 한국어',
+      openDashboard: '대시보드 열기',
+      minimize: '최소화',
+      quit: '종료',
+      usageBudgets: 'Usage budgets',
+      all: '전체',
+      myPokemonParty: '내 포켓몬 파티',
+      myPokemonCompact: '내 포켓몬',
+      agents: 'Agents',
+      agentStatusCounts: 'Agent status counts',
+      statusActive: 'active',
+      statusThinking: 'thinking',
+      statusTool: 'tool',
+      statusWaiting: 'waiting',
+      statusSleeping: 'sleeping',
+      statusIdle: 'idle',
+      connecting: '연결 중',
+      online: '온라인',
+      offline: '오프라인',
+      unknown: '미확인',
+      pokemon: '포켓몬',
+      waitingForActivity: 'Waiting for activity',
+      unnamedAgent: 'Unnamed agent',
+      noBudgetData: 'No budget data yet',
+      noPartyPokemon: '아직 파티 포켓몬이 없습니다',
+      noAgentsYet: 'No agents yet',
+      project: 'Project',
+      unassigned: '미지정',
+      tokens: 'Tokens',
+      seen: 'Seen',
+      archive: 'Archive',
+      archiveAgent: 'Archive agent',
+      updatedAt: '{time} 업데이트',
+      codexBudget: 'Codex Budget',
+      claudeBudget: 'Claude Budget',
+      budget: 'Budget',
+      rateNoData: '{provider} {period}: 데이터 없음',
+      rateRemaining: '{provider} {period}: {remaining}% 남음',
+      rateLeft: '{time} 남음',
+      rateResets: '{time} 리셋'
+    }
+  };
+
+  function currentLanguage() {
+    return nameLanguage === 'ko' ? 'ko' : 'en';
+  }
+
+  function t(key, params) {
+    var dict = TEXT[currentLanguage()] || TEXT.en;
+    var text = Object.prototype.hasOwnProperty.call(dict, key) ? dict[key] : TEXT.en[key];
+    if (text === undefined) return key;
+    return String(text).replace(/\{([a-zA-Z0-9_]+)\}/g, function (_, name) {
+      return params && params[name] !== undefined ? String(params[name]) : '';
+    });
+  }
+
+  function applyStaticTranslations(root) {
+    var host = root || document;
+    Array.prototype.forEach.call(host.querySelectorAll('[data-i18n]'), function (node) {
+      node.textContent = t(node.getAttribute('data-i18n'));
+    });
+    Array.prototype.forEach.call(host.querySelectorAll('[data-i18n-aria]'), function (node) {
+      node.setAttribute('aria-label', t(node.getAttribute('data-i18n-aria')));
+    });
+    Array.prototype.forEach.call(host.querySelectorAll('[data-i18n-title]'), function (node) {
+      node.setAttribute('title', t(node.getAttribute('data-i18n-title')));
+    });
+  }
 
   function electronBridge() {
     return window.agentSafariElectron || null;
@@ -69,10 +191,60 @@
     return Math.abs(h >>> 0);
   }
 
+  function pickPokemonFromTierPools(agentId, tierPools) {
+    var speciesPoolsByTier = {};
+    var effectiveWeights = {};
+    for (var i = 0; i < TIER_IDS.length; i += 1) {
+      var tier = TIER_IDS[i];
+      var speciesPool = tierPools && tierPools[tier];
+      speciesPoolsByTier[tier] = Array.isArray(speciesPool) ? speciesPool : [];
+      effectiveWeights[tier] = speciesPoolsByTier[tier].length > 0 ? TIER_WEIGHTS[tier] || 1 : 0;
+    }
+
+    for (var missingIndex = 0; missingIndex < TIER_IDS.length; missingIndex += 1) {
+      var missingTier = TIER_IDS[missingIndex];
+      if (speciesPoolsByTier[missingTier].length > 0) continue;
+      var missingWeight = TIER_WEIGHTS[missingTier] || 1;
+      for (var lowerTier = missingTier - 1; lowerTier >= 1; lowerTier -= 1) {
+        if (speciesPoolsByTier[lowerTier] && speciesPoolsByTier[lowerTier].length > 0) {
+          effectiveWeights[lowerTier] += missingWeight;
+          break;
+        }
+      }
+    }
+
+    var entries = [];
+    for (var entryIndex = 0; entryIndex < TIER_IDS.length; entryIndex += 1) {
+      var entryTier = TIER_IDS[entryIndex];
+      if (speciesPoolsByTier[entryTier].length === 0 || effectiveWeights[entryTier] <= 0) continue;
+      entries.push({
+        tier: entryTier,
+        speciesPool: speciesPoolsByTier[entryTier],
+        weight: effectiveWeights[entryTier]
+      });
+    }
+    if (entries.length === 0) return null;
+
+    var totalWeight = 0;
+    for (var j = 0; j < entries.length; j += 1) totalWeight += entries[j].weight;
+    var roll = hashCode(String(agentId) + ':tier') % totalWeight;
+    var selected = entries[entries.length - 1];
+    for (var k = 0; k < entries.length; k += 1) {
+      if (roll < entries[k].weight) {
+        selected = entries[k];
+        break;
+      }
+      roll -= entries[k].weight;
+    }
+
+    var speciesIndex = hashCode(String(agentId) + ':species:' + selected.tier) % selected.speciesPool.length;
+    return selected.speciesPool[speciesIndex];
+  }
+
   function fallbackPokemonIdForAgentId(agentId) {
     if (!agentId) return POKEDEX_MIN;
     if (pokemonPoolReady && pokemonPool.length > 0) {
-      return pokemonPool[hashCode(agentId) % pokemonPool.length];
+      return pickPokemonFromTierPools(agentId, pokemonTierPools) || pokemonPool[hashCode(agentId) % pokemonPool.length];
     }
     return (hashCode(agentId) % POKEDEX_TOTAL) + POKEDEX_MIN;
   }
@@ -178,9 +350,9 @@
       var legacy = localStorage.getItem(LEGACY_LANGUAGE_STORAGE_KEY);
       if (legacy === 'ko' || legacy === 'en') return legacy;
     } catch (err) {
-      return 'ko';
+      return 'en';
     }
-    return 'ko';
+    return 'en';
   }
 
   function storeNameLanguage(lang) {
@@ -194,7 +366,7 @@
     if (!els.languageMenuButton) return;
     var isEnglish = nameLanguage === 'en';
     var label = isEnglish ? 'EN' : 'KO';
-    var title = isEnglish ? 'Pokemon names: English' : 'Pokemon names: Korean';
+    var title = isEnglish ? t('uiLanguageEnglish') : t('uiLanguageKorean');
     els.languageMenuButton.textContent = label;
     els.languageMenuButton.title = title;
     els.languageMenuButton.setAttribute('aria-label', title);
@@ -220,12 +392,14 @@
     nameLanguage = lang === 'en' ? 'en' : 'ko';
     storeNameLanguage(nameLanguage);
     languageMenuOpen = false;
+    applyStaticTranslations();
     updateLanguageToggle();
+    setConnection(connectionStatus);
     if (snapshot) render(snapshot);
   }
 
   function formatPokemonName(name) {
-    if (!name) return 'Unknown';
+    if (!name) return t('unknown');
     return String(name)
       .split('-')
       .map(function (part) {
@@ -237,7 +411,7 @@
 
   function pokemonDisplayName(pokemonId, lang) {
     var id = Number(pokemonId);
-    var fallback = 'Pokemon #' + String(id || POKEDEX_MIN).padStart(3, '0');
+    var fallback = t('pokemon') + ' #' + String(id || POKEDEX_MIN).padStart(3, '0');
     if ((lang || nameLanguage) === 'en') {
       return pokemonNames[id] || pokemonKoNames[id] || fallback;
     }
@@ -250,7 +424,7 @@
   }
 
   function ownedDisplayName(pokemon) {
-    if (!pokemon) return 'Pokemon';
+    if (!pokemon) return t('pokemon');
     return pokemon.nickname || pokemonDisplayName(pokemon.speciesId);
   }
 
@@ -263,19 +437,26 @@
       .then(function (data) {
         var list = Array.isArray(data && data.pokemon) ? data.pokemon : [];
         var pool = [];
+        var tierPools = {};
         list.forEach(function (pokemon) {
           var id = Number(pokemon && pokemon.pokemon_id);
           if (!Number.isInteger(id)) return;
           if (pokemon.name) pokemonNames[id] = formatPokemonName(pokemon.name);
           if (pokemon.name_ko) pokemonKoNames[id] = pokemon.name_ko;
           if (id >= POKEDEX_MIN && id <= POKEDEX_MAX) {
-            var weight = TIER_WEIGHTS[pokemon.final_tier] || 1;
+            var tier = Number.isInteger(pokemon.final_tier) && pokemon.final_tier >= 1 && pokemon.final_tier <= 5
+              ? pokemon.final_tier
+              : 1;
+            var weight = TIER_WEIGHTS[tier] || 1;
+            if (!tierPools[tier]) tierPools[tier] = [];
+            tierPools[tier].push(id);
             for (var i = 0; i < weight; i += 1) {
               pool.push(id);
             }
           }
         });
         pokemonPool = pool;
+        pokemonTierPools = tierPools;
         pokemonPoolReady = pool.length > 0;
       })
       .catch(function () {});
@@ -315,34 +496,45 @@
     return String(Math.round(num));
   }
 
+  function formatPointCount(value) {
+    var num = Number(value);
+    if (!Number.isFinite(num) || num <= 0) return '0';
+    return Math.round(num).toLocaleString(currentLanguage() === 'ko' ? 'ko-KR' : 'en-US');
+  }
+
   function formatTime(ts) {
     var num = Number(ts);
     if (!Number.isFinite(num) || num <= 0) return '--';
-    return new Date(num).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    return new Date(num).toLocaleTimeString(currentLanguage() === 'ko' ? 'ko-KR' : 'en-US', {
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit'
+    });
   }
 
   function formatAge(ts) {
     var num = Number(ts);
     if (!Number.isFinite(num) || num <= 0) return '--';
     var seconds = Math.max(0, Math.floor((Date.now() - num) / 1000));
-    if (seconds < 60) return seconds + 's ago';
+    if (seconds < 60) return currentLanguage() === 'ko' ? seconds + '초 전' : seconds + 's ago';
     var minutes = Math.floor(seconds / 60);
-    if (minutes < 60) return minutes + 'm ago';
+    if (minutes < 60) return currentLanguage() === 'ko' ? minutes + '분 전' : minutes + 'm ago';
     var hours = Math.floor(minutes / 60);
-    if (hours < 48) return hours + 'h ago';
-    return Math.floor(hours / 24) + 'd ago';
+    if (hours < 48) return currentLanguage() === 'ko' ? hours + '시간 전' : hours + 'h ago';
+    var days = Math.floor(hours / 24);
+    return currentLanguage() === 'ko' ? days + '일 전' : days + 'd ago';
   }
 
   function titleCase(raw) {
     var text = String(raw || '').replace(/[_-]+/g, ' ').trim();
-    if (!text) return 'Unknown';
+    if (!text) return t('unknown');
     return text.charAt(0).toUpperCase() + text.slice(1);
   }
 
   function compactModelName(model, provider) {
     var text = String(model || '').trim();
     if (!text) {
-      return titleCase(provider || 'unknown');
+      return titleCase(provider || t('unknown'));
     }
     text = text
       .replace(/^claude[-_]/i, '')
@@ -352,11 +544,11 @@
       .replace(/[-_](latest|preview)$/i, '')
       .replace(/[-_]+/g, ' ')
       .trim();
-    return text ? titleCase(text) : titleCase(provider || 'unknown');
+    return text ? titleCase(text) : titleCase(provider || t('unknown'));
   }
 
   function shortProjectName(projectId) {
-    if (!projectId) return 'unknown';
+    if (!projectId) return t('unknown');
     var segments = String(projectId).replace(/^-+/, '').split('-').filter(Boolean);
     var skip = { home: 1, users: 1, user: 1, projects: 1, repos: 1, src: 1, code: 1, work: 1, workspace: 1, documents: 1, desktop: 1 };
     var last = -1;
@@ -375,8 +567,8 @@
   }
 
   function agentName(agent) {
-    if (!agent) return 'Waiting for activity';
-    return agent.displayName || agent.name || agent.subagentType || agent.agentId || 'Unnamed agent';
+    if (!agent) return t('waitingForActivity');
+    return agent.displayName || agent.name || agent.subagentType || agent.agentId || t('unnamedAgent');
   }
 
   function contextStats(agent) {
@@ -406,9 +598,20 @@
   }
 
   function agentStateLabel(agent) {
-    if (agent && agent.isSleeping) return 'sleeping';
-    if (agent && agent.isActive) return 'active';
-    return String((agent && (agent.status || agent.activity)) || 'idle').toLowerCase().replace(/[_-]+/g, ' ');
+    if (agent && agent.isSleeping) return t('statusSleeping');
+    if (agent && agent.isActive) return t('statusActive');
+    return localizedStatusText((agent && (agent.status || agent.activity)) || 'idle');
+  }
+
+  function localizedStatusText(raw) {
+    var normalized = String(raw || '').toLowerCase().replace(/[_-]+/g, ' ').trim();
+    if (normalized === 'active') return t('statusActive');
+    if (normalized === 'thinking') return t('statusThinking');
+    if (normalized === 'tool' || normalized === 'tool running' || normalized === 'tool use' || normalized === 'tooling') return t('statusTool');
+    if (normalized === 'waiting') return t('statusWaiting');
+    if (normalized === 'sleeping') return t('statusSleeping');
+    if (normalized === 'idle') return t('statusIdle');
+    return normalized || t('unknown');
   }
 
   function agentStateClass(agent) {
@@ -498,15 +701,18 @@
   function formatResetAtShort(epoch) {
     if (!epoch) return '-';
     var d = new Date(epoch * 1000);
-    var months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-    return months[d.getMonth()] + ' ' + d.getDate() + ' '
-      + String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
+    return d.toLocaleString(currentLanguage() === 'ko' ? 'ko-KR' : 'en-US', {
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
   }
 
   function rateLimitProviderLabel(provider) {
-    if (provider === 'codex') return 'Codex Budget';
-    if (provider === 'claude') return 'Claude Budget';
-    return 'Budget';
+    if (provider === 'codex') return t('codexBudget');
+    if (provider === 'claude') return t('claudeBudget');
+    return t('budget');
   }
 
   function rateLimitProviderOrder(nextSnapshot) {
@@ -542,13 +748,13 @@
     var remain = hasValue ? 100 - Math.min(100, Math.max(0, rateLimit.used_percentage)) : 0;
     var color = hasValue ? hpBarColor(remain / 100) : '#777';
     var pctText = hasValue ? remain.toFixed(1) + '%' : '-';
-    var tooltip = providerLabel + ' ' + periodLabel + ': no data';
+    var tooltip = t('rateNoData', { provider: providerLabel, period: periodLabel });
 
     if (hasValue) {
-      tooltip = providerLabel + ' ' + periodLabel + ': ' + remain.toFixed(1) + '% remaining';
+      tooltip = t('rateRemaining', { provider: providerLabel, period: periodLabel, remaining: remain.toFixed(1) });
       tooltip += resetKind === 'remaining'
-        ? ' / ' + formatRemainingShort(rateLimit.resets_at) + ' left'
-        : ' / resets ' + formatResetAtShort(rateLimit.resets_at);
+        ? ' / ' + t('rateLeft', { time: formatRemainingShort(rateLimit.resets_at) })
+        : ' / ' + t('rateResets', { time: formatResetAtShort(rateLimit.resets_at) });
     }
 
     return [
@@ -577,7 +783,7 @@
   function renderRateLimits(nextSnapshot) {
     var entries = rateLimitEntries(nextSnapshot || {});
     if (entries.length === 0) {
-      els.rateLimitList.innerHTML = '<div class="panel-empty">No budget data yet</div>';
+      els.rateLimitList.innerHTML = '<div class="panel-empty">' + escapeHtml(t('noBudgetData')) + '</div>';
       return;
     }
     els.rateLimitList.innerHTML = entries.map(rateLimitProviderHtml).join('');
@@ -593,7 +799,7 @@
     els.ownedCount.textContent = String(Math.min(party.length, PARTY_LIMIT));
 
     if (party.length === 0) {
-      els.ownedList.innerHTML = '<div class="panel-empty">No party Pokemon yet</div>';
+      els.ownedList.innerHTML = '<div class="panel-empty">' + escapeHtml(t('noPartyPokemon')) + '</div>';
       return;
     }
 
@@ -603,7 +809,7 @@
       var speciesId = Number(pokemon.speciesId) || POKEDEX_MIN;
       var displayName = ownedDisplayName(pokemon);
       var speciesName = pokemonDisplayName(speciesId);
-      var assigned = pokemon.assignedProjectId ? shortProjectName(pokemon.assignedProjectId) : 'unassigned';
+      var assigned = pokemon.assignedProjectId ? shortProjectName(pokemon.assignedProjectId) : t('unassigned');
       html += '<article class="owned-party-card sticker-owned-card" tabindex="0">';
       html += '<img class="owned-party-sprite" src="' + escapeHtml(iconUrl(speciesId)) + '" alt="" />';
       html += '<div class="owned-party-body">';
@@ -620,7 +826,7 @@
       html += '<div class="popover-copy">';
       html += '<strong>' + escapeHtml(displayName) + '</strong>';
       html += '<span>#' + String(speciesId).padStart(3, '0') + ' ' + escapeHtml(speciesName) + ' / Lv.' + stats.level + '</span>';
-      html += '<span>Project ' + escapeHtml(assigned) + '</span>';
+      html += '<span>' + escapeHtml(t('project')) + ' ' + escapeHtml(assigned) + '</span>';
       html += '</div>';
       html += '</div>';
       html += '</article>';
@@ -636,7 +842,7 @@
     els.agentCount.textContent = String(agents.length);
 
     if (sorted.length === 0) {
-      els.agentList.innerHTML = '<div class="panel-empty">No agents yet</div>';
+      els.agentList.innerHTML = '<div class="panel-empty">' + escapeHtml(t('noAgentsYet')) + '</div>';
       return;
     }
 
@@ -648,7 +854,7 @@
       var pokemonLabel = pokemonNumberLabel(pokemonId);
       var name = agentName(agent);
       var model = compactModelName(agent.model, agent.provider);
-      var status = titleCase(agent.status || agent.activity || 'active');
+      var status = localizedStatusText(agent.status || agent.activity || 'active');
       var stateLabel = agentStateLabel(agent);
       var className = 'agent-row' + agentStateClass(agent);
       if (agent.isSleeping) className += ' sleeping';
@@ -665,7 +871,7 @@
       html += '</span>';
       html += '<span class="agent-row-actions">';
       html += '<span class="agent-row-state">' + escapeHtml(stateLabel) + '</span>';
-      html += '<button class="agent-row-archive" type="button" data-agent-action="archive" data-agent-id="' + escapeHtml(agent.agentId) + '" title="Archive agent" aria-label="Archive agent">Archive</button>';
+      html += '<button class="agent-row-archive" type="button" data-agent-action="archive" data-agent-id="' + escapeHtml(agent.agentId) + '" title="' + escapeHtml(t('archiveAgent')) + '" aria-label="' + escapeHtml(t('archiveAgent')) + '">' + escapeHtml(t('archive')) + '</button>';
       html += '</span>';
       html += '<div class="row-popover">';
       html += '<div class="popover-figure">';
@@ -677,9 +883,9 @@
       html += '<span>' + escapeHtml(model) + ' / ' + escapeHtml(status) + ' / ' + escapeHtml(stateLabel) + '</span>';
       html += meterHtml('HP', hp.pct, hp.color, hp.label + ' ' + contextTokenLabel(hp));
       html += meterHtml('EXP', level.progress, '#f0b35c', Math.round(level.progress) + '%');
-      html += '<span>Lv.' + level.level + ' / Tokens ' + formatNumber(level.totalTokens) + '</span>';
-      html += '<span>Project ' + escapeHtml(shortProjectName(agent.projectId)) + '</span>';
-      html += '<span>Seen ' + escapeHtml(formatAge(agent.lastSeen || agent.createdAt)) + '</span>';
+      html += '<span>Lv.' + level.level + ' / ' + escapeHtml(t('tokens')) + ' ' + formatNumber(level.totalTokens) + '</span>';
+      html += '<span>' + escapeHtml(t('project')) + ' ' + escapeHtml(shortProjectName(agent.projectId)) + '</span>';
+      html += '<span>' + escapeHtml(t('seen')) + ' ' + escapeHtml(formatAge(agent.lastSeen || agent.createdAt)) + '</span>';
       if (agent.lastCommand) {
         html += '<span>Cmd ' + escapeHtml(truncate(agent.lastCommand, 64)) + '</span>';
       }
@@ -704,9 +910,10 @@
 
   function setConnection(status) {
     if (!els.connectionState) return;
+    connectionStatus = status || 'connecting';
     els.connectionState.classList.remove('online', 'offline');
     if (status) els.connectionState.classList.add(status);
-    els.connectionState.textContent = status || 'connecting';
+    els.connectionState.textContent = t(connectionStatus);
   }
 
   function render(nextSnapshot) {
@@ -720,13 +927,18 @@
     var counts = countByStatus(agents);
     var source = snapshot.config && snapshot.config.source ? snapshot.config.source : 'all';
 
-    els.sourcePill.textContent = source;
+    els.sourcePill.textContent = source === 'all' ? t('all') : source;
     els.activeCount.textContent = String(activeCount);
     els.thinkingCount.textContent = String(counts.thinking);
     els.toolCount.textContent = String(counts.tool);
     els.waitingCount.textContent = String(counts.waiting);
     els.sleepingCount.textContent = String(counts.sleeping);
-    els.lastUpdate.textContent = 'updated ' + formatTime(snapshot.lastUpdate || snapshot.now);
+    els.lastUpdate.textContent = t('updatedAt', { time: formatTime(snapshot.lastUpdate || snapshot.now) });
+    if (els.currentPoints) {
+      var itemState = snapshot.evolutionItems || {};
+      els.currentPoints.textContent = formatPointCount(itemState.itemPoints) + ' pts';
+      els.currentPoints.setAttribute('title', t('currentPoints'));
+    }
 
     renderRateLimits(snapshot);
     renderOwned(owned);
@@ -822,6 +1034,7 @@
   }
 
   wireControls();
+  applyStaticTranslations();
   updateLanguageToggle();
   setConnection('connecting');
   loadPokemonNames();

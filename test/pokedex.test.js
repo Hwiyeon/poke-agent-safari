@@ -5,7 +5,7 @@ const assert = require('assert').strict;
 
 const { EVENT_TYPES } = require('../parser');
 const { AgentState } = require('../state');
-const { getPokemonAreaId, getPokemonIdForAgent, resolveRenderedPokemonIdForAgent } = require('../pokemon');
+const { getPokemonAreaId, getPokemonRarityTier, getPokemonIdForAgent, resolveRenderedPokemonIdForAgent } = require('../pokemon');
 
 test('state tracks discovered pokemon in snapshot and serialization', () => {
   const state = new AgentState({
@@ -188,6 +188,22 @@ test('area-specific pokemon pool matches the selected exploration area', () => {
 
   assert.equal(getPokemonAreaId(cavePokemonId), 'cave');
   assert.equal(getPokemonAreaId(forestPokemonId), 'forest');
+});
+
+test('area spawn rolls missing rarity weight down to lower tiers', () => {
+  const sampleSize = 6100;
+  const counts = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
+
+  for (let i = 0; i < sampleSize; i += 1) {
+    const pokemonId = getPokemonIdForAgent('ruin-rarity-sample-' + i, { areaId: 'ruin' });
+    assert.equal(getPokemonAreaId(pokemonId), 'ruin');
+    counts[getPokemonRarityTier(pokemonId)] += 1;
+  }
+
+  assert.equal(counts[2], 0);
+  assert.ok(counts[1] > 4300, 'missing uncommon weight should be absorbed by common ruin encounters');
+  assert.ok(counts[3] + counts[4] + counts[5] < 1700, 'missing uncommon weight should not inflate rare-or-higher ruin encounters');
+  assert.ok(counts[5] < 250, 'legendary species count should not dominate the ruin area pool');
 });
 
 test('state fixes root pokemon at spawn using the current exploration area', () => {
