@@ -191,7 +191,7 @@ ENABLE_POKEAPI_SPRITES
 
 Training rules:
 
-- agent 토큰 `10`개가 배분 전 owned Pokemon EXP `1`이 됩니다.
+- agent 토큰 `20`개가 배분 전 owned Pokemon EXP `1`이 됩니다.
 - 프로젝트가 일치하는 배정 포켓몬은 allocation weight `5`를 받습니다.
 - 프로젝트가 없는 포켓몬은 일반 training share를 받을 수 있습니다.
 - training event는 저장되고 dashboard snapshot에 포함됩니다.

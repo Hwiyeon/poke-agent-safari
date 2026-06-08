@@ -191,7 +191,7 @@ ENABLE_POKEAPI_SPRITES
 
 Training rules:
 
-- `10` agent tokens become `1` owned Pokemon EXP before allocation.
+- `20` agent tokens become `1` owned Pokemon EXP before allocation.
 - Project-assigned Pokemon receive allocation weight `5` for matching project activity.
 - Unassigned Pokemon can share general training.
 - Training events are persisted and included in dashboard snapshots.

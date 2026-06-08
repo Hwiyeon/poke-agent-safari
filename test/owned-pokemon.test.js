@@ -139,12 +139,12 @@ test('project training grants usage exp to assigned pokemon and party', () => {
 
   const byId = new Map(state.snapshot().ownedPokemon.map((pokemon) => [pokemon.id, pokemon]));
   assert.ok(byId.get(wooper.id).totalTrainingExp > byId.get(pikachu.id).totalTrainingExp);
-  assert.equal(byId.get(wooper.id).totalTrainingExp, 7143);
-  assert.ok([1428, 1429].includes(byId.get(pikachu.id).totalTrainingExp));
-  assert.ok([1428, 1429].includes(byId.get(eevee.id).totalTrainingExp));
+  assert.equal(byId.get(wooper.id).totalTrainingExp, 3572);
+  assert.equal(byId.get(pikachu.id).totalTrainingExp, 714);
+  assert.equal(byId.get(eevee.id).totalTrainingExp, 714);
   assert.equal(
     byId.get(wooper.id).totalTrainingExp + byId.get(pikachu.id).totalTrainingExp + byId.get(eevee.id).totalTrainingExp,
-    10000
+    5000
   );
   assert.equal(state.snapshot().trainingEvents.length, 3);
 });
@@ -201,7 +201,7 @@ test('project training does not grant usage exp to boxed pokemon', () => {
   assert.equal(byId.get(boxedAssigned.id).totalTrainingExp, 0);
   assert.equal(
     party.reduce((sum, pokemon) => sum + byId.get(pokemon.id).totalTrainingExp, 0),
-    10000
+    5000
   );
   assert.equal(state.snapshot().trainingEvents.length, 6);
 });
@@ -232,9 +232,9 @@ test('project training weights assigned pokemon above unassigned pokemon', () =>
   });
 
   const byId = new Map(state.snapshot().ownedPokemon.map((pokemon) => [pokemon.id, pokemon]));
-  assert.equal(byId.get(bulbasaur.id).totalTrainingExp + byId.get(charmander.id).totalTrainingExp, 9091);
+  assert.equal(byId.get(bulbasaur.id).totalTrainingExp + byId.get(charmander.id).totalTrainingExp, 4546);
   assert.ok(Math.abs(byId.get(bulbasaur.id).totalTrainingExp - byId.get(charmander.id).totalTrainingExp) <= 1);
-  assert.equal(byId.get(pikachu.id).totalTrainingExp, 909);
+  assert.equal(byId.get(pikachu.id).totalTrainingExp, 454);
   assert.equal(byId.get(squirtle.id).totalTrainingExp, 0);
   assert.deepEqual(state.snapshot().projectTraining['project-a'].sort(), [bulbasaur.id, charmander.id].sort());
 });
