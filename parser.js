@@ -456,14 +456,13 @@ function normalizeEntry(entry, context) {
     baseMeta.lastUserQuery = userSummary;
   }
 
-  const events = [];
   const seenEvent = {
     type: EVENT_TYPES.AGENT_SEEN,
     agentId: agentId || stableFallbackId(context.filePath, sessionId, projectId),
     ts,
     meta: baseMeta
   };
-  events.push(seenEvent);
+  const events = [];
 
   if (userSummary) {
     events.push({
@@ -606,7 +605,11 @@ function normalizeEntry(entry, context) {
     });
   }
 
-  return events;
+  if (events.length === 0) {
+    return [];
+  }
+
+  return [seenEvent, ...events];
 }
 
 function normalizeLine(line, context) {

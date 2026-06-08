@@ -1397,6 +1397,16 @@ class AgentState extends EventEmitter {
       }
     }
 
+    const existingAgent = this.agents.get(event.agentId);
+    if (
+      existingAgent &&
+      existingAgent.lifecycle === LIFECYCLE.SLEEPING &&
+      replay &&
+      ts <= (existingAgent.lastSeen || 0)
+    ) {
+      return;
+    }
+
     const { agent, created } = this.upsertAgent(event.agentId, ts, meta);
     if (agent.lifecycle === LIFECYCLE.SLEEPING) {
       agent.lifecycle = LIFECYCLE.ACTIVE;
