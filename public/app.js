@@ -4202,6 +4202,63 @@
     }
   }
 
+  function mergeOwnedPokemonIntoSnapshot(snapshot, pokemon, recruitCost) {
+    if (!snapshot || !pokemon || typeof snapshot !== 'object') return snapshot;
+    var speciesId = validPokemonId(pokemon.speciesId);
+    if (!speciesId) return snapshot;
+
+    var next = { ...snapshot };
+    var owned = Array.isArray(snapshot.ownedPokemon) ? snapshot.ownedPokemon.slice() : [];
+    var ownedId = pokemon.id ? String(pokemon.id) : null;
+    var added = true;
+    if (ownedId) {
+      for (var i = 0; i < owned.length; i++) {
+        if (owned[i] && String(owned[i].id) === ownedId) {
+          owned[i] = { ...owned[i], ...pokemon };
+          added = false;
+          break;
+        }
+      }
+    }
+    if (added) {
+      owned.push({ ...pokemon });
+    }
+    next.ownedPokemon = owned;
+
+    var pokedex = snapshot.pokedex || {};
+    var seenIds = Array.isArray(pokedex.seenPokemonIds) ? pokedex.seenPokemonIds.slice() : [];
+    if (seenIds.indexOf(speciesId) < 0) {
+      seenIds.push(speciesId);
+      seenIds.sort(function (a, b) { return a - b; });
+      next.pokedex = {
+        ...pokedex,
+        seenPokemonIds: seenIds,
+        discoveredCount: seenIds.length,
+        totalCount: pokedex.totalCount || POKEDEX_TOTAL
+      };
+    }
+
+    var pointCost = Number(recruitCost && recruitCost.pointCost);
+    var currentPoints = Number(next.evolutionItems && next.evolutionItems.itemPoints);
+    if (added && Number.isFinite(pointCost) && pointCost > 0 && Number.isFinite(currentPoints)) {
+      next.evolutionItems = {
+        ...next.evolutionItems,
+        itemPoints: Math.max(0, currentPoints - pointCost)
+      };
+    }
+
+    return next;
+  }
+
+  function applyOwnedPokemonActionResult(result) {
+    if (!result || !result.ok || !result.pokemon) return;
+    var baseSnapshot = appState.liveSnapshot || appState.snapshot;
+    var nextSnapshot = mergeOwnedPokemonIntoSnapshot(baseSnapshot, result.pokemon, result.recruitCost);
+    if (nextSnapshot && nextSnapshot !== baseSnapshot) {
+      applySnapshot(nextSnapshot);
+    }
+  }
+
   function localizedActionText(en, ko) {
     return currentLanguage() === 'ko' ? ko : en;
   }
@@ -7732,12 +7789,13 @@
       ))) return;
 
       btn.disabled = true;
-      var result = await readActionResult(transport.owned('adopt', { agentId: agentId }));
+      var result = await readActionResult(transport.owned('adopt', { agentId: agentId, speciesId: costInfo.pokemonId }));
       if (!result || !result.ok) {
         showActionPopup(t('recruitResult'), t('recruitResult'), actionErrorMessage(result), actionErrorMessage(result), { isError: true });
         btn.disabled = false;
         return;
       }
+      applyOwnedPokemonActionResult(result);
       var spent = result.recruitCost && Number(result.recruitCost.pointCost) ? Number(result.recruitCost.pointCost) : costInfo.pointCost;
       var recruitMessage = t('recruitedPokemon', { pokemon: costInfo.pokemonName }) + catchRewardMessage(result);
       showActionPopup(
@@ -8149,6 +8207,7 @@
         showActionPopup(t('recruitResult'), t('recruitResult'), actionErrorMessage(result), actionErrorMessage(result));
         return;
       }
+      applyOwnedPokemonActionResult(result);
       var recruitMessage = t('recruitedPokemon', { pokemon: pokemonName }) + catchRewardMessage(result);
       showActionPopup(t('recruitResult'), t('recruitResult'), recruitMessage, recruitMessage);
       setOwnedRecruitOpen(false);
