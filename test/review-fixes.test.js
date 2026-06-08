@@ -309,6 +309,56 @@ test('explicit provider boxing archives only matching root agents and waits for 
   assert.equal(state.agents.has('codex-root'), true);
 });
 
+test('boxed agent resumes from initial tail replay when query is newer than boxing time', () => {
+  const state = new AgentState();
+
+  state.applyEvent({
+    type: EVENT_TYPES.AGENT_SEEN,
+    agentId: 'codex-root',
+    ts: 100,
+    meta: {
+      provider: 'codex',
+      projectId: 'project-a',
+      sessionId: 'codex-session'
+    }
+  });
+
+  state.boxActiveRootAgents({ provider: 'codex' });
+  const boxedAt = state.boxedAgents[0].doneAt;
+
+  state.applyEvent({
+    type: EVENT_TYPES.USER_QUERY,
+    agentId: 'codex-root',
+    ts: boxedAt,
+    meta: {
+      provider: 'codex',
+      projectId: 'project-a',
+      sessionId: 'codex-session',
+      replay: true
+    }
+  });
+
+  assert.equal(state.agents.has('codex-root'), false);
+  assert.equal(state.boxedAgents.length, 1);
+  assert.equal(state.suppressedSessions.has('codex-session'), true);
+
+  state.applyEvent({
+    type: EVENT_TYPES.USER_QUERY,
+    agentId: 'codex-root',
+    ts: boxedAt + 1,
+    meta: {
+      provider: 'codex',
+      projectId: 'project-a',
+      sessionId: 'codex-session',
+      replay: true
+    }
+  });
+
+  assert.equal(state.agents.has('codex-root'), true);
+  assert.equal(state.boxedAgents.length, 0);
+  assert.equal(state.suppressedSessions.has('codex-session'), false);
+});
+
 test('restored Claude agents are not archived by the first missing PID check', () => {
   const state = new AgentState();
 

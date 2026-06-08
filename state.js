@@ -168,6 +168,24 @@ function pickBestAgentRecord(candidates, beforeTs) {
   return best;
 }
 
+function newestBoxedEntryBySession(boxedAgents, sessionId) {
+  if (!sessionId || !Array.isArray(boxedAgents)) {
+    return null;
+  }
+
+  let newest = null;
+  let newestDoneAt = -Infinity;
+  for (const entry of boxedAgents) {
+    if (!entry || entry.sessionId !== sessionId) continue;
+    const doneAt = typeof entry.doneAt === 'number' ? entry.doneAt : -Infinity;
+    if (!newest || doneAt >= newestDoneAt) {
+      newest = entry;
+      newestDoneAt = doneAt;
+    }
+  }
+  return newest;
+}
+
 function clampPokemonId(value, maxPokemonId = POKEDEX_MAX) {
   const pokemonId = Number(value);
   const max = Math.max(POKEDEX_MIN, Math.min(POKEDEX_MAX, Number(maxPokemonId) || POKEDEX_MAX));
@@ -1315,24 +1333,24 @@ class AgentState extends EventEmitter {
     }
 
     // Suppress sessions that were active before a hard reset / startup cleanup.
-    // Only unsuppress on USER_QUERY that is genuinely NEW (timestamp > boxed doneAt).
+    // Only unsuppress on USER_QUERY that is genuinely new (timestamp > boxed doneAt).
     if (this.suppressedSessions.size > 0) {
       const sid = meta.sessionId;
       if (sid && this.suppressedSessions.has(sid)) {
-        if (replay) {
-          return;
-        }
         if (event.type !== EVENT_TYPES.USER_QUERY) {
           return;
         }
         // Check if this USER_QUERY is older than the boxing timestamp.
         // Initial tail reads replay historical events that should not unsuppress.
-        const boxedEntry = this.boxedAgents.find((b) => b.sessionId === sid);
+        const boxedEntry = newestBoxedEntryBySession(this.boxedAgents, sid);
         if (boxedEntry && boxedEntry.doneAt && ts <= boxedEntry.doneAt) {
           return; // historical USER_QUERY from before boxing — keep suppressed
         }
+        if (replay && !(boxedEntry && boxedEntry.doneAt && ts > boxedEntry.doneAt)) {
+          return;
+        }
         this.suppressedSessions.delete(sid);
-        // fall through: genuinely new USER_QUERY spawns the agent fresh
+        // Fall through: a genuinely new USER_QUERY spawns or unboxes the agent.
       }
     }
 
@@ -1345,9 +1363,9 @@ class AgentState extends EventEmitter {
       if (boxIdx >= 0) {
         const boxed = this.boxedAgents[boxIdx];
         if (boxed.lifecycle === LIFECYCLE.BOXED) {
-          if (replay) return;
           if (event.type !== EVENT_TYPES.USER_QUERY) return;
           if (boxed.doneAt && ts <= boxed.doneAt) return;
+          if (replay && !boxed.doneAt) return;
         }
         this.boxedAgents.splice(boxIdx, 1);
         this.agents.set(event.agentId, {
