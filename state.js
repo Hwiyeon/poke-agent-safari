@@ -6,6 +6,7 @@ const {
   POKEDEX_MIN,
   POKEDEX_MAX,
   getPokemonIdForAgent,
+  getEvolutionPath,
   normalizeAreaId,
   getPokemonRarityTier
 } = require('./pokemon');
@@ -257,6 +258,22 @@ function discoveryPokemonIdsByAgent(firstDiscoveryByPokemon) {
     }
   }
   return byAgentId;
+}
+
+function speciesIsSameOrEvolvedFrom(sourceSpeciesId, currentSpeciesId) {
+  const source = clampPokemonId(sourceSpeciesId);
+  const current = clampPokemonId(currentSpeciesId);
+  if (!source || !current) {
+    return false;
+  }
+  if (source === current) {
+    return true;
+  }
+
+  const path = getEvolutionPath(source).map((pokemonId) => Number(pokemonId));
+  const sourceIndex = path.indexOf(source);
+  const currentIndex = path.indexOf(current);
+  return sourceIndex >= 0 && currentIndex >= sourceIndex;
 }
 
 function recruitPointCostForSpecies(speciesId, discovered, caught = false) {
@@ -599,6 +616,7 @@ class AgentState extends EventEmitter {
       ts,
       meta,
       agent,
+      areaId: this.explorationAreaId,
       getAgentById: (id, lookupOptions = {}) => this.lookupAgentById(id, lookupOptions)
     });
     if (!Number.isInteger(pokemonId) || pokemonId < POKEDEX_MIN || pokemonId > POKEDEX_MAX) {
@@ -643,6 +661,7 @@ class AgentState extends EventEmitter {
     for (const agent of this.agents.values()) {
       const pokemonId = this.resolvePokemonId ? this.resolvePokemonId(agent.agentId, {
         agent,
+        areaId: this.explorationAreaId,
         getAgentById: (id, lookupOptions = {}) => this.lookupAgentById(id, lookupOptions)
       }) : null;
       if (pokemonId && this.seenPokemonIds.has(pokemonId) && !this.firstDiscoveryByPokemon[pokemonId]) {
@@ -657,6 +676,7 @@ class AgentState extends EventEmitter {
     for (const agent of this.boxedAgents) {
       const pokemonId = this.resolvePokemonId ? this.resolvePokemonId(agent.agentId, {
         agent,
+        areaId: this.explorationAreaId,
         getAgentById: (id, lookupOptions = {}) => this.lookupAgentById(id, lookupOptions)
       }) : null;
       if (pokemonId && this.seenPokemonIds.has(pokemonId) && !this.firstDiscoveryByPokemon[pokemonId]) {
@@ -672,6 +692,7 @@ class AgentState extends EventEmitter {
     for (const agent of this.subagentHistory) {
       const pokemonId = this.resolvePokemonId ? this.resolvePokemonId(agent.agentId, {
         agent,
+        areaId: this.explorationAreaId,
         getAgentById: (id, lookupOptions = {}) => this.lookupAgentById(id, lookupOptions)
       }) : null;
       if (pokemonId && this.seenPokemonIds.has(pokemonId) && !this.firstDiscoveryByPokemon[pokemonId]) {
@@ -736,10 +757,46 @@ class AgentState extends EventEmitter {
 
     const pokemonId = this.resolvePokemonId(agent.agentId, {
       agent,
+      areaId: this.explorationAreaId,
       getAgentById: (id, lookupOptions = {}) => this.lookupAgentById(id, lookupOptions),
       ts: agent.createdAt || Date.now()
     });
     return clampPokemonId(pokemonId);
+  }
+
+  repairOwnedPokemonSourceSpecies(options = {}) {
+    let changed = false;
+    const now = Date.now();
+    for (const pokemon of this.ownedPokemon) {
+      if (!pokemon || !pokemon.sourceAgentId) {
+        continue;
+      }
+
+      const sourceAgent = this.lookupAgentById(pokemon.sourceAgentId, { beforeTs: pokemon.createdAt || Infinity }) ||
+        this.lookupAgentById(pokemon.sourceAgentId);
+      if (!sourceAgent) {
+        continue;
+      }
+
+      const sourceSpeciesId = this.getPokemonIdForAgentRecord(sourceAgent);
+      if (!sourceSpeciesId || speciesIsSameOrEvolvedFrom(sourceSpeciesId, pokemon.speciesId)) {
+        continue;
+      }
+
+      pokemon.speciesId = sourceSpeciesId;
+      pokemon.updatedAt = now;
+      changed = true;
+    }
+
+    if (changed) {
+      this.lastUpdate = now;
+      this.refreshSeenPokemonFromOwned({ emit: false });
+      if (options.emit !== false) {
+        this.emit('pokedex', this.pokedexSnapshot());
+        this.emit('update', this.snapshot());
+      }
+    }
+    return changed;
   }
 
   ownedPokemonById(id) {
@@ -810,12 +867,13 @@ class AgentState extends EventEmitter {
     const now = Date.now();
     const rawAgentId = normalizeOwnedText(options.agentId, 240);
     let sourceAgent = rawAgentId ? this.lookupAgentById(rawAgentId) : null;
+    const requestedSpeciesId = clampPokemonId(options.speciesId);
     let speciesId = null;
 
     if (sourceAgent) {
-      speciesId = this.getPokemonIdForAgentRecord(sourceAgent);
+      speciesId = requestedSpeciesId || this.getPokemonIdForAgentRecord(sourceAgent);
     } else {
-      speciesId = clampPokemonId(options.speciesId);
+      speciesId = requestedSpeciesId;
     }
 
     if (!speciesId) {

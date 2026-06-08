@@ -48,6 +48,46 @@ test('owned pokemon can be adopted from discovered encounters and restored', () 
   assert.equal(restored.snapshot().ownedPokemon[0].nickname, 'Muddy');
 });
 
+test('agent recruit can use the rendered species id from the action payload', () => {
+  const state = createState({ 'agent-a': 25 });
+  state.mergeSeenPokemonIds([133]);
+  state.applyEvent({
+    type: EVENT_TYPES.AGENT_SEEN,
+    agentId: 'agent-a',
+    ts: 10,
+    meta: { projectId: 'project-a', sessionId: 'session-a' }
+  });
+
+  const result = state.adoptOwnedPokemon({ agentId: 'agent-a', speciesId: 133, inParty: false });
+
+  assert.equal(result.ok, true);
+  assert.equal(result.pokemon.speciesId, 133);
+  assert.equal(result.pokemon.sourceAgentId, 'agent-a');
+  assert.equal(state.snapshot().ownedPokemon[0].speciesId, 133);
+});
+
+test('agent recruit falls back to the current area-aware species resolver', () => {
+  const state = new AgentState({
+    resolvePokemonId(agentId, context = {}) {
+      if (agentId !== 'area-agent') return null;
+      return context.areaId === 'forest' ? 10 : 25;
+    }
+  });
+  state.evolutionItems.itemPoints = 100000;
+  state.setExplorationArea('forest');
+  state.applyEvent({
+    type: EVENT_TYPES.AGENT_SEEN,
+    agentId: 'area-agent',
+    ts: 10,
+    meta: { projectId: 'project-a', sessionId: 'session-a' }
+  });
+
+  const result = state.adoptOwnedPokemon({ agentId: 'area-agent', inParty: false });
+
+  assert.equal(result.ok, true);
+  assert.equal(result.pokemon.speciesId, 10);
+});
+
 test('party membership is capped at six owned pokemon', () => {
   const state = createState({});
 
