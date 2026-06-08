@@ -88,6 +88,68 @@ test('agent recruit falls back to the current area-aware species resolver', () =
   assert.equal(result.pokemon.speciesId, 10);
 });
 
+test('restore repairs past agent recruits saved with a mismatched species', () => {
+  const state = createState({ 'agent-a': 133 });
+  const restored = state.restore({
+    version: 1,
+    seenPokemonIds: [],
+    firstDiscoveryByPokemon: {},
+    agents: [{
+      agentId: 'agent-a',
+      projectId: 'project-a',
+      sessionId: 'session-a',
+      createdAt: 10,
+      lastSeen: 10,
+      counters: {}
+    }],
+    ownedPokemon: [{
+      id: 'owned-wrong-species',
+      speciesId: 25,
+      nickname: 'Buddy',
+      sourceAgentId: 'agent-a',
+      sourceProjectId: 'project-a',
+      sourceSessionId: 'session-a',
+      createdAt: 20,
+      updatedAt: 20
+    }]
+  });
+
+  assert.equal(restored, true);
+  const snapshot = state.snapshot();
+  assert.equal(snapshot.ownedPokemon[0].speciesId, 133);
+  assert.equal(snapshot.ownedPokemon[0].nickname, 'Buddy');
+  assert.ok(snapshot.pokedex.seenPokemonIds.includes(133));
+});
+
+test('restore preserves past agent recruits that already evolved from the source species', () => {
+  const state = createState({ 'agent-a': 25 });
+  const restored = state.restore({
+    version: 1,
+    seenPokemonIds: [],
+    firstDiscoveryByPokemon: {},
+    agents: [{
+      agentId: 'agent-a',
+      projectId: 'project-a',
+      sessionId: 'session-a',
+      createdAt: 10,
+      lastSeen: 10,
+      counters: {}
+    }],
+    ownedPokemon: [{
+      id: 'owned-evolved',
+      speciesId: 26,
+      sourceAgentId: 'agent-a',
+      sourceProjectId: 'project-a',
+      sourceSessionId: 'session-a',
+      createdAt: 20,
+      updatedAt: 30
+    }]
+  });
+
+  assert.equal(restored, true);
+  assert.equal(state.snapshot().ownedPokemon[0].speciesId, 26);
+});
+
 test('party membership is capped at six owned pokemon', () => {
   const state = createState({});
 

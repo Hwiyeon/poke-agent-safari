@@ -273,7 +273,27 @@ function speciesIsSameOrEvolvedFrom(sourceSpeciesId, currentSpeciesId) {
   const path = getEvolutionPath(source).map((pokemonId) => Number(pokemonId));
   const sourceIndex = path.indexOf(source);
   const currentIndex = path.indexOf(current);
-  return sourceIndex >= 0 && currentIndex >= sourceIndex;
+  if (sourceIndex >= 0 && currentIndex >= sourceIndex) {
+    return true;
+  }
+
+  const visited = new Set([source]);
+  const queue = [source];
+  while (queue.length > 0) {
+    const speciesId = queue.shift();
+    for (const option of evolutionOptionsForSpecies(speciesId)) {
+      const nextSpeciesId = clampPokemonId(option && (option.nextSpeciesId || option.toSpeciesId));
+      if (!nextSpeciesId || visited.has(nextSpeciesId)) {
+        continue;
+      }
+      if (nextSpeciesId === current) {
+        return true;
+      }
+      visited.add(nextSpeciesId);
+      queue.push(nextSpeciesId);
+    }
+  }
+  return false;
 }
 
 function recruitPointCostForSpecies(speciesId, discovered, caught = false) {
@@ -2148,8 +2168,6 @@ class AgentState extends EventEmitter {
         }
       }
     }
-    this.refreshSeenPokemonFromOwned({ emit: false });
-    this.rebuildProjectTraining();
     this.trainingEvents = Array.isArray(data.trainingEvents)
       ? data.trainingEvents.filter((event) => event && typeof event === 'object').map((event) => ({ ...event }))
       : [];
@@ -2163,6 +2181,9 @@ class AgentState extends EventEmitter {
       }
     }
 
+    this.repairOwnedPokemonSourceSpecies({ emit: false });
+    this.refreshSeenPokemonFromOwned({ emit: false });
+    this.rebuildProjectTraining();
     this.refreshSeenPokemonFromAgents({
       allowNewDiscoveries: !(Array.isArray(data.seenPokemonIds) && data.seenPokemonIds.length > 0)
     });
