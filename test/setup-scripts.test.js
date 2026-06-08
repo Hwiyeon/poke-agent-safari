@@ -2,6 +2,8 @@
 
 const { test, run } = require('./runner');
 const assert = require('assert').strict;
+const fs = require('fs');
+const os = require('os');
 const path = require('path');
 const packageJson = require('../package.json');
 const { EVOLUTION_ITEM_POOL } = require('../evolutionItems');
@@ -18,6 +20,15 @@ const {
   buildWindowsCmdShim,
   isDirOnPath
 } = require('../tools/setup_cli_command');
+
+const {
+  OWNER_DIR_BITS,
+  OWNER_FILE_BITS,
+  modeWithUserBits,
+  repairBrokenSymlink,
+  repairPathPermissions,
+  setupRuntimePermissions
+} = require('../tools/setup_runtime_permissions');
 
 const {
   REQUIRED_EVOLUTION_ITEM_SPRITES,
@@ -83,12 +94,63 @@ test('package files include setup and packaged runtime entry dependencies', () =
     'cli.js',
     'server.js',
     'tools/setup_cli_command.js',
+    'tools/setup_runtime_permissions.js',
     'tools/setup_poke_assets.js',
     'data/map_assets/*.png',
     'public/item-sprites/*.png'
   ]) {
     assert.ok(packageJson.files.includes(filePath), `${filePath} should be packaged`);
   }
+});
+
+test('runtime permission setup adds owner-only access bits', () => {
+  assert.equal(modeWithUserBits(0o040, OWNER_DIR_BITS) & 0o777, 0o740);
+  assert.equal(modeWithUserBits(0o000, OWNER_FILE_BITS) & 0o777, 0o600);
+});
+
+test('runtime permission setup repairs owned paths and stale debug symlink', () => {
+  const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'poke-agents-perms-'));
+  const homeDir = path.join(tempRoot, 'home');
+  const claudeProjects = path.join(homeDir, '.claude', 'projects', 'project-a');
+  const claudeSessions = path.join(homeDir, '.claude', 'sessions');
+  const codexSessions = path.join(homeDir, '.codex', 'sessions', '2026', '06', '08');
+  const debugDir = path.join(homeDir, '.claude', 'debug');
+  const transcriptPath = path.join(claudeProjects, 'session-a.jsonl');
+  const claudeSessionPath = path.join(claudeSessions, 'session-a.json');
+  const codexTranscriptPath = path.join(codexSessions, 'session-b.jsonl');
+  const latestLink = path.join(debugDir, 'latest');
+
+  fs.mkdirSync(claudeProjects, { recursive: true });
+  fs.mkdirSync(claudeSessions, { recursive: true });
+  fs.mkdirSync(codexSessions, { recursive: true });
+  fs.mkdirSync(debugDir, { recursive: true });
+  fs.writeFileSync(transcriptPath, '{}\n', { mode: 0o000 });
+  fs.writeFileSync(claudeSessionPath, '{}\n', { mode: 0o000 });
+  fs.writeFileSync(codexTranscriptPath, '{}\n', { mode: 0o000 });
+  fs.symlinkSync(path.join(debugDir, 'missing.txt'), latestLink);
+
+  const result = setupRuntimePermissions({ homeDir, log: () => {} });
+
+  assert.equal(fs.existsSync(latestLink), false);
+  assert.ok((fs.statSync(transcriptPath).mode & OWNER_FILE_BITS) === OWNER_FILE_BITS);
+  assert.ok((fs.statSync(claudeSessionPath).mode & OWNER_FILE_BITS) === OWNER_FILE_BITS);
+  assert.ok((fs.statSync(codexTranscriptPath).mode & OWNER_FILE_BITS) === OWNER_FILE_BITS);
+  assert.ok((fs.statSync(claudeProjects).mode & OWNER_DIR_BITS) === OWNER_DIR_BITS);
+  assert.ok(result.fixed >= 4);
+});
+
+test('runtime permission helpers report direct repairs', () => {
+  const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'poke-agents-path-perms-'));
+  const filePath = path.join(tempRoot, 'session.jsonl');
+  fs.writeFileSync(filePath, '{}\n', { mode: 0o000 });
+
+  assert.equal(repairPathPermissions(filePath, OWNER_FILE_BITS).status, 'fixed');
+  assert.equal((fs.statSync(filePath).mode & OWNER_FILE_BITS), OWNER_FILE_BITS);
+
+  const linkPath = path.join(tempRoot, 'latest');
+  fs.symlinkSync(path.join(tempRoot, 'missing.txt'), linkPath);
+  assert.equal(repairBrokenSymlink(linkPath).status, 'fixed');
+  assert.equal(fs.existsSync(linkPath), false);
 });
 
 test('package exposes the poke-as executable', () => {

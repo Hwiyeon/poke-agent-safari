@@ -73,12 +73,18 @@ npm install
 npm run setup
 ```
 
-`npm install` runs a best-effort CLI registration automatically. `npm run setup` refreshes that `poke-as` command, creates or updates a sparse PokeAPI sprite checkout under `public/vendor/pokeapi-sprites`, copies required item sprites into `public/item-sprites`, and validates required map assets under `data/map_assets`.
+`npm install` runs a best-effort CLI registration automatically. `npm run setup` repairs local Claude/Codex runtime path permissions, refreshes that `poke-as` command, creates or updates a sparse PokeAPI sprite checkout under `public/vendor/pokeapi-sprites`, copies required item sprites into `public/item-sprites`, and validates required map assets under `data/map_assets`.
 
 If shell permissions prevented command registration during install, rerun:
 
 ```bash
 npm run setup:cli
+```
+
+To rerun only the Claude/Codex runtime permission repair:
+
+```bash
+npm run setup:permissions
 ```
 
 On Ubuntu 22.04, Electron may also need the standard desktop runtime libraries:

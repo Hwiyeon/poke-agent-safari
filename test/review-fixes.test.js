@@ -213,6 +213,59 @@ test('stale replay events do not wake sleeping agents', () => {
   assert.equal(afterNewReplay.lastSeen, 70000);
 });
 
+test('fresh replayed user queries wake sleeping agents', () => {
+  const state = new AgentState({
+    activeTimeoutSec: 60,
+    staleTimeoutSec: 300
+  });
+
+  state.applyEvent({
+    type: EVENT_TYPES.AGENT_SEEN,
+    agentId: 'session-a:main',
+    ts: 100,
+    meta: {
+      projectId: 'project-a',
+      sessionId: 'session-a'
+    }
+  });
+  state.tick(61001);
+  assert.equal(state.agents.get('session-a:main').status, 'Sleeping');
+
+  const events = normalizeLine(
+    JSON.stringify({
+      type: 'user',
+      projectId: 'project-a',
+      sessionId: 'session-a',
+      timestamp: '1970-01-01T00:01:10.000Z',
+      message: {
+        role: 'user',
+        content: 'resume this session'
+      }
+    }),
+    {
+      filePath: '/tmp/project-a/session-a.jsonl',
+      configuredRoot: '/tmp'
+    }
+  ).map((event) => ({
+    ...event,
+    meta: {
+      ...event.meta,
+      replay: true
+    }
+  }));
+
+  assert.deepEqual(events.map((event) => event.type), [EVENT_TYPES.AGENT_SEEN, EVENT_TYPES.USER_QUERY]);
+  for (const event of events) {
+    state.applyEvent(event);
+  }
+
+  const agent = state.agents.get('session-a:main');
+  assert.equal(agent.lifecycle, 'active');
+  assert.equal(agent.status, 'Thinking');
+  assert.equal(agent.lastSeen, 70000);
+  assert.equal(agent.lastUserQuery, 'resume this session');
+});
+
 test('subagents are removed on done without entering the box', () => {
   const state = new AgentState();
 

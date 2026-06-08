@@ -117,6 +117,7 @@
     "snapshotPayload.js",
     "state.js",
     "tools/setup_cli_command.js",
+    "tools/setup_runtime_permissions.js",
     "tools/setup_poke_assets.js",
     "watcher.js",
     "data/pokemon_data.json",
@@ -128,7 +129,8 @@
   ],
   "scripts": {
     "postinstall": "node tools/setup_cli_command.js --best-effort",
-    "setup": "node tools/setup_cli_command.js && node tools/setup_poke_assets.js",
+    "setup": "node tools/setup_runtime_permissions.js && node tools/setup_cli_command.js && node tools/setup_poke_assets.js",
+    "setup:permissions": "node tools/setup_runtime_permissions.js",
     "setup:cli": "node tools/setup_cli_command.js",
     "setup:assets": "node tools/setup_poke_assets.js",
     "dev:pokemon-cache": "node dev/setup_poke_cache.js --range 1-649",
