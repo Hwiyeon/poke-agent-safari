@@ -121,16 +121,12 @@
             <p id="pokedex-summary" class="pokedex-summary">0 / 649 discovered</p>
           </div>
           <div class="pokedex-panel-actions">
-            <label class="pokedex-sort-control">
-              <span data-i18n="pokedexFilter">Filter</span>
-              <select id="pokedex-filter" aria-label="Pokedex filter">
-                <option value="all" data-i18n="pokedexFilterAll">All</option>
-                <option value="unseen" data-i18n="pokedexFilterUnseen">Unseen</option>
-                <option value="seen" data-i18n="pokedexFilterSeen">Seen</option>
-                <option value="caught" data-i18n="pokedexFilterCaught">Caught</option>
-                <option value="seen-not-caught" data-i18n="pokedexFilterSeenNotCaught">Seen not caught</option>
-              </select>
-            </label>
+            <div id="pokedex-category-control" class="pokedex-category-control" role="group" aria-label="Pokedex status">
+              <button type="button" data-pokedex-category="all">All</button>
+              <button type="button" data-pokedex-category="undiscovered">Undiscovered</button>
+              <button type="button" data-pokedex-category="discovered">Discovered</button>
+              <button type="button" data-pokedex-category="caught">Caught</button>
+            </div>
             <label class="pokedex-sort-control">
               <span data-i18n="pokedexSort">Sort</span>
               <select id="pokedex-sort" aria-label="Pokedex sort">

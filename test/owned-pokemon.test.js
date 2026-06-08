@@ -403,22 +403,29 @@ test('recruit pricing spends points and discovers unknown pokemon', () => {
   snapshot = state.snapshot();
   assert.equal(snapshot.evolutionItems.itemPoints, 499);
   assert.equal(snapshot.recruitPricing.discovered[1], 100);
-  assert.equal(snapshot.recruitPricing.caught[1], 80);
   assert.equal(snapshot.recruitPricing.undiscovered[5], 10000);
+  assert.equal(snapshot.recruitPricing.caughtDiscountRate, 0.8);
 });
 
-test('already caught pokemon use discounted recruit pricing without catch rewards', () => {
+test('already caught pokemon are recruited at a discounted cost without catch rewards', () => {
   const state = createState({});
   state.evolutionItems.itemPoints = 1000;
   state.mergeSeenPokemonIds([10]);
 
   const first = state.adoptOwnedPokemon({ speciesId: 10, inParty: false });
   assert.equal(first.ok, true);
+  assert.equal(first.recruitCost.pointCost, 100);
 
   state.evolutionItems.itemPoints = 100;
   const duplicate = state.adoptOwnedPokemon({ speciesId: 10, inParty: false });
   assert.equal(duplicate.ok, true);
-  assert.deepEqual(duplicate.recruitCost, { tier: 1, discovered: true, caught: true, discount: 0.8, pointCost: 80 });
+  assert.deepEqual(duplicate.recruitCost, {
+    tier: 1,
+    discovered: true,
+    caught: true,
+    discount: { type: 'caught', rate: 0.8 },
+    pointCost: 80
+  });
   assert.equal(duplicate.catchRewards.isNewCatch, false);
   assert.equal(state.snapshot().evolutionItems.itemPoints, 20);
 });
@@ -440,10 +447,13 @@ test('item evolutions consume the required item', () => {
   const evolved = state.evolveOwnedPokemon(pikachu.id);
 
   assert.equal(evolved.ok, true);
-  assert.equal(state.snapshot().ownedPokemon[0].speciesId, 26);
-  assert.ok(state.snapshot().pokedex.caughtPokemonIds.includes(26));
-  assert.equal(state.snapshot().pokedex.firstCatchByPokemon[26].source, 'evolution');
-  assert.equal(state.snapshot().evolutionItems.inventory['thunder-stone'], undefined);
+  const snapshot = state.snapshot();
+  assert.equal(snapshot.ownedPokemon[0].speciesId, 26);
+  assert.ok(snapshot.pokedex.seenPokemonIds.includes(26));
+  assert.ok(snapshot.pokedex.caughtPokemonIds.includes(26));
+  assert.equal(snapshot.pokedex.firstDiscoveryByPokemon[26].provider, 'evolution');
+  assert.equal(snapshot.pokedex.firstCatchByPokemon[26].source, 'evolution');
+  assert.equal(snapshot.evolutionItems.inventory['thunder-stone'], undefined);
 });
 
 test('trade evolutions use linking cord and branched evolutions require a target', () => {
@@ -465,6 +475,27 @@ test('trade evolutions use linking cord and branched evolutions require a target
   assert.equal(snapshot.ownedPokemon.find((pokemon) => pokemon.id === poliwhirl.id).speciesId, 186);
   assert.equal(snapshot.evolutionItems.inventory['kings-rock'], undefined);
   assert.equal(snapshot.evolutionItems.inventory['water-stone'], 1);
+});
+
+test('restored owned pokemon species are backfilled into the pokedex', () => {
+  const state = createState({});
+  const restored = state.restore({
+    version: 1,
+    seenPokemonIds: [],
+    firstDiscoveryByPokemon: {},
+    ownedPokemon: [{
+      id: 'owned-raichu',
+      speciesId: 26,
+      level: 1,
+      createdAt: 10,
+      updatedAt: 10
+    }]
+  });
+
+  assert.equal(restored, true);
+  const snapshot = state.snapshot();
+  assert.ok(snapshot.pokedex.seenPokemonIds.includes(26));
+  assert.equal(snapshot.pokedex.firstDiscoveryByPokemon[26].provider, 'owned');
 });
 
 test('hard reset clears owned pokemon and training state', () => {
