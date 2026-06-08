@@ -3397,6 +3397,45 @@ body {
   justify-content: flex-end;
   gap: 10px;
   min-width: 0;
+  flex-wrap: wrap;
+}
+
+.pokedex-category-control {
+  display: inline-flex;
+  align-items: center;
+  flex: 0 1 auto;
+  min-width: 0;
+  border: 2px solid var(--line);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.72);
+  padding: 2px;
+}
+
+.pokedex-category-control button {
+  min-width: 0;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--muted);
+  padding: 7px 10px;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 900;
+  line-height: 1.1;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.pokedex-category-control button:hover,
+.pokedex-category-control button:focus-visible {
+  color: var(--ink);
+  outline: none;
+}
+
+.pokedex-category-control button.active {
+  background: #fff7cf;
+  color: var(--ink);
+  box-shadow: inset 0 0 0 1px rgba(31, 35, 38, 0.12);
 }
 
 .pokedex-sort-control {
@@ -3532,20 +3571,104 @@ body {
 }
 
 .pokedex-cell {
+  position: relative;
   min-height: 154px;
   min-width: 0;
-  border: 2px solid var(--line);
-  background: rgba(255, 249, 238, 0.94);
+  border: 2px solid rgba(82, 92, 116, 0.16);
+  border-radius: 8px;
+  background:
+    linear-gradient(180deg, #f7f8fb 0%, #eef2f7 100%),
+    repeating-linear-gradient(0deg, rgba(51,61,83,0.022), rgba(51,61,83,0.022) 1px, transparent 1px, transparent 12px);
   display: flex;
   flex-direction: column;
   align-items: stretch;
   justify-content: flex-start;
   gap: 10px;
   padding: 12px 10px 10px;
+  overflow: hidden;
+  box-sizing: border-box;
 }
 
-.pokedex-cell.seen {
-  background: linear-gradient(180deg, #efffe8 0%, #daf5d3 100%);
+.pokedex-cell.seen,
+.pokedex-cell.discovered {
+  border-color: rgba(177, 115, 26, 0.16);
+  background:
+    linear-gradient(180deg, #fffbed 0%, #f8efd8 100%),
+    repeating-linear-gradient(0deg, rgba(159,95,18,0.018), rgba(159,95,18,0.018) 1px, transparent 1px, transparent 12px);
+}
+
+.pokedex-cell.caught {
+  border-color: rgba(41, 105, 48, 0.72);
+  background:
+    linear-gradient(180deg, #f0fbdd 0%, #d3efbf 100%),
+    repeating-linear-gradient(0deg, rgba(39,110,45,0.055), rgba(39,110,45,0.055) 1px, transparent 1px, transparent 12px);
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.68),
+    0 2px 0 rgba(45, 93, 47, 0.18);
+}
+
+.pokedex-cell:hover {
+  border-color: rgba(82, 92, 116, 0.28);
+}
+
+.pokedex-cell.discovered:hover {
+  border-color: rgba(177, 115, 26, 0.28);
+}
+
+.pokedex-cell.caught:hover {
+  border-color: rgba(35, 89, 39, 0.86);
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.72),
+    0 3px 0 rgba(45, 93, 47, 0.24);
+}
+
+.pokedex-cell:focus-visible {
+  outline: 2px solid rgba(77, 143, 232, 0.72);
+  outline-offset: 2px;
+}
+
+.pokedex-caught-icon {
+  position: absolute;
+  left: 7px;
+  top: 7px;
+  z-index: 2;
+  width: 24px;
+  height: 24px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.72);
+  box-shadow: 0 1px 2px rgba(31, 35, 38, 0.22);
+}
+
+.pokedex-caught-icon::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 18px;
+  height: 18px;
+  transform: translate(-50%, -50%);
+  box-sizing: border-box;
+  border: 2px solid #2f3336;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 50% 50%, transparent 0 18%, #2f3336 19% 30%, transparent 31%),
+    linear-gradient(180deg, #db3d35 0 47%, #2f3336 48% 56%, #fff8ed 57% 100%);
+}
+
+.pokedex-caught-icon::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 8px;
+  height: 8px;
+  transform: translate(-50%, -50%);
+  box-sizing: border-box;
+  border: 2px solid #2f3336;
+  border-radius: 50%;
+  background: #fffefa;
 }
 
 .pokedex-meta {
@@ -3580,11 +3703,21 @@ body {
   align-items: center;
   justify-content: center;
   overflow: hidden;
-  border: 2px solid rgba(31, 35, 38, 0.14);
-  background:
-    linear-gradient(180deg, rgba(255,255,255,0.72), rgba(240,235,220,0.92)),
-    repeating-linear-gradient(0deg, rgba(31,35,38,0.04), rgba(31,35,38,0.04) 1px, transparent 1px, transparent 12px),
-    repeating-linear-gradient(90deg, rgba(31,35,38,0.04), rgba(31,35,38,0.04) 1px, transparent 1px, transparent 12px);
+  border: 2px solid rgba(82, 92, 116, 0.12);
+  border-radius: 7px;
+  background: #fff;
+}
+
+.pokedex-cell.undiscovered .pokedex-media {
+  border-color: rgba(82, 92, 116, 0.12);
+}
+
+.pokedex-cell.discovered .pokedex-media {
+  border-color: rgba(177, 115, 26, 0.1);
+}
+
+.pokedex-cell.caught .pokedex-media {
+  border-color: rgba(41, 105, 48, 0.44);
 }
 
 .pokedex-icon {
@@ -5369,11 +5502,11 @@ body {
   min-width: 0;
   min-height: 176px;
   height: 176px;
-  border: 2px solid rgba(31, 35, 38, 0.18);
+  border: 2px solid rgba(82, 92, 116, 0.16);
   border-radius: 8px;
   background:
-    linear-gradient(180deg, rgba(255,255,255,0.76), rgba(240,246,229,0.94)),
-    repeating-linear-gradient(0deg, rgba(31,35,38,0.035), rgba(31,35,38,0.035) 1px, transparent 1px, transparent 12px);
+    linear-gradient(180deg, #f7f8fb 0%, #eef2f7 100%),
+    repeating-linear-gradient(0deg, rgba(51,61,83,0.022), rgba(51,61,83,0.022) 1px, transparent 1px, transparent 12px);
   color: var(--ink);
   display: grid;
   grid-template-rows: auto minmax(0, 1fr) auto auto;
@@ -5386,12 +5519,35 @@ body {
   overflow: hidden;
 }
 
-.owned-recruit-cell.seen {
-  background: linear-gradient(180deg, #efffe8 0%, #daf5d3 100%);
+.owned-recruit-cell.seen,
+.owned-recruit-cell.discovered {
+  border-color: rgba(177, 115, 26, 0.16);
+  background:
+    linear-gradient(180deg, #fffbed 0%, #f8efd8 100%),
+    repeating-linear-gradient(0deg, rgba(159,95,18,0.018), rgba(159,95,18,0.018) 1px, transparent 1px, transparent 12px);
 }
 
-.owned-recruit-cell.unseen {
-  background: linear-gradient(180deg, #fff8df 0%, #f4ead0 100%);
+.owned-recruit-cell.unseen,
+.owned-recruit-cell.undiscovered {
+  border-color: rgba(82, 92, 116, 0.16);
+  background:
+    linear-gradient(180deg, #f7f8fb 0%, #eef2f7 100%),
+    repeating-linear-gradient(0deg, rgba(51,61,83,0.022), rgba(51,61,83,0.022) 1px, transparent 1px, transparent 12px);
+}
+
+.owned-recruit-cell.caught {
+  border-color: rgba(41, 105, 48, 0.72);
+  background:
+    linear-gradient(180deg, #f0fbdd 0%, #d3efbf 100%),
+    repeating-linear-gradient(0deg, rgba(39,110,45,0.055), rgba(39,110,45,0.055) 1px, transparent 1px, transparent 12px);
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.68),
+    0 2px 0 rgba(45, 93, 47, 0.18);
+}
+
+.owned-recruit-cell.caught .owned-recruit-media,
+.owned-recruit-cell.caught .owned-recruit-cost {
+  border-color: rgba(41, 105, 48, 0.36);
 }
 
 .owned-recruit-cell.unaffordable {
@@ -5401,7 +5557,16 @@ body {
 
 .owned-recruit-cell:not(:disabled):hover {
   filter: brightness(1.04);
-  border-color: rgba(77, 143, 232, 0.65);
+  border-color: rgba(82, 92, 116, 0.28);
+}
+
+.owned-recruit-cell.discovered:not(:disabled):hover,
+.owned-recruit-cell.seen:not(.caught):not(:disabled):hover {
+  border-color: rgba(177, 115, 26, 0.28);
+}
+
+.owned-recruit-cell.caught:not(:disabled):hover {
+  border-color: rgba(35, 89, 39, 0.86);
 }
 
 .owned-recruit-cell:not(:disabled):focus-visible {
@@ -5454,13 +5619,24 @@ body {
   box-sizing: border-box;
   display: grid;
   place-items: center;
-  border: 1px solid rgba(31, 35, 38, 0.12);
+  border: 1px solid rgba(82, 92, 116, 0.12);
   border-radius: 6px;
-  background:
-    linear-gradient(180deg, rgba(255,255,255,0.72), rgba(240,235,220,0.92)),
-    repeating-linear-gradient(0deg, rgba(31,35,38,0.04), rgba(31,35,38,0.04) 1px, transparent 1px, transparent 12px),
-    repeating-linear-gradient(90deg, rgba(31,35,38,0.04), rgba(31,35,38,0.04) 1px, transparent 1px, transparent 12px);
+  background: #fff;
   overflow: hidden;
+}
+
+.owned-recruit-cell.discovered .owned-recruit-media,
+.owned-recruit-cell.seen:not(.caught) .owned-recruit-media {
+  border-color: rgba(177, 115, 26, 0.1);
+}
+
+.owned-recruit-cell.undiscovered .owned-recruit-media,
+.owned-recruit-cell.unseen .owned-recruit-media {
+  border-color: rgba(82, 92, 116, 0.12);
+}
+
+.owned-recruit-cell.caught .owned-recruit-media {
+  border-color: rgba(41, 105, 48, 0.36);
 }
 
 .owned-recruit-media img {
@@ -5492,6 +5668,20 @@ body {
   padding: 4px 6px;
   line-height: 1.05;
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.74);
+}
+
+.owned-recruit-cell.discovered .owned-recruit-cost,
+.owned-recruit-cell.seen:not(.caught) .owned-recruit-cost {
+  border-color: rgba(177, 115, 26, 0.16);
+}
+
+.owned-recruit-cell.undiscovered .owned-recruit-cost,
+.owned-recruit-cell.unseen .owned-recruit-cost {
+  border-color: rgba(82, 92, 116, 0.14);
+}
+
+.owned-recruit-cell.caught .owned-recruit-cost {
+  border-color: rgba(41, 105, 48, 0.36);
 }
 
 .owned-recruit-cost b {
@@ -5539,7 +5729,7 @@ body {
   font-size: 40px;
   line-height: 1;
   font-weight: 700;
-  color: #7d816f;
+  color: #8a90a0;
 }
 
 @media (max-width: 520px) {
@@ -5598,6 +5788,18 @@ body {
   .pokedex-panel-actions {
     width: 100%;
     justify-content: space-between;
+  }
+
+  .pokedex-category-control {
+    width: 100%;
+    flex-wrap: wrap;
+    border-radius: 8px;
+  }
+
+  .pokedex-category-control button {
+    flex: 1 1 calc(50% - 4px);
+    padding-inline: 6px;
+    text-align: center;
   }
 
   .pokedex-sort-control {

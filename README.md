@@ -136,6 +136,21 @@ Web mock mode:
 poke-as web --mock
 ```
 
+Remote Electron viewer over SSH:
+
+```bash
+# Remote server
+poke-as web --host 127.0.0.1 --port 8123 --source all
+```
+
+```bash
+# Local machine
+ssh -N -L 8123:127.0.0.1:8123 user@server
+poke-as viewer --url http://127.0.0.1:8123
+```
+
+`viewer` does not watch local transcripts or start a local dashboard server. It only opens the remote dashboard in an always-on-top Electron sticker. With the tunnel above, `poke-as viewer` can omit `--url` because it defaults to `http://127.0.0.1:8123`.
+
 Legacy web aliases still work:
 
 ```bash
@@ -150,6 +165,7 @@ npm run mock
 poke-as [--source claude|codex|all] [--port 8123] [--path ~/.claude/projects] [--codex-path ~/.codex/sessions] [--no-pokeapi]
 poke-as --mock [--port 8123] [--no-pokeapi]
 poke-as sticker [--source claude|codex|all] [--port 8123]
+poke-as viewer [--url http://127.0.0.1:8123] [--host 127.0.0.1 --port 8123]
 poke-as web [watch|mock] [--source claude|codex|all] [--port 8123]
 poke-as watch [--source claude|codex|all] [--port 8123]
 poke-as hard-reset [watch|mock] [--source claude|codex|all]

@@ -382,13 +382,13 @@ test('recruit pricing spends points and discovers unknown pokemon', () => {
 
   const discovered = state.adoptOwnedPokemon({ speciesId: 10, inParty: false });
   assert.equal(discovered.ok, true);
-  assert.deepEqual(discovered.recruitCost, { tier: 1, discovered: true, pointCost: 100 });
+  assert.deepEqual(discovered.recruitCost, { tier: 1, discovered: true, caught: false, discount: null, pointCost: 100 });
   assert.equal(state.snapshot().evolutionItems.itemPoints, 700);
 
   state.evolutionItems.itemPoints = 500;
   const undiscovered = state.adoptOwnedPokemon({ speciesId: 13, inParty: false, skipRecruitCost: true });
   assert.equal(undiscovered.ok, true);
-  assert.deepEqual(undiscovered.recruitCost, { tier: 1, discovered: false, pointCost: 500 });
+  assert.deepEqual(undiscovered.recruitCost, { tier: 1, discovered: false, caught: false, discount: null, pointCost: 500 });
   let snapshot = state.snapshot();
   assert.equal(snapshot.evolutionItems.itemPoints, 0);
   assert.ok(snapshot.pokedex.seenPokemonIds.includes(13));
@@ -396,11 +396,33 @@ test('recruit pricing spends points and discovers unknown pokemon', () => {
   state.evolutionItems.itemPoints = 499;
   const insufficient = state.adoptOwnedPokemon({ speciesId: 16, inParty: false });
   assert.equal(insufficient.ok, false);
-  assert.deepEqual(insufficient.recruitCost, { tier: 1, discovered: false, pointCost: 500 });
+  assert.deepEqual(insufficient.recruitCost, { tier: 1, discovered: false, caught: false, discount: null, pointCost: 500 });
   snapshot = state.snapshot();
   assert.equal(snapshot.evolutionItems.itemPoints, 499);
   assert.equal(snapshot.recruitPricing.discovered[1], 100);
   assert.equal(snapshot.recruitPricing.undiscovered[5], 10000);
+  assert.equal(snapshot.recruitPricing.caughtDiscountRate, 0.8);
+});
+
+test('already caught pokemon are recruited at a discounted cost', () => {
+  const state = createState({});
+  state.evolutionItems.itemPoints = 1000;
+  state.mergeSeenPokemonIds([10]);
+
+  const first = state.adoptOwnedPokemon({ speciesId: 10, inParty: false });
+  assert.equal(first.ok, true);
+  assert.equal(first.recruitCost.pointCost, 100);
+
+  const repeat = state.adoptOwnedPokemon({ speciesId: 10, inParty: false });
+  assert.equal(repeat.ok, true);
+  assert.deepEqual(repeat.recruitCost, {
+    tier: 1,
+    discovered: true,
+    caught: true,
+    discount: { type: 'caught', rate: 0.8 },
+    pointCost: 80
+  });
+  assert.equal(state.snapshot().evolutionItems.itemPoints, 820);
 });
 
 test('item evolutions consume the required item', () => {
@@ -420,8 +442,11 @@ test('item evolutions consume the required item', () => {
   const evolved = state.evolveOwnedPokemon(pikachu.id);
 
   assert.equal(evolved.ok, true);
-  assert.equal(state.snapshot().ownedPokemon[0].speciesId, 26);
-  assert.equal(state.snapshot().evolutionItems.inventory['thunder-stone'], undefined);
+  const snapshot = state.snapshot();
+  assert.equal(snapshot.ownedPokemon[0].speciesId, 26);
+  assert.ok(snapshot.pokedex.seenPokemonIds.includes(26));
+  assert.equal(snapshot.pokedex.firstDiscoveryByPokemon[26].provider, 'evolution');
+  assert.equal(snapshot.evolutionItems.inventory['thunder-stone'], undefined);
 });
 
 test('trade evolutions use linking cord and branched evolutions require a target', () => {
@@ -443,6 +468,27 @@ test('trade evolutions use linking cord and branched evolutions require a target
   assert.equal(snapshot.ownedPokemon.find((pokemon) => pokemon.id === poliwhirl.id).speciesId, 186);
   assert.equal(snapshot.evolutionItems.inventory['kings-rock'], undefined);
   assert.equal(snapshot.evolutionItems.inventory['water-stone'], 1);
+});
+
+test('restored owned pokemon species are backfilled into the pokedex', () => {
+  const state = createState({});
+  const restored = state.restore({
+    version: 1,
+    seenPokemonIds: [],
+    firstDiscoveryByPokemon: {},
+    ownedPokemon: [{
+      id: 'owned-raichu',
+      speciesId: 26,
+      level: 1,
+      createdAt: 10,
+      updatedAt: 10
+    }]
+  });
+
+  assert.equal(restored, true);
+  const snapshot = state.snapshot();
+  assert.ok(snapshot.pokedex.seenPokemonIds.includes(26));
+  assert.equal(snapshot.pokedex.firstDiscoveryByPokemon[26].provider, 'owned');
 });
 
 test('hard reset clears owned pokemon and training state', () => {

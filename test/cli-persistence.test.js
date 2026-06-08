@@ -95,6 +95,8 @@ test('default CLI launch targets the Electron sticker', () => {
   assert.equal(shouldLaunchElectron(['--mock']), true);
   assert.equal(shouldLaunchElectron(['mock']), true);
   assert.equal(shouldLaunchElectron(['sticker', '--source', 'claude']), true);
+  assert.equal(shouldLaunchElectron(['viewer']), true);
+  assert.deepEqual(electronArgv(['viewer', '--url', 'http://127.0.0.1:8123']), ['viewer', '--url', 'http://127.0.0.1:8123']);
 });
 
 test('web CLI command keeps browser dashboard mode available', () => {

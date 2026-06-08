@@ -136,6 +136,21 @@ Web mock mode:
 poke-as web --mock
 ```
 
+SSH 원격 Electron viewer:
+
+```bash
+# 원격 서버
+poke-as web --host 127.0.0.1 --port 8123 --source all
+```
+
+```bash
+# 로컬 머신
+ssh -N -L 8123:127.0.0.1:8123 user@server
+poke-as viewer --url http://127.0.0.1:8123
+```
+
+`viewer`는 로컬 transcript를 감시하거나 로컬 dashboard server를 띄우지 않습니다. 원격 dashboard를 always-on-top Electron sticker로 보여주기만 합니다. 위 터널 방식에서는 `poke-as viewer`가 기본값으로 `http://127.0.0.1:8123`을 사용하므로 `--url`을 생략할 수 있습니다.
+
 기존 web alias도 계속 동작합니다.
 
 ```bash
@@ -150,6 +165,7 @@ npm run mock
 poke-as [--source claude|codex|all] [--port 8123] [--path ~/.claude/projects] [--codex-path ~/.codex/sessions] [--no-pokeapi]
 poke-as --mock [--port 8123] [--no-pokeapi]
 poke-as sticker [--source claude|codex|all] [--port 8123]
+poke-as viewer [--url http://127.0.0.1:8123] [--host 127.0.0.1 --port 8123]
 poke-as web [watch|mock] [--source claude|codex|all] [--port 8123]
 poke-as watch [--source claude|codex|all] [--port 8123]
 poke-as hard-reset [watch|mock] [--source claude|codex|all]

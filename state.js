@@ -52,6 +52,7 @@ const OWNED_LEVEL_100_EXP = 30115800;
 const OWNED_MEDIUM_FAST_LEVEL_100_EXP = 1000000;
 const RECRUIT_POINT_COSTS_DISCOVERED = Object.freeze({ 1: 100, 2: 300, 3: 700, 4: 1000, 5: 2000 });
 const RECRUIT_POINT_COSTS_UNDISCOVERED = Object.freeze({ 1: 500, 2: 1500, 3: 3500, 4: 5000, 5: 10000 });
+const RECRUIT_CAUGHT_DISCOUNT_RATE = 0.8;
 const DEFAULT_COUNTERS = Object.freeze({
   seen: 0,
   toolStarts: 0,
@@ -258,14 +259,21 @@ function discoveryPokemonIdsByAgent(firstDiscoveryByPokemon) {
   return byAgentId;
 }
 
-function recruitPointCostForSpecies(speciesId, discovered) {
+function recruitPointCostForSpecies(speciesId, discovered, caught = false) {
   const normalizedId = clampPokemonId(speciesId);
   const tier = Math.max(1, Math.min(5, Number(getPokemonRarityTier(normalizedId)) || 1));
-  const costs = discovered ? RECRUIT_POINT_COSTS_DISCOVERED : RECRUIT_POINT_COSTS_UNDISCOVERED;
+  const isCaught = !!caught;
+  const costs = (discovered || isCaught) ? RECRUIT_POINT_COSTS_DISCOVERED : RECRUIT_POINT_COSTS_UNDISCOVERED;
+  const basePointCost = costs[tier] || costs[1];
+  const pointCost = isCaught
+    ? Math.max(1, Math.floor(basePointCost * RECRUIT_CAUGHT_DISCOUNT_RATE))
+    : basePointCost;
   return {
     tier,
-    discovered: !!discovered,
-    pointCost: costs[tier] || costs[1]
+    discovered: !!(discovered || isCaught),
+    caught: isCaught,
+    discount: isCaught ? { type: 'caught', rate: RECRUIT_CAUGHT_DISCOUNT_RATE } : null,
+    pointCost
   };
 }
 
@@ -533,6 +541,55 @@ class AgentState extends EventEmitter {
     };
   }
 
+  recordOwnedPokemonDiscovery(speciesId, context = {}) {
+    const pokemonId = clampPokemonId(speciesId);
+    if (!pokemonId || this.seenPokemonIds.has(pokemonId)) {
+      return false;
+    }
+
+    const now = Number.isFinite(Number(context.now)) ? Number(context.now) : Date.now();
+    const source = context.source === 'evolution'
+      ? 'evolution'
+      : (context.source === 'owned' ? 'owned' : 'recruit');
+    const sourceAgent = context.sourceAgent || null;
+    const ownedPokemon = context.ownedPokemon || null;
+
+    this.seenPokemonIds.add(pokemonId);
+    this.firstDiscoveryByPokemon[pokemonId] = {
+      agentId: sourceAgent ? sourceAgent.agentId : (ownedPokemon && ownedPokemon.sourceAgentId) || null,
+      agentName: source === 'evolution'
+        ? 'Evolution'
+        : (source === 'owned' ? 'Owned Pokemon' : 'Recruit'),
+      provider: source,
+      projectId: sourceAgent
+        ? sourceAgent.projectId
+        : (ownedPokemon && (ownedPokemon.assignedProjectId || ownedPokemon.sourceProjectId)) || null,
+      sessionId: sourceAgent ? sourceAgent.sessionId : (ownedPokemon && ownedPokemon.sourceSessionId) || null,
+      createdAt: sourceAgent ? (sourceAgent.createdAt || now) : (ownedPokemon && ownedPokemon.createdAt) || now,
+      discoveredAt: now,
+      parentId: null,
+      parentName: null,
+      viaSubagent: false
+    };
+    return true;
+  }
+
+  refreshSeenPokemonFromOwned(options = {}) {
+    let changed = false;
+    const now = Date.now();
+    for (const pokemon of this.ownedPokemon) {
+      changed = this.recordOwnedPokemonDiscovery(pokemon && pokemon.speciesId, {
+        source: 'owned',
+        ownedPokemon: pokemon,
+        now: pokemon && pokemon.createdAt ? pokemon.createdAt : now
+      }) || changed;
+    }
+    if (changed && options.emit !== false) {
+      this.emit('pokedex', this.pokedexSnapshot());
+    }
+    return changed;
+  }
+
   recordSeenPokemon(agentId, ts = Date.now(), meta = {}, agent = null) {
     if (!this.resolvePokemonId || !agentId) {
       return false;
@@ -689,6 +746,19 @@ class AgentState extends EventEmitter {
     return this.ownedPokemon.find((pokemon) => pokemon && pokemon.id === id) || null;
   }
 
+  hasOwnedPokemonSpecies(speciesId, options = {}) {
+    const normalizedId = clampPokemonId(speciesId);
+    if (!normalizedId) {
+      return false;
+    }
+    const excludeId = normalizeOwnedText(options.excludeId, 120);
+    return this.ownedPokemon.some((pokemon) => (
+      pokemon &&
+      pokemon.speciesId === normalizedId &&
+      (!excludeId || pokemon.id !== excludeId)
+    ));
+  }
+
   partyPokemon() {
     return this.ownedPokemon
       .filter((pokemon) => Number.isInteger(pokemon.partySlot))
@@ -732,7 +802,8 @@ class AgentState extends EventEmitter {
     if (!normalizedId) {
       return null;
     }
-    return recruitPointCostForSpecies(normalizedId, this.seenPokemonIds.has(normalizedId));
+    const caught = this.hasOwnedPokemonSpecies(normalizedId);
+    return recruitPointCostForSpecies(normalizedId, this.seenPokemonIds.has(normalizedId), caught);
   }
 
   adoptOwnedPokemon(options = {}) {
@@ -751,8 +822,9 @@ class AgentState extends EventEmitter {
       return { ok: false, error: 'Unknown Pokemon.' };
     }
 
+    const wasCaught = this.hasOwnedPokemonSpecies(speciesId);
     const wasDiscovered = this.seenPokemonIds.has(speciesId);
-    const recruitCost = recruitPointCostForSpecies(speciesId, wasDiscovered);
+    const recruitCost = recruitPointCostForSpecies(speciesId, wasDiscovered, wasCaught);
     if (this.evolutionItems.itemPoints < recruitCost.pointCost) {
       return {
         ok: false,
@@ -762,21 +834,11 @@ class AgentState extends EventEmitter {
     }
     this.evolutionItems.itemPoints -= recruitCost.pointCost;
 
-    if (!wasDiscovered) {
-      this.seenPokemonIds.add(speciesId);
-      this.firstDiscoveryByPokemon[speciesId] = {
-        agentId: null,
-        agentName: 'Recruit',
-        provider: 'recruit',
-        projectId: sourceAgent ? sourceAgent.projectId : null,
-        sessionId: sourceAgent ? sourceAgent.sessionId : null,
-        createdAt: now,
-        discoveredAt: now,
-        parentId: null,
-        parentName: null,
-        viaSubagent: false
-      };
-    }
+    const pokedexChanged = this.recordOwnedPokemonDiscovery(speciesId, {
+      source: 'recruit',
+      sourceAgent,
+      now
+    });
 
     const shouldJoinParty = options.inParty !== false && options.boxOnly !== true && options.toBox !== true;
     const openSlot = shouldJoinParty ? this.firstOpenPartySlot() : null;
@@ -801,6 +863,9 @@ class AgentState extends EventEmitter {
     this.compactPartySlots();
     this.ensurePokemonBoxes();
     this.lastUpdate = now;
+    if (pokedexChanged) {
+      this.emit('pokedex', this.pokedexSnapshot());
+    }
     this.emit('update', this.snapshot());
     return { ok: true, pokemon: cloneOwnedPokemon(owned), recruitCost };
   }
@@ -1007,7 +1072,15 @@ class AgentState extends EventEmitter {
     pokemon.speciesId = selected.nextSpeciesId;
     pokemon.evolutionHeld = false;
     pokemon.updatedAt = Date.now();
+    const pokedexChanged = this.recordOwnedPokemonDiscovery(pokemon.speciesId, {
+      source: 'evolution',
+      ownedPokemon: pokemon,
+      now: pokemon.updatedAt
+    });
     this.lastUpdate = pokemon.updatedAt;
+    if (pokedexChanged) {
+      this.emit('pokedex', this.pokedexSnapshot());
+    }
     this.emit('update', this.snapshot());
     return { ok: true, pokemon: cloneOwnedPokemon(pokemon) };
   }
@@ -1895,7 +1968,8 @@ class AgentState extends EventEmitter {
       evolutionItems: evolutionItemSnapshot(this.evolutionItems),
       recruitPricing: {
         discovered: { ...RECRUIT_POINT_COSTS_DISCOVERED },
-        undiscovered: { ...RECRUIT_POINT_COSTS_UNDISCOVERED }
+        undiscovered: { ...RECRUIT_POINT_COSTS_UNDISCOVERED },
+        caughtDiscountRate: RECRUIT_CAUGHT_DISCOUNT_RATE
       },
       projectTraining: { ...this.projectTraining },
       trainingEvents: this.trainingEvents.slice(-80)
@@ -2016,6 +2090,7 @@ class AgentState extends EventEmitter {
         }
       }
     }
+    this.refreshSeenPokemonFromOwned({ emit: false });
     this.rebuildProjectTraining();
     this.trainingEvents = Array.isArray(data.trainingEvents)
       ? data.trainingEvents.filter((event) => event && typeof event === 'object').map((event) => ({ ...event }))

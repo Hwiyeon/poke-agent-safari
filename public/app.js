@@ -136,6 +136,11 @@
       availablePokedexCount: '{count} / {total} available',
       seen: 'seen',
       newEntryShort: 'new',
+      pokedexStatus: 'Status',
+      pokedexStatusAll: 'All',
+      pokedexStatusUndiscovered: 'Undiscovered',
+      pokedexStatusDiscovered: 'Discovered',
+      pokedexStatusCaught: 'Caught',
       need: 'Need',
       spent: 'Spent',
       recruitCost: 'Recruit cost',
@@ -360,6 +365,11 @@
       availablePokedexCount: '{count} / {total} 가능',
       seen: '만남',
       newEntryShort: '신규',
+      pokedexStatus: '\uc0c1\ud0dc',
+      pokedexStatusAll: '\uc804\uccb4',
+      pokedexStatusUndiscovered: '\ubbf8\ubc1c\uacac',
+      pokedexStatusDiscovered: '\ubc1c\uacac',
+      pokedexStatusCaught: '\ud3ec\ud68d',
       need: '필요',
       spent: '사용',
       recruitCost: '영입 비용',
@@ -974,6 +984,7 @@
   const pokedexCloseEl = document.getElementById('pokedex-close');
   const pokedexSummaryEl = document.getElementById('pokedex-summary');
   const pokedexGridEl = document.getElementById('pokedex-grid');
+  const pokedexCategoryControlEl = document.getElementById('pokedex-category-control');
   const pokedexSortEl = document.getElementById('pokedex-sort');
   const pokedexLangButtonEl = document.getElementById('pokedex-lang-button');
   const pokedexLangOptionsEl = document.getElementById('pokedex-lang-options');
@@ -982,6 +993,7 @@
   const uiState = {
     areaFilter: 'all',
     pokedexOpen: false,
+    pokedexCategory: 'all',
     ownedOpen: false,
     ownedRecruitOpen: false,
     ownedRecruitMode: 'available',
@@ -1858,6 +1870,87 @@
     var pokedex = appState.snapshot.pokedex || {};
     var discoveryMap = pokedex.firstDiscoveryByPokemon || {};
     return discoveryMap[pokemonId] || null;
+  }
+
+  function isPokedexPokemonSeen(pokemonId) {
+    var pokedex = appState.snapshot.pokedex || {};
+    var seenIds = Array.isArray(pokedex.seenPokemonIds) ? pokedex.seenPokemonIds : [];
+    return seenIds.indexOf(Number(pokemonId)) >= 0;
+  }
+
+  function pokedexOwnedSpeciesLookup() {
+    var lookup = {};
+    var owned = appState.snapshot && Array.isArray(appState.snapshot.ownedPokemon)
+      ? appState.snapshot.ownedPokemon
+      : [];
+    for (var i = 0; i < owned.length; i++) {
+      var speciesId = Number(owned[i] && owned[i].speciesId);
+      if (Number.isInteger(speciesId) && speciesId >= POKEDEX_MIN && speciesId <= POKEDEX_MAX) {
+        lookup[speciesId] = true;
+      }
+    }
+    return lookup;
+  }
+
+  function pokedexStatusForPokemon(pokemonId, seenLookup, caughtLookup) {
+    if (caughtLookup && caughtLookup[pokemonId]) return 'caught';
+    if (seenLookup ? seenLookup[pokemonId] : isPokedexPokemonSeen(pokemonId)) return 'discovered';
+    return 'undiscovered';
+  }
+
+  function pokedexStatusLabel(status) {
+    if (status === 'all') return t('pokedexStatusAll');
+    if (status === 'caught') return t('pokedexStatusCaught');
+    if (status === 'discovered') return t('pokedexStatusDiscovered');
+    return t('pokedexStatusUndiscovered');
+  }
+
+  function normalizePokedexCategory(value) {
+    if (value === 'undiscovered' || value === 'discovered' || value === 'caught') return value;
+    return 'all';
+  }
+
+  function pokedexCategoryIncludesStatus(category, status) {
+    var normalized = normalizePokedexCategory(category);
+    if (normalized === 'all') return true;
+    if (normalized === 'undiscovered') return status === 'undiscovered';
+    if (normalized === 'caught') return status === 'caught';
+    return status === 'discovered';
+  }
+
+  function pokedexStatusCounts(seenLookup, caughtLookup) {
+    var counts = { all: 0, undiscovered: 0, discovered: 0, caught: 0 };
+    for (var pokemonId = POKEDEX_MIN; pokemonId <= POKEDEX_MAX; pokemonId++) {
+      var status = pokedexStatusForPokemon(pokemonId, seenLookup, caughtLookup);
+      counts.all += 1;
+      counts[status] += 1;
+    }
+    return counts;
+  }
+
+  function syncPokedexCategoryControl(counts) {
+    if (!pokedexCategoryControlEl) return;
+    uiState.pokedexCategory = normalizePokedexCategory(uiState.pokedexCategory);
+    pokedexCategoryControlEl.setAttribute('aria-label', t('pokedexStatus'));
+    var options = pokedexCategoryControlEl.querySelectorAll('[data-pokedex-category]');
+    Array.prototype.forEach.call(options, function (option) {
+      var category = normalizePokedexCategory(option.getAttribute('data-pokedex-category'));
+      var selected = category === uiState.pokedexCategory;
+      option.classList.toggle('active', selected);
+      option.setAttribute('aria-pressed', selected ? 'true' : 'false');
+      option.textContent = pokedexStatusLabel(category) + ' ' + String((counts && counts[category]) || 0);
+    });
+  }
+
+  function setPokedexCategory(category) {
+    var nextCategory = normalizePokedexCategory(category);
+    if (uiState.pokedexCategory === nextCategory) {
+      return;
+    }
+    uiState.pokedexCategory = nextCategory;
+    if (pokedexGridEl) pokedexGridEl.scrollTop = 0;
+    hidePokedexTooltip();
+    renderPokedex();
   }
 
   function pokedexEncounterCount(pokemonId) {
@@ -3782,9 +3875,10 @@
     var pointCost = Math.max(0, Number(visual.pointCost) || 0);
     var afterPoints = Math.max(0, Number.isFinite(Number(visual.afterPoints)) ? Number(visual.afterPoints) : currentPoints - pointCost);
     var discovered = !!visual.discovered;
-    var discoveryText = discovered
-      ? t('pokedexRegistered')
-      : t('newPokedexEntry');
+    var caught = !!visual.caught;
+    var discoveryText = caught
+      ? t('pokedexStatusCaught')
+      : (discovered ? t('pokedexRegistered') : t('newPokedexEntry'));
     var rows = [
       { label: t('currentPoints'), value: formatTokenCount(currentPoints) },
       { label: t('plannedSpend'), value: '-' + formatTokenCount(pointCost), tone: 'cost', note: discoveryText },
@@ -5297,6 +5391,8 @@
     var rarity = getPokemonRarity(pokemonId);
     var labels = pokedexTooltipLabels();
     var name = pokemonDisplayName(pokemonId);
+    var status = pokedexStatusForPokemon(pokemonId, null, pokedexOwnedSpeciesLookup());
+    var statusLabel = pokedexStatusLabel(status);
     var encounterText = String(pokedexEncounterCount(pokemonId));
     var habitatName = pokedexHabitatLabel(pokemonId);
     var firstMetAt = discovery ? (discovery.discoveredAt || discovery.createdAt) : null;
@@ -5323,6 +5419,10 @@
 
     html += '<div class="pokedex-tooltip-body">';
     html += '<div class="pokedex-tooltip-facts">';
+    html += '<div class="pokedex-tooltip-fact">';
+    html += '<span class="pokedex-tooltip-fact-label">' + escapeHtml(t('pokedexStatus')) + '</span>';
+    html += '<span class="pokedex-tooltip-fact-value">' + escapeHtml(statusLabel) + '</span>';
+    html += '</div>';
     html += '<div class="pokedex-tooltip-fact">';
     html += '<span class="pokedex-tooltip-fact-label">' + escapeHtml(labels.metCount) + '</span>';
     html += '<span class="pokedex-tooltip-fact-value">' + escapeHtml(encounterText) + '</span>';
@@ -5976,9 +6076,24 @@
   function recruitablePokemonIds() {
     var pokedex = appState.snapshot.pokedex || {};
     var seenIds = Array.isArray(pokedex.seenPokemonIds) ? pokedex.seenPokemonIds.slice() : [];
-    return seenIds
+    var idLookup = {};
+    for (var i = 0; i < seenIds.length; i++) {
+      var seenId = parseInt(seenIds[i], 10);
+      if (Number.isInteger(seenId) && seenId >= POKEDEX_MIN && seenId <= POKEDEX_MAX) {
+        idLookup[seenId] = true;
+      }
+    }
+    var owned = appState.snapshot && Array.isArray(appState.snapshot.ownedPokemon)
+      ? appState.snapshot.ownedPokemon
+      : [];
+    for (var j = 0; j < owned.length; j++) {
+      var speciesId = Number(owned[j] && owned[j].speciesId);
+      if (Number.isInteger(speciesId) && speciesId >= POKEDEX_MIN && speciesId <= POKEDEX_MAX) {
+        idLookup[speciesId] = true;
+      }
+    }
+    return Object.keys(idLookup)
       .map(function (id) { return parseInt(id, 10); })
-      .filter(function (id) { return Number.isInteger(id) && id >= POKEDEX_MIN && id <= POKEDEX_MAX; })
       .sort(function (a, b) { return a - b; });
   }
 
@@ -5992,18 +6107,26 @@
     var pricing = appState.snapshot.recruitPricing || {};
     return {
       discovered: pricing.discovered || { 1: 100, 2: 300, 3: 700, 4: 1000, 5: 2000 },
-      undiscovered: pricing.undiscovered || { 1: 500, 2: 1500, 3: 3500, 4: 5000, 5: 10000 }
+      undiscovered: pricing.undiscovered || { 1: 500, 2: 1500, 3: 3500, 4: 5000, 5: 10000 },
+      caughtDiscountRate: Number.isFinite(Number(pricing.caughtDiscountRate)) ? Number(pricing.caughtDiscountRate) : 0.8
     };
   }
 
-  function recruitCostForPokemon(pokemonId, discovered) {
+  function recruitCostForPokemon(pokemonId, discovered, caught) {
     var tier = Math.max(1, Math.min(5, Number(pokemonRarityTiers[pokemonId]) || 1));
     var pricing = recruitPricing();
-    var costs = discovered ? pricing.discovered : pricing.undiscovered;
+    var isCaught = !!caught;
+    var costs = (discovered || isCaught) ? pricing.discovered : pricing.undiscovered;
+    var basePointCost = Number(costs[tier]) || Number(costs[String(tier)]) || 0;
+    var pointCost = isCaught
+      ? Math.max(1, Math.floor(basePointCost * pricing.caughtDiscountRate))
+      : basePointCost;
     return {
       tier: tier,
-      discovered: !!discovered,
-      pointCost: Number(costs[tier]) || Number(costs[String(tier)]) || 0
+      discovered: !!(discovered || isCaught),
+      caught: isCaught,
+      discount: isCaught ? { type: 'caught', rate: pricing.caughtDiscountRate } : null,
+      pointCost: pointCost
     };
   }
 
@@ -6014,12 +6137,16 @@
   function recruitCostForAgent(agent) {
     var pokemonId = getRenderPokemonId(agent);
     var discovered = isPokemonDiscovered(pokemonId);
-    var costInfo = recruitCostForPokemon(pokemonId, discovered);
+    var caughtLookup = pokedexOwnedSpeciesLookup();
+    var caught = !!caughtLookup[pokemonId];
+    var costInfo = recruitCostForPokemon(pokemonId, discovered, caught);
     return {
       pokemonId: pokemonId,
       pokemonName: pokemonDisplayName(pokemonId),
       tier: costInfo.tier,
       discovered: costInfo.discovered,
+      caught: costInfo.caught,
+      discount: costInfo.discount,
       pointCost: costInfo.pointCost
     };
   }
@@ -6054,6 +6181,7 @@
     var availableIds = recruitablePokemonIds();
     var availableLookup = {};
     for (var i = 0; i < availableIds.length; i++) availableLookup[availableIds[i]] = true;
+    var caughtLookup = pokedexOwnedSpeciesLookup();
     var showPokedex = uiState.ownedRecruitMode === 'pokedex';
     var ids = showPokedex ? [] : availableIds;
     if (showPokedex) {
@@ -6070,13 +6198,17 @@
     for (var j = 0; j < ids.length; j++) {
       var pokemonId = ids[j];
       var seen = !!availableLookup[pokemonId];
-      var costInfo = recruitCostForPokemon(pokemonId, seen);
+      var status = pokedexStatusForPokemon(pokemonId, availableLookup, caughtLookup);
+      var discovered = status !== 'undiscovered';
+      var caught = status === 'caught';
+      var costInfo = recruitCostForPokemon(pokemonId, discovered, caught);
       var canAfford = itemPoints >= costInfo.pointCost;
-      var cellClass = 'owned-recruit-cell' + (seen ? ' seen' : ' unseen') + (canAfford ? '' : ' unaffordable');
+      var cellClass = 'owned-recruit-cell ' + status + (seen ? ' seen' : ' unseen') + (canAfford ? '' : ' unaffordable');
       var pokemonName = pokemonDisplayName(pokemonId);
       var areaMeta = pokemonSpawnAreaMeta(pokemonId);
       var rarity = getPokemonRarity(pokemonId);
-      var recruitLabel = '#' + String(pokemonId).padStart(3, '0') + ' ' + pokemonName + ', ' + (rarity ? rarity.label + ', ' : '') + t('spawnArea', { area: areaMeta.label }) + ', ' + costInfo.pointCost + ' pts, ' + (seen ? t('seen') : t('newEntryShort'));
+      var statusLabel = pokedexStatusLabel(status);
+      var recruitLabel = '#' + String(pokemonId).padStart(3, '0') + ' ' + pokemonName + ', ' + (rarity ? rarity.label + ', ' : '') + t('spawnArea', { area: areaMeta.label }) + ', ' + costInfo.pointCost + ' pts, ' + statusLabel;
       html += '<button class="' + cellClass + '" type="button" data-owned-action="recruit-species" data-pokemon-id="' + pokemonId + '"' +
         ' data-point-cost="' + escapeHtml(String(costInfo.pointCost)) + '" title="' + escapeHtml(recruitLabel) + '" aria-label="' + escapeHtml(recruitLabel) + '"' +
         (canAfford ? '' : ' disabled') + '>';
@@ -6085,7 +6217,11 @@
       html += pokemonRarityBadgeHtml(pokemonId, 'owned-recruit-rarity');
       html += '</span>';
       html += '<span class="owned-recruit-media">';
-      html += '<img src="' + escapeHtml(spriteUrl('animated', pokemonId, 'gif')) + '" alt="" loading="lazy" />';
+      if (status === 'undiscovered') {
+        html += '<span class="owned-recruit-unknown" aria-hidden="true">?</span>';
+      } else {
+        html += '<img src="' + escapeHtml(spriteUrl('animated', pokemonId, 'gif')) + '" alt="" loading="lazy" />';
+      }
       html += '</span>';
       html += '<span class="owned-recruit-name">' + escapeHtml(pokemonName) + '</span>';
       html += '<span class="owned-recruit-bottom">';
@@ -6291,6 +6427,8 @@
     for (var i = 0; i < seenIds.length; i++) {
       seenLookup[seenIds[i]] = true;
     }
+    var caughtLookup = pokedexOwnedSpeciesLookup();
+    var statusCounts = pokedexStatusCounts(seenLookup, caughtLookup);
 
     var discovered = typeof pokedex.discoveredCount === 'number' ? pokedex.discoveredCount : seenIds.length;
     var total = typeof pokedex.totalCount === 'number' ? pokedex.totalCount : POKEDEX_TOTAL;
@@ -6309,8 +6447,13 @@
     var pokemonIds = sortedPokedexPokemonIds();
     var currentGroupKey = '';
     var showGroupHeaders = normalizePokedexSort(uiState.pokedexSort) !== 'number';
+    uiState.pokedexCategory = normalizePokedexCategory(uiState.pokedexCategory);
     for (var p = 0; p < pokemonIds.length; p++) {
       var pokemonId = pokemonIds[p];
+      var status = pokedexStatusForPokemon(pokemonId, seenLookup, caughtLookup);
+      if (!pokedexCategoryIncludesStatus(uiState.pokedexCategory, status)) {
+        continue;
+      }
       if (showGroupHeaders) {
         var groupKey = pokedexGroupKey(pokemonId);
         if (groupKey !== currentGroupKey) {
@@ -6318,15 +6461,21 @@
           html += pokedexGroupHeaderHtml(pokemonId);
         }
       }
-      var seen = !!seenLookup[pokemonId];
-      html += '<div class="pokedex-cell' + (seen ? ' seen' : '') + '" data-pokemon-id="' + pokemonId + '" tabindex="0">';
+      var known = status !== 'undiscovered';
+      var pokemonName = pokemonDisplayName(pokemonId);
+      var statusLabel = pokedexStatusLabel(status);
+      var cellLabel = '#' + String(pokemonId).padStart(3, '0') + ' ' + pokemonName + ', ' + statusLabel;
+      html += '<div class="pokedex-cell ' + status + '" data-pokemon-id="' + pokemonId + '" tabindex="0" aria-label="' + escapeHtml(cellLabel) + '" title="' + escapeHtml(cellLabel) + '">';
+      if (status === 'caught') {
+        html += '<span class="pokedex-caught-icon" aria-hidden="true"></span>';
+      }
       html += '<div class="pokedex-meta">';
       html += '<span class="pokedex-number">#' + String(pokemonId).padStart(3, '0') + '</span>';
-      html += '<span class="pokedex-name">' + escapeHtml(pokemonDisplayName(pokemonId)) + '</span>';
+      html += '<span class="pokedex-name">' + escapeHtml(pokemonName) + '</span>';
       html += '</div>';
       html += '<div class="pokedex-media">';
-      if (seen) {
-        html += '<img class="pokedex-icon" src="' + escapeHtml(spriteUrl('animated', pokemonId, 'gif')) + '" alt="' + escapeHtml(pokemonDisplayName(pokemonId)) + '" loading="lazy" />';
+      if (known) {
+        html += '<img class="pokedex-icon" src="' + escapeHtml(spriteUrl('animated', pokemonId, 'gif')) + '" alt="' + escapeHtml(pokemonName) + '" loading="lazy" />';
       } else {
         html += '<span class="pokedex-unknown">?</span>';
       }
@@ -6342,6 +6491,7 @@
       }
     }
     syncPokedexLanguageMenu();
+    syncPokedexCategoryControl(statusCounts);
     syncPokedexSortControl();
   }
 
@@ -7120,6 +7270,8 @@
         pointCost: costInfo.pointCost,
         afterPoints: currentPoints - costInfo.pointCost,
         discovered: costInfo.discovered,
+        caught: costInfo.caught,
+        discount: costInfo.discount,
         label: t('recruitCost')
       };
       var promptText = t('recruitPrompt', { pokemon: costInfo.pokemonName, cost: costInfo.pointCost });
@@ -7519,8 +7671,10 @@
       e.stopPropagation();
       var pokemonId = parseInt(btn.getAttribute('data-pokemon-id'), 10);
       if (!pokemonId) return;
-      var discovered = isPokemonDiscovered(pokemonId);
-      var costInfo = recruitCostForPokemon(pokemonId, discovered);
+      var status = pokedexStatusForPokemon(pokemonId, null, pokedexOwnedSpeciesLookup());
+      var discovered = status !== 'undiscovered';
+      var caught = status === 'caught';
+      var costInfo = recruitCostForPokemon(pokemonId, discovered, caught);
       var pokemonName = pokemonDisplayName(pokemonId);
       var currentPoints = currentItemPointBalance();
       var recruitPrompt = t('recruitPrompt', { pokemon: pokemonName, cost: costInfo.pointCost });
@@ -7537,6 +7691,8 @@
           pointCost: costInfo.pointCost,
           afterPoints: currentPoints - costInfo.pointCost,
           discovered: discovered,
+          caught: costInfo.caught,
+          discount: costInfo.discount,
           label: t('recruitCost')
         }
       }))) return;
@@ -7609,6 +7765,13 @@
     if (pokedexSortEl) {
       pokedexSortEl.addEventListener('change', function () {
         setPokedexSort(pokedexSortEl.value);
+      });
+    }
+    if (pokedexCategoryControlEl) {
+      pokedexCategoryControlEl.addEventListener('click', function (event) {
+        var option = event.target.closest('[data-pokedex-category]');
+        if (!option || !pokedexCategoryControlEl.contains(option)) return;
+        setPokedexCategory(option.getAttribute('data-pokedex-category'));
       });
     }
     if (pokedexLangButtonEl) {

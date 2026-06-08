@@ -26,11 +26,47 @@ function hasSource(source, target) {
 }
 
 function normalizeMode(mode) {
+  if (mode === 'viewer') return 'viewer';
   return mode === 'mock' ? 'mock' : 'watch';
 }
 
 function isSupportedMode(mode) {
-  return mode === 'watch' || mode === 'mock';
+  return mode === 'watch' || mode === 'mock' || mode === 'viewer';
+}
+
+function normalizeViewerBaseUrl(rawUrl) {
+  const trimmed = String(rawUrl || '').trim();
+  if (!trimmed) {
+    throw new Error('Viewer mode requires --url <dashboard-url> or --host/--port.');
+  }
+  if (trimmed.toLowerCase() === 'true') {
+    throw new Error('Viewer mode requires a value after --url.');
+  }
+
+  const withProtocol = /^[a-z][a-z0-9+.-]*:\/\//i.test(trimmed)
+    ? trimmed
+    : `http://${trimmed}`;
+  const parsed = new URL(withProtocol);
+  if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
+    throw new Error('Viewer URL must use http:// or https://.');
+  }
+  parsed.hash = '';
+  parsed.search = '';
+  return parsed.href.replace(/\/$/, '');
+}
+
+function viewerUrlFor(baseUrl, pathname = '/') {
+  const normalizedPath = String(pathname || '/').startsWith('/')
+    ? String(pathname || '/')
+    : `/${pathname}`;
+  return new URL(normalizedPath, `${baseUrl}/`).toString();
+}
+
+function resolveViewerConfig(argv, config) {
+  const parsed = configResolver.parseArgv(argv);
+  const rawUrl = parsed.url || parsed.viewerUrl || parsed['viewer-url'];
+  const baseUrl = normalizeViewerBaseUrl(rawUrl || `${config.host}:${config.port}`);
+  return { ...config, viewerUrl: baseUrl };
 }
 
 function resolveElectronConfig() {
@@ -46,7 +82,11 @@ function resolveElectronConfig() {
     throw new Error(`Unknown Electron mode: ${command}`);
   }
 
-  return { mode, config, showHelp: false };
+  return {
+    mode,
+    config: mode === 'viewer' ? resolveViewerConfig(argv, config) : config,
+    showHelp: false
+  };
 }
 
 function getPersistencePaths(mode, source) {
@@ -227,6 +267,17 @@ async function startRuntime(mode, config) {
   };
 }
 
+function createViewerRuntime(config) {
+  return {
+    mode: 'viewer',
+    config,
+    url(pathname = '/') {
+      return viewerUrlFor(config.viewerUrl, pathname);
+    },
+    async stop() {}
+  };
+}
+
 function createWindow() {
   const win = new BrowserWindow({
     width: 360,
@@ -247,7 +298,8 @@ function createWindow() {
   });
 
   win.webContents.setWindowOpenHandler(({ url }) => {
-    if (url.startsWith(runtime.url('/'))) {
+    const dashboardRoot = runtime && typeof runtime.url === 'function' ? runtime.url('/') : null;
+    if (dashboardRoot && url.startsWith(dashboardRoot)) {
       return { action: 'allow' };
     }
     shell.openExternal(url);
@@ -319,7 +371,10 @@ async function shutdownAndQuit() {
 app.whenReady().then(async () => {
   wireIpc();
   const { mode, config } = resolveElectronConfig();
-  runtime = await startRuntime(mode, config);
+  runtime = mode === 'viewer' ? createViewerRuntime(config) : await startRuntime(mode, config);
+  if (mode === 'viewer') {
+    console.log(`[viewer] loading ${runtime.url('/')}`);
+  }
   mainWindow = createWindow();
   showSticker();
 });

@@ -85,6 +85,7 @@ function usage() {
     '  poke-as [--source claude|codex|all] [--port 8123] [--path ~/.claude/projects] [--codex-path ~/.codex/sessions] [--no-pokeapi]',
     '  poke-as --mock [--port 8123] [--no-pokeapi]',
     '  poke-as sticker [--source claude|codex|all] [--port 8123]',
+    '  poke-as viewer [--url http://127.0.0.1:8123] [--host 127.0.0.1 --port 8123]',
     '  poke-as web [watch|mock] [--source claude|codex|all] [--port 8123]',
     '  poke-as watch [--source claude|codex|all] [--port 8123]',
     '  poke-as hard-reset [watch|mock] [--source claude|codex|all]',
@@ -127,7 +128,7 @@ function webArgv(argv) {
 function shouldLaunchElectron(argv) {
   const command = firstPositionalArg(argv);
   if (!command) return true;
-  return command === 'sticker' || command === 'electron' || command === 'mock';
+  return command === 'sticker' || command === 'electron' || command === 'viewer' || command === 'mock';
 }
 
 function electronArgv(argv) {
