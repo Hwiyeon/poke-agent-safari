@@ -38,6 +38,23 @@ const {
   parseGitLinkCommit
 } = require('../tools/setup_poke_assets');
 
+function createSymlinkIfSupported(targetPath, linkPath) {
+  try {
+    fs.symlinkSync(targetPath, linkPath);
+    return true;
+  } catch (error) {
+    if (error && (error.code === 'EPERM' || error.code === 'EACCES' || error.code === 'EINVAL')) {
+      return false;
+    }
+    throw error;
+  }
+}
+
+function assertOwnerPermissionBits(targetPath, requiredBits) {
+  const effectiveBits = process.platform === 'win32' ? (requiredBits & OWNER_FILE_BITS) : requiredBits;
+  assert.ok((fs.statSync(targetPath).mode & effectiveBits) === effectiveBits);
+}
+
 test('asset setup sparse paths cover runtime sprites plus items', () => {
   assert.deepEqual(SPRITE_SPARSE_PATHS, [
     'sprites/pokemon/versions/generation-v/black-white',
@@ -127,16 +144,16 @@ test('runtime permission setup repairs owned paths and stale debug symlink', () 
   fs.writeFileSync(transcriptPath, '{}\n', { mode: 0o000 });
   fs.writeFileSync(claudeSessionPath, '{}\n', { mode: 0o000 });
   fs.writeFileSync(codexTranscriptPath, '{}\n', { mode: 0o000 });
-  fs.symlinkSync(path.join(debugDir, 'missing.txt'), latestLink);
+  const symlinkCreated = createSymlinkIfSupported(path.join(debugDir, 'missing.txt'), latestLink);
 
   const result = setupRuntimePermissions({ homeDir, log: () => {} });
 
   assert.equal(fs.existsSync(latestLink), false);
-  assert.ok((fs.statSync(transcriptPath).mode & OWNER_FILE_BITS) === OWNER_FILE_BITS);
-  assert.ok((fs.statSync(claudeSessionPath).mode & OWNER_FILE_BITS) === OWNER_FILE_BITS);
-  assert.ok((fs.statSync(codexTranscriptPath).mode & OWNER_FILE_BITS) === OWNER_FILE_BITS);
-  assert.ok((fs.statSync(claudeProjects).mode & OWNER_DIR_BITS) === OWNER_DIR_BITS);
-  assert.ok(result.fixed >= 4);
+  assertOwnerPermissionBits(transcriptPath, OWNER_FILE_BITS);
+  assertOwnerPermissionBits(claudeSessionPath, OWNER_FILE_BITS);
+  assertOwnerPermissionBits(codexTranscriptPath, OWNER_FILE_BITS);
+  assertOwnerPermissionBits(claudeProjects, OWNER_DIR_BITS);
+  assert.ok(result.fixed >= (symlinkCreated ? 4 : 3));
 });
 
 test('runtime permission helpers report direct repairs', () => {
@@ -145,11 +162,11 @@ test('runtime permission helpers report direct repairs', () => {
   fs.writeFileSync(filePath, '{}\n', { mode: 0o000 });
 
   assert.equal(repairPathPermissions(filePath, OWNER_FILE_BITS).status, 'fixed');
-  assert.equal((fs.statSync(filePath).mode & OWNER_FILE_BITS), OWNER_FILE_BITS);
+  assertOwnerPermissionBits(filePath, OWNER_FILE_BITS);
 
   const linkPath = path.join(tempRoot, 'latest');
-  fs.symlinkSync(path.join(tempRoot, 'missing.txt'), linkPath);
-  assert.equal(repairBrokenSymlink(linkPath).status, 'fixed');
+  const symlinkCreated = createSymlinkIfSupported(path.join(tempRoot, 'missing.txt'), linkPath);
+  assert.equal(repairBrokenSymlink(linkPath).status, symlinkCreated ? 'fixed' : 'missing');
   assert.equal(fs.existsSync(linkPath), false);
 });
 
