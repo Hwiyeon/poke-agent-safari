@@ -133,6 +133,10 @@ function isSubagent(agent) {
   return !!(agent && agent.parentId);
 }
 
+function isStartupReplay(meta) {
+  return !!(meta && typeof meta.replaySource === 'string' && meta.replaySource.startsWith('initial-'));
+}
+
 function pickBestAgentRecord(candidates, beforeTs) {
   if (!Array.isArray(candidates) || candidates.length === 0) {
     return null;
@@ -1401,10 +1405,21 @@ class AgentState extends EventEmitter {
     if (
       existingAgent &&
       existingAgent.lifecycle === LIFECYCLE.SLEEPING &&
-      replay &&
-      ts <= (existingAgent.lastSeen || 0)
+      replay
     ) {
-      return;
+      const canReplayWakeSleeping =
+        event.type === EVENT_TYPES.USER_QUERY &&
+        !isStartupReplay(meta) &&
+        ts > (existingAgent.lastSeen || 0);
+      if (!canReplayWakeSleeping) {
+        if (!existingAgent.displayName && meta.sessionDisplayName) {
+          existingAgent.displayName = meta.sessionDisplayName;
+        }
+        if (event.type === EVENT_TYPES.USER_QUERY && meta.lastUserQuery) {
+          existingAgent.lastUserQuery = meta.lastUserQuery;
+        }
+        return;
+      }
     }
 
     const { agent, created } = this.upsertAgent(event.agentId, ts, meta);
@@ -1464,6 +1479,15 @@ class AgentState extends EventEmitter {
         // Apply session display name from first user message to main session agents
         if (!agent.displayName && meta.sessionDisplayName) {
           agent.displayName = meta.sessionDisplayName;
+        }
+        if (meta.lastUserQuery) {
+          agent.lastUserQuery = meta.lastUserQuery;
+        }
+        break;
+      case EVENT_TYPES.USER_QUERY:
+        if (agent.status === STATUS.IDLE || agent.status === STATUS.SLEEPING || !agent.status) {
+          agent.status = STATUS.THINKING;
+          agent.activity = 'Active';
         }
         if (meta.lastUserQuery) {
           agent.lastUserQuery = meta.lastUserQuery;
