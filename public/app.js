@@ -73,6 +73,29 @@
       pokedexFilterSeen: 'Seen',
       pokedexFilterCaught: 'Caught',
       pokedexFilterSeenNotCaught: 'Seen not caught',
+      pokedexEntries: 'Entries',
+      pokedexRewards: 'Rewards',
+      pokedexRewardsReady: '{count} ready',
+      pokedexNationalDex: 'National Dex',
+      pokedexAreaDex: 'Area Dex',
+      pokedexNextReward: 'Next reward',
+      pokedexNoPendingReward: 'No pending reward',
+      pokedexRewardReady: 'Ready',
+      pokedexRewardClaimed: 'Claimed',
+      pokedexRewardLocked: 'Locked',
+      pokedexRewardClaim: 'Claim',
+      pokedexCaughtMilestone: 'Caught {count}',
+      pokedexAreaMilestone: 'Lv.{level} - {percent}%',
+      pokedexRewardProgress: '{caught} / {target} caught',
+      pokedexAreaProgress: '{caught} / {total} caught',
+      pokedexPointsReward: '+{points} pts',
+      pokedexGlobalRadar: 'Global radar Lv.{level}',
+      pokedexAreaBoost: 'Area boost',
+      pokedexNotCaughtBoost: 'Uncaught spawn x{multiplier}',
+      pokedexRareBoost: 'Rare boost Lv.{level}',
+      pokedexBadgeReward: 'Badge: {badge}',
+      pokedexClaimedReward: 'Claimed {reward}.',
+      pokedexRewardClaimFailed: 'Reward claim failed.',
       selectedArea: 'selected area',
       agentsOutsideArea: 'Agents outside {area}',
       myPokemon: 'My Pokemon',
@@ -591,6 +614,9 @@
     items(action, payload) {
       return postVscodeAction({ type: 'items', action: action, payload: payload || {} });
     },
+    pokedex(action, payload) {
+      return postVscodeAction({ type: 'pokedex', action: action, payload: payload || {} });
+    },
     explorationArea(areaId) {
       return postVscodeAction({ type: 'explorationArea', areaId: areaId || 'all' });
     },
@@ -658,6 +684,19 @@
         path = '/api/items/buy';
       } else if (action === 'sell') {
         path = '/api/items/sell';
+      }
+      if (!path) return Promise.resolve({ ok: false, status: 400 });
+      return fetch(path, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+    },
+    pokedex(action, payload) {
+      payload = payload || {};
+      var path = null;
+      if (action === 'claim') {
+        path = '/api/pokedex/claim';
       }
       if (!path) return Promise.resolve({ ok: false, status: 400 });
       return fetch(path, {
@@ -986,6 +1025,11 @@
   const pokedexBackdropEl = document.getElementById('pokedex-backdrop');
   const pokedexCloseEl = document.getElementById('pokedex-close');
   const pokedexSummaryEl = document.getElementById('pokedex-summary');
+  const pokedexEntriesPanelEl = document.getElementById('pokedex-entries-panel');
+  const pokedexRewardsPanelEl = document.getElementById('pokedex-rewards-panel');
+  const pokedexTabEntriesEl = document.getElementById('pokedex-tab-entries');
+  const pokedexTabRewardsEl = document.getElementById('pokedex-tab-rewards');
+  const pokedexRewardCountEl = document.getElementById('pokedex-reward-count');
   const pokedexGridEl = document.getElementById('pokedex-grid');
   const pokedexFilterEl = document.getElementById('pokedex-filter');
   const pokedexSortEl = document.getElementById('pokedex-sort');
@@ -1007,6 +1051,7 @@
     subhistoryParentId: null,
     pokedexSort: 'number',
     pokedexFilter: 'all',
+    pokedexTab: 'entries',
     pokedexLanguage: activeUiLanguage,
     pokedexLanguageMenuOpen: false,
     collapsedSubtrees: {},
@@ -1995,6 +2040,10 @@
     return 'all';
   }
 
+  function normalizePokedexTab(value) {
+    return value === 'rewards' ? 'rewards' : 'entries';
+  }
+
   function pokemonMatchesPokedexFilter(pokemonId) {
     var filter = normalizePokedexFilter(uiState.pokedexFilter);
     if (filter === 'all') return true;
@@ -2143,6 +2192,214 @@
     if (pokedexGridEl) pokedexGridEl.scrollTop = 0;
     hidePokedexTooltip();
     renderPokedex();
+  }
+
+  function syncPokedexTabs() {
+    uiState.pokedexTab = normalizePokedexTab(uiState.pokedexTab);
+    var isRewards = uiState.pokedexTab === 'rewards';
+    if (pokedexTabEntriesEl) {
+      pokedexTabEntriesEl.classList.toggle('active', !isRewards);
+      pokedexTabEntriesEl.setAttribute('aria-selected', isRewards ? 'false' : 'true');
+    }
+    if (pokedexTabRewardsEl) {
+      pokedexTabRewardsEl.classList.toggle('active', isRewards);
+      pokedexTabRewardsEl.setAttribute('aria-selected', isRewards ? 'true' : 'false');
+    }
+    if (pokedexEntriesPanelEl) pokedexEntriesPanelEl.hidden = isRewards;
+    if (pokedexRewardsPanelEl) pokedexRewardsPanelEl.hidden = !isRewards;
+    var filterControl = pokedexFilterEl && pokedexFilterEl.closest ? pokedexFilterEl.closest('.pokedex-sort-control') : null;
+    var sortControl = pokedexSortEl && pokedexSortEl.closest ? pokedexSortEl.closest('.pokedex-sort-control') : null;
+    if (filterControl) filterControl.hidden = isRewards;
+    if (sortControl) sortControl.hidden = isRewards;
+  }
+
+  function setPokedexTab(tab) {
+    var nextTab = normalizePokedexTab(tab);
+    if (uiState.pokedexTab === nextTab) {
+      syncPokedexTabs();
+      return;
+    }
+    uiState.pokedexTab = nextTab;
+    hidePokedexTooltip();
+    syncPokedexTabs();
+    renderPokedex();
+  }
+
+  function pokedexRewardStatus(milestone) {
+    if (milestone && milestone.claimed) return 'claimed';
+    if (milestone && milestone.claimable) return 'claimable';
+    return 'locked';
+  }
+
+  function pokedexRewardStatusLabel(status) {
+    if (status === 'claimed') return t('pokedexRewardClaimed');
+    if (status === 'claimable') return t('pokedexRewardReady');
+    return t('pokedexRewardLocked');
+  }
+
+  function pokedexBadgeName(value) {
+    return String(value || '')
+      .replace(/[-_]+/g, ' ')
+      .replace(/\b\w/g, function (match) { return match.toUpperCase(); });
+  }
+
+  function pokedexRewardEffects(milestone) {
+    var effects = [];
+    if (!milestone) return effects;
+    var points = Number(milestone.pointReward) || 0;
+    if (points > 0) effects.push(t('pokedexPointsReward', { points: formatTokenCount(points) }));
+    if (milestone.globalRadarLevel) effects.push(t('pokedexGlobalRadar', { level: milestone.globalRadarLevel }));
+    if (milestone.notCaughtMultiplier) effects.push(t('pokedexNotCaughtBoost', { multiplier: milestone.notCaughtMultiplier }));
+    if (milestone.rareBoostLevel) effects.push(t('pokedexRareBoost', { level: milestone.rareBoostLevel }));
+    if (milestone.badge) effects.push(t('pokedexBadgeReward', { badge: pokedexBadgeName(milestone.badge) }));
+    return effects;
+  }
+
+  function pokedexRewardEffectsHtml(milestone) {
+    var effects = pokedexRewardEffects(milestone);
+    if (effects.length === 0) return '';
+    var html = '<div class="pokedex-reward-effects">';
+    for (var i = 0; i < effects.length; i++) {
+      html += '<span class="pokedex-reward-effect">' + escapeHtml(effects[i]) + '</span>';
+    }
+    html += '</div>';
+    return html;
+  }
+
+  function nextUnclaimedPokedexReward(milestones) {
+    if (!Array.isArray(milestones)) return null;
+    for (var i = 0; i < milestones.length; i++) {
+      if (milestones[i] && milestones[i].claimable) return milestones[i];
+    }
+    for (var j = 0; j < milestones.length; j++) {
+      if (milestones[j] && !milestones[j].claimed) return milestones[j];
+    }
+    return null;
+  }
+
+  function pokedexRewardTitle(milestone, type) {
+    if (!milestone) return t('pokedexNoPendingReward');
+    if (type === 'area') {
+      var percent = Math.round((Number(milestone.percent) || 0) * 100);
+      return t('pokedexAreaMilestone', { level: milestone.level, percent: percent });
+    }
+    return t('pokedexCaughtMilestone', { count: milestone.count });
+  }
+
+  function renderPokedexRewardRow(milestone, type, progressText, progressRatio) {
+    if (!milestone) return '';
+    var status = pokedexRewardStatus(milestone);
+    var id = milestone.id || '';
+    var ratio = Math.max(0, Math.min(1, Number(progressRatio) || 0));
+    var html = '<div class="pokedex-reward-row ' + escapeHtml(status) + '">';
+    html += '<div class="pokedex-reward-row-main">';
+    html += '<div class="pokedex-reward-row-title">';
+    html += '<span>' + escapeHtml(pokedexRewardTitle(milestone, type)) + '</span>';
+    html += '<span class="pokedex-reward-status ' + escapeHtml(status) + '">' + escapeHtml(pokedexRewardStatusLabel(status)) + '</span>';
+    html += '</div>';
+    html += '<div class="pokedex-reward-progress-line">';
+    html += '<span>' + escapeHtml(progressText) + '</span>';
+    html += '<span>' + Math.round(ratio * 100) + '%</span>';
+    html += '</div>';
+    html += '<div class="pokedex-reward-meter" aria-hidden="true"><span style="width:' + (ratio * 100).toFixed(1) + '%"></span></div>';
+    html += pokedexRewardEffectsHtml(milestone);
+    html += '</div>';
+    if (status === 'claimable') {
+      html += '<button class="pokedex-reward-claim" type="button" data-pokedex-action="claim-reward" data-reward-type="' + escapeHtml(type) + '" data-reward-id="' + escapeHtml(id) + '">' + escapeHtml(t('pokedexRewardClaim')) + '</button>';
+    } else {
+      html += '<span class="pokedex-reward-claim-spacer" aria-hidden="true"></span>';
+    }
+    html += '</div>';
+    return html;
+  }
+
+  function renderPokedexNextReward(nextReward, type, progressText) {
+    var html = '<div class="pokedex-next-reward">';
+    html += '<span class="pokedex-next-label">' + escapeHtml(t('pokedexNextReward')) + '</span>';
+    if (nextReward) {
+      html += '<span class="pokedex-next-title">' + escapeHtml(pokedexRewardTitle(nextReward, type)) + '</span>';
+      html += '<span class="pokedex-next-progress">' + escapeHtml(progressText) + '</span>';
+    } else {
+      html += '<span class="pokedex-next-title">' + escapeHtml(t('pokedexNoPendingReward')) + '</span>';
+    }
+    html += '</div>';
+    return html;
+  }
+
+  function renderPokedexRewards() {
+    if (!pokedexRewardsPanelEl) return;
+    var pokedex = appState.snapshot.pokedex || {};
+    var caught = typeof pokedex.caughtCount === 'number' ? pokedex.caughtCount : 0;
+    var total = typeof pokedex.totalCount === 'number' ? pokedex.totalCount : POKEDEX_TOTAL;
+    var claimableCount = Number(pokedex.claimableRewardCount) || 0;
+    var catchMilestones = Array.isArray(pokedex.catchMilestones) ? pokedex.catchMilestones : [];
+    var areaProgress = Array.isArray(pokedex.areaCatchProgress) ? pokedex.areaCatchProgress : [];
+    var nationalNext = nextUnclaimedPokedexReward(catchMilestones);
+    var nationalTarget = nationalNext ? Number(nationalNext.count) || total : total;
+    var html = '<div class="pokedex-rewards-summary">';
+    html += '<div><span class="pokedex-rewards-kicker">' + escapeHtml(t('pokedexRewards')) + '</span>';
+    html += '<strong>' + escapeHtml(t('pokedexRewardsReady', { count: claimableCount })) + '</strong></div>';
+    html += '<span>' + escapeHtml(t('pokedexRewardProgress', { caught: caught, target: total })) + '</span>';
+    html += '</div>';
+
+    html += '<section class="pokedex-reward-section">';
+    html += '<div class="pokedex-reward-section-head">';
+    html += '<div><h3>' + escapeHtml(t('pokedexNationalDex')) + '</h3>';
+    html += '<p>' + escapeHtml(t('pokedexRewardProgress', { caught: caught, target: total })) + '</p></div>';
+    html += renderPokedexNextReward(nationalNext, 'catch', nationalNext ? t('pokedexRewardProgress', { caught: caught, target: nationalTarget }) : '');
+    html += '</div>';
+    html += '<div class="pokedex-reward-list">';
+    for (var i = 0; i < catchMilestones.length; i++) {
+      var milestone = catchMilestones[i];
+      var target = Number(milestone.count) || total;
+      html += renderPokedexRewardRow(
+        milestone,
+        'catch',
+        t('pokedexRewardProgress', { caught: Math.min(caught, target), target: target }),
+        target > 0 ? caught / target : 0
+      );
+    }
+    html += '</div></section>';
+
+    html += '<section class="pokedex-reward-section">';
+    html += '<div class="pokedex-reward-section-head">';
+    html += '<div><h3>' + escapeHtml(t('pokedexAreaDex')) + '</h3>';
+    html += '<p>' + escapeHtml(t('pokedexAreaBoost')) + '</p></div>';
+    html += '</div>';
+    html += '<div class="pokedex-area-rewards">';
+    for (var a = 0; a < areaProgress.length; a++) {
+      var progress = areaProgress[a] || {};
+      var areaId = progress.areaId || '';
+      var areaMilestones = Array.isArray(progress.milestones) ? progress.milestones : [];
+      var areaNext = nextUnclaimedPokedexReward(areaMilestones);
+      var areaCaught = Number(progress.caughtCount) || 0;
+      var areaTotal = Number(progress.totalCount) || 0;
+      var areaMeta = areaDefById(areaId);
+      html += '<div class="pokedex-area-reward">';
+      html += '<div class="pokedex-area-reward-head">';
+      html += '<span class="spawn-area-chip pokedex-area-reward-chip" style="' + escapeHtml(spawnAreaChipStyle(areaMeta)) + '"><span class="spawn-area-icon"></span>' + escapeHtml(localizedAreaLabel(areaId)) + '</span>';
+      html += '<span>' + escapeHtml(t('pokedexAreaProgress', { caught: areaCaught, total: areaTotal })) + '</span>';
+      html += '</div>';
+      html += renderPokedexNextReward(
+        areaNext,
+        'area',
+        areaNext ? t('pokedexRewardProgress', { caught: areaCaught, target: Number(areaNext.threshold) || areaTotal }) : ''
+      );
+      html += '<div class="pokedex-reward-list compact">';
+      for (var m = 0; m < areaMilestones.length; m++) {
+        var areaMilestone = areaMilestones[m];
+        var areaTarget = Number(areaMilestone.threshold) || areaTotal;
+        html += renderPokedexRewardRow(
+          areaMilestone,
+          'area',
+          t('pokedexRewardProgress', { caught: Math.min(areaCaught, areaTarget), target: areaTarget }),
+          areaTarget > 0 ? areaCaught / areaTarget : 0
+        );
+      }
+      html += '</div></div>';
+    }
+    html += '</div></section>';
+    pokedexRewardsPanelEl.innerHTML = html;
   }
 
   function pokedexMatchingAgents(pokemonId) {
@@ -6474,6 +6731,14 @@
     var total = typeof pokedex.totalCount === 'number' ? pokedex.totalCount : POKEDEX_TOTAL;
     pokedexProgressEl.textContent = discovered + ' / ' + total + ' | ' + caught + ' ' + t('caught');
     pokedexSummaryEl.textContent = t('pokedexProgressFull', { seen: discovered, caught: caught, total: total });
+    var claimableRewardCount = Number(pokedex.claimableRewardCount) || 0;
+    if (pokedexRewardCountEl) {
+      pokedexRewardCountEl.textContent = String(claimableRewardCount);
+      pokedexRewardCountEl.classList.toggle('ready', claimableRewardCount > 0);
+      pokedexRewardCountEl.setAttribute('title', t('pokedexRewardsReady', { count: claimableRewardCount }));
+    }
+    syncPokedexTabs();
+    renderPokedexRewards();
 
     var html = '';
     var scrollTop = pokedexGridEl.scrollTop;
@@ -7793,6 +8058,16 @@
     pokedexBackdropEl.addEventListener('click', function () {
       setPokedexOpen(false);
     });
+    if (pokedexTabEntriesEl) {
+      pokedexTabEntriesEl.addEventListener('click', function () {
+        setPokedexTab('entries');
+      });
+    }
+    if (pokedexTabRewardsEl) {
+      pokedexTabRewardsEl.addEventListener('click', function () {
+        setPokedexTab('rewards');
+      });
+    }
     if (pokedexSortEl) {
       pokedexSortEl.addEventListener('change', function () {
         setPokedexSort(pokedexSortEl.value);
@@ -7824,6 +8099,31 @@
     document.addEventListener('keydown', function (event) {
       if (event.key === 'Escape' && uiState.pokedexLanguageMenuOpen) setPokedexLanguageMenu(false);
     });
+    if (pokedexRewardsPanelEl) {
+      pokedexRewardsPanelEl.addEventListener('click', async function (e) {
+        var btn = e.target.closest('[data-pokedex-action="claim-reward"]');
+        if (!btn) return;
+        e.preventDefault();
+        var rewardType = btn.getAttribute('data-reward-type');
+        var rewardId = btn.getAttribute('data-reward-id');
+        if (!rewardType || !rewardId) return;
+        btn.disabled = true;
+        var result = await readActionResult(transport.pokedex('claim', { rewardType: rewardType, id: rewardId }));
+        btn.disabled = false;
+        if (result && result.ok) {
+          var reward = result.reward || {};
+          var effects = pokedexRewardEffects(reward).join(', ');
+          var rewardName = rewardType === 'area' ? pokedexRewardTitle(reward, 'area') : pokedexRewardTitle(reward, 'catch');
+          var message = t('pokedexClaimedReward', { reward: rewardName }) + (effects ? ' ' + effects + '.' : '');
+          showActionPopup(t('claimResult'), t('claimResult'), message, message);
+          renderPokedex();
+        } else {
+          var errorMessage = result && result.error ? result.error : t('pokedexRewardClaimFailed');
+          showActionPopup(t('claimResult'), t('claimResult'), errorMessage, errorMessage, { isError: true });
+          renderPokedex();
+        }
+      });
+    }
     pokedexGridEl.addEventListener('mouseover', function (e) {
       var cell = e.target.closest('.pokedex-cell[data-pokemon-id]');
       if (!cell) return;

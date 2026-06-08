@@ -82,7 +82,35 @@ test('state restore preserves caught pokemon and claimed catch milestones', () =
   assert.equal(state.serialize().claimedAreaCatchMilestones.includes('forest:L1'), true);
 });
 
-test('area catch milestones award points once', () => {
+test('catch milestones are manually claimed for points', () => {
+  const state = new AgentState({});
+
+  const result = state.registerCaughtPokemon(25, { source: 'test' });
+
+  assert.equal(result.isNewCatch, true);
+  assert.equal(result.rewards.some((reward) => reward.type === 'catch-milestone'), false);
+
+  let milestone = state.snapshot().pokedex.catchMilestones.find((entry) => entry.id === 'caught-1');
+  assert.equal(milestone.reached, true);
+  assert.equal(milestone.claimed, false);
+  assert.equal(milestone.claimable, true);
+
+  const before = state.snapshot().evolutionItems.itemPoints;
+  const claimed = state.claimPokedexReward('catch', 'caught-1');
+  assert.equal(claimed.ok, true);
+  assert.equal(claimed.reward.pointReward, 100);
+  assert.equal(state.snapshot().evolutionItems.itemPoints, before + 100);
+
+  milestone = state.snapshot().pokedex.catchMilestones.find((entry) => entry.id === 'caught-1');
+  assert.equal(milestone.claimed, true);
+  assert.equal(milestone.claimable, false);
+
+  const duplicate = state.claimPokedexReward('catch', 'caught-1');
+  assert.equal(duplicate.ok, false);
+  assert.equal(state.snapshot().evolutionItems.itemPoints, before + 100);
+});
+
+test('area catch milestones become claimable and award points once', () => {
   const state = new AgentState({});
   const ruinIds = [];
   for (let pokemonId = 1; pokemonId <= 649 && ruinIds.length < 3; pokemonId += 1) {
@@ -97,15 +125,35 @@ test('area catch milestones award points once', () => {
     last = state.registerCaughtPokemon(pokemonId, { source: 'test' });
   }
 
-  const areaReward = last.rewards.find((reward) => reward.type === 'area-catch-milestone' && reward.areaId === 'ruin' && reward.level === 1);
-  assert.ok(areaReward);
-  assert.equal(areaReward.pointReward, 50);
-  assert.equal(state.snapshot().pokedex.areaCatchProgress.find((entry) => entry.areaId === 'ruin').milestones[0].claimed, true);
+  assert.equal(last.rewards.some((reward) => reward.type === 'area-catch-milestone'), false);
+
+  let areaMilestone = state.snapshot().pokedex.areaCatchProgress
+    .find((entry) => entry.areaId === 'ruin')
+    .milestones[0];
+  assert.equal(areaMilestone.reached, true);
+  assert.equal(areaMilestone.claimed, false);
+  assert.equal(areaMilestone.claimable, true);
 
   const before = state.snapshot().evolutionItems.itemPoints;
-  const duplicate = state.registerCaughtPokemon(ruinIds[0], { source: 'test' });
-  assert.equal(duplicate.isNewCatch, false);
-  assert.equal(state.snapshot().evolutionItems.itemPoints, before);
+  const claimed = state.claimPokedexReward('area', areaMilestone.id);
+  assert.equal(claimed.ok, true);
+  assert.equal(claimed.reward.areaId, 'ruin');
+  assert.equal(claimed.reward.pointReward, 50);
+  assert.equal(state.snapshot().evolutionItems.itemPoints, before + 50);
+
+  areaMilestone = state.snapshot().pokedex.areaCatchProgress
+    .find((entry) => entry.areaId === 'ruin')
+    .milestones[0];
+  assert.equal(areaMilestone.claimed, true);
+  assert.equal(areaMilestone.claimable, false);
+
+  const duplicate = state.claimPokedexReward('area', areaMilestone.id);
+  assert.equal(duplicate.ok, false);
+  assert.equal(state.snapshot().evolutionItems.itemPoints, before + 50);
+
+  const duplicateCatch = state.registerCaughtPokemon(ruinIds[0], { source: 'test' });
+  assert.equal(duplicateCatch.isNewCatch, false);
+  assert.equal(state.snapshot().evolutionItems.itemPoints, before + 50);
 });
 
 test('state restore backfills discovered pokemon from restored agents', () => {

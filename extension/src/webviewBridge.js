@@ -104,6 +104,11 @@ function createWebviewBridge(options = {}) {
               actionResult = state.sellEvolutionItem(message.payload.itemId);
             }
             break;
+          case 'pokedex':
+            if (message.action === 'claim' && message.payload) {
+              actionResult = state.claimPokedexReward(message.payload.rewardType || message.payload.type, message.payload.id || message.payload.rewardId);
+            }
+            break;
           case 'explorationArea':
             actionResult = state.setExplorationArea(message.areaId);
             break;

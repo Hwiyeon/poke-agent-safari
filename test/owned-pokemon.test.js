@@ -383,8 +383,8 @@ test('recruit pricing spends points and discovers unknown pokemon', () => {
   const discovered = state.adoptOwnedPokemon({ speciesId: 10, inParty: false });
   assert.equal(discovered.ok, true);
   assert.deepEqual(discovered.recruitCost, { tier: 1, discovered: true, caught: false, discount: null, pointCost: 100 });
-  assert.equal(discovered.catchRewards.totalPointReward, 110);
-  assert.equal(state.snapshot().evolutionItems.itemPoints, 810);
+  assert.equal(discovered.catchRewards.totalPointReward, 10);
+  assert.equal(state.snapshot().evolutionItems.itemPoints, 710);
   assert.ok(state.snapshot().pokedex.caughtPokemonIds.includes(10));
 
   state.evolutionItems.itemPoints = 500;

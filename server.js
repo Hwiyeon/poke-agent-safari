@@ -164,6 +164,13 @@ class DashboardServer extends EventEmitter {
       return;
     }
 
+    if (pathname === '/api/pokedex/claim' && req.method === 'POST') {
+      const body = await this.readJsonBody(req);
+      const result = this.state.claimPokedexReward(body.rewardType || body.type, body.id || body.rewardId);
+      this.sendJson(res, result.ok ? 200 : 400, result);
+      return;
+    }
+
     if (pathname.startsWith('/api/items/') && req.method === 'POST') {
       const action = pathname.slice('/api/items/'.length);
       const body = await this.readJsonBody(req);

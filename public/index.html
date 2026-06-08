@@ -142,7 +142,17 @@
             <button id="pokedex-close" class="pokedex-close" type="button" aria-label="Close Pokedex" data-i18n-aria="close" data-i18n="close">Close</button>
           </div>
         </div>
-        <div id="pokedex-grid" class="pokedex-grid"></div>
+        <div class="pokedex-tabs" role="tablist" aria-label="Pokedex views">
+          <button id="pokedex-tab-entries" class="pokedex-tab active" type="button" role="tab" aria-selected="true" aria-controls="pokedex-entries-panel" data-pokedex-tab="entries" data-i18n="pokedexEntries">Entries</button>
+          <button id="pokedex-tab-rewards" class="pokedex-tab" type="button" role="tab" aria-selected="false" aria-controls="pokedex-rewards-panel" data-pokedex-tab="rewards">
+            <span data-i18n="pokedexRewards">Rewards</span>
+            <span id="pokedex-reward-count" class="pokedex-reward-count">0</span>
+          </button>
+        </div>
+        <div id="pokedex-entries-panel" class="pokedex-entries-panel" role="tabpanel" aria-labelledby="pokedex-tab-entries">
+          <div id="pokedex-grid" class="pokedex-grid"></div>
+        </div>
+        <div id="pokedex-rewards-panel" class="pokedex-rewards-panel" role="tabpanel" aria-labelledby="pokedex-tab-rewards" hidden></div>
       </section>
     </div>
 
