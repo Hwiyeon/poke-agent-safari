@@ -7,6 +7,11 @@ const POKEDEX_MIN = 1;
 const POKEDEX_MAX = 649;
 const TIER_IDS = Object.freeze([1, 2, 3, 4, 5]);
 const TIER_WEIGHTS = Object.freeze({ 1: 40, 2: 25, 3: 15, 4: 5, 5: 1 });
+const RARE_BOOST_MULTIPLIERS = Object.freeze({
+  1: Object.freeze({ 1: 1, 2: 1, 3: 1.10, 4: 1.15, 5: 1.25 }),
+  2: Object.freeze({ 1: 1, 2: 1, 3: 1.15, 4: 1.25, 5: 1.40 }),
+  3: Object.freeze({ 1: 1, 2: 1, 3: 1.20, 4: 1.35, 5: 1.60 })
+});
 const DATA_FILE = path.join(__dirname, 'data', 'pokemon_data.json');
 const EVOLUTION_PATHS_FILE = path.join(__dirname, 'data', 'evolution_paths.json');
 const AREA_IDS = Object.freeze([
@@ -61,7 +66,54 @@ function emptyTierPools() {
   return Object.fromEntries(TIER_IDS.map((tier) => [tier, []]));
 }
 
-function pickPokemonFromTierPools(agentId, tierPools, maxPokemonId) {
+function normalizeCaughtPokemonSet(caughtPokemonIds) {
+  if (caughtPokemonIds instanceof Set) {
+    return caughtPokemonIds;
+  }
+  if (!Array.isArray(caughtPokemonIds)) {
+    return new Set();
+  }
+  return new Set(caughtPokemonIds.map((id) => Number(id)).filter((id) => Number.isInteger(id)));
+}
+
+function tierWeightMultiplier(tier, rareBoostLevel) {
+  const level = Math.max(0, Math.min(3, Number(rareBoostLevel) || 0));
+  const multipliers = RARE_BOOST_MULTIPLIERS[level];
+  return multipliers ? multipliers[tier] || 1 : 1;
+}
+
+function pickSpeciesFromPool(agentId, tier, speciesPool, options = {}) {
+  if (!Array.isArray(speciesPool) || speciesPool.length === 0) {
+    return null;
+  }
+
+  const notCaughtMultiplier = Math.max(1, Number(options.notCaughtMultiplier) || 1);
+  if (notCaughtMultiplier <= 1) {
+    const speciesIndex = hashCode(`${agentId}:species:${tier}`) % speciesPool.length;
+    return speciesPool[speciesIndex];
+  }
+
+  const caughtPokemonIds = normalizeCaughtPokemonSet(options.caughtPokemonIds);
+  const weights = speciesPool.map((pokemonId) => (
+    caughtPokemonIds.has(Number(pokemonId)) ? 1 : notCaughtMultiplier
+  ));
+  const totalWeight = weights.reduce((sum, weight) => sum + weight, 0);
+  if (totalWeight <= 0) {
+    const speciesIndex = hashCode(`${agentId}:species:${tier}`) % speciesPool.length;
+    return speciesPool[speciesIndex];
+  }
+
+  let roll = (hashCode(`${agentId}:species:${tier}:weighted`) / 0x100000000) * totalWeight;
+  for (let i = 0; i < speciesPool.length; i += 1) {
+    if (roll < weights[i]) {
+      return speciesPool[i];
+    }
+    roll -= weights[i];
+  }
+  return speciesPool[speciesPool.length - 1];
+}
+
+function pickPokemonFromTierPools(agentId, tierPools, maxPokemonId, options = {}) {
   const normalizedMax = Number(maxPokemonId);
   const shouldFilterMax = Number.isInteger(normalizedMax) && normalizedMax >= POKEDEX_MIN && normalizedMax < POKEDEX_MAX;
   const speciesPoolsByTier = {};
@@ -72,14 +124,16 @@ function pickPokemonFromTierPools(agentId, tierPools, maxPokemonId) {
     speciesPoolsByTier[tier] = shouldFilterMax
       ? pool.filter((pokemonId) => pokemonId <= normalizedMax)
       : pool;
-    effectiveWeights[tier] = speciesPoolsByTier[tier].length > 0 ? TIER_WEIGHTS[tier] || 1 : 0;
+    effectiveWeights[tier] = speciesPoolsByTier[tier].length > 0
+      ? (TIER_WEIGHTS[tier] || 1) * tierWeightMultiplier(tier, options.rareBoostLevel)
+      : 0;
   }
 
   for (const tier of TIER_IDS) {
     if (speciesPoolsByTier[tier].length > 0) {
       continue;
     }
-    const missingWeight = TIER_WEIGHTS[tier] || 1;
+    const missingWeight = (TIER_WEIGHTS[tier] || 1) * tierWeightMultiplier(tier, options.rareBoostLevel);
     for (let lowerTier = tier - 1; lowerTier >= 1; lowerTier -= 1) {
       if (speciesPoolsByTier[lowerTier] && speciesPoolsByTier[lowerTier].length > 0) {
         effectiveWeights[lowerTier] += missingWeight;
@@ -111,8 +165,7 @@ function pickPokemonFromTierPools(agentId, tierPools, maxPokemonId) {
     roll -= entry.weight;
   }
 
-  const speciesIndex = hashCode(`${agentId}:species:${selected.tier}`) % selected.speciesPool.length;
-  return selected.speciesPool[speciesIndex];
+  return pickSpeciesFromPool(agentId, selected.tier, selected.speciesPool, options);
 }
 
 function loadPokemonCatalog() {
@@ -124,6 +177,7 @@ function loadPokemonCatalog() {
   let areaTierPools = Object.fromEntries(AREA_IDS.map((areaId) => [areaId, emptyTierPools()]));
   let pokemonAreaIds = {};
   let pokemonRarityTiers = {};
+  let areaTotals = Object.fromEntries(AREA_IDS.map((areaId) => [areaId, 0]));
 
   try {
     const raw = fs.readFileSync(DATA_FILE, 'utf8');
@@ -140,6 +194,7 @@ function loadPokemonCatalog() {
         const areaId = HABITAT_TO_AREA[pokemon.habitat] || null;
         if (areaId) {
           pokemonAreaIds[pokemonId] = areaId;
+          areaTotals[areaId] += 1;
         }
         tierPools[normalizedTier].push(pokemonId);
         if (areaId && areaTierPools[areaId]) {
@@ -152,13 +207,15 @@ function loadPokemonCatalog() {
     areaTierPools = Object.fromEntries(AREA_IDS.map((areaId) => [areaId, emptyTierPools()]));
     pokemonAreaIds = {};
     pokemonRarityTiers = {};
+    areaTotals = Object.fromEntries(AREA_IDS.map((areaId) => [areaId, 0]));
   }
 
   cachedCatalog = {
     tierPools,
     areaTierPools,
     pokemonAreaIds,
-    pokemonRarityTiers
+    pokemonRarityTiers,
+    areaTotals
   };
   return cachedCatalog;
 }
@@ -173,6 +230,11 @@ function getPokemonRarityTier(pokemonId) {
   return catalog.pokemonRarityTiers[Number(pokemonId)] || 1;
 }
 
+function getPokemonAreaTotals() {
+  const catalog = loadPokemonCatalog();
+  return { ...catalog.areaTotals };
+}
+
 function getPokemonIdForAgent(agentId, options = {}) {
   if (!agentId) {
     return POKEDEX_MIN;
@@ -182,11 +244,16 @@ function getPokemonIdForAgent(agentId, options = {}) {
   const maxPokemonId = Number(options.maxPokemonId);
   const areaId = normalizeAreaId(options.areaId);
   const areaTierPools = areaId !== 'all' ? catalog.areaTierPools[areaId] : null;
+  const spawnOptions = {
+    caughtPokemonIds: options.caughtPokemonIds,
+    notCaughtMultiplier: Math.max(1, Number(options.notCaughtMultiplier) || 1),
+    rareBoostLevel: Math.max(0, Math.min(3, Number(options.rareBoostLevel) || 0))
+  };
   let pokemonId = areaTierPools
-    ? pickPokemonFromTierPools(agentId, areaTierPools, maxPokemonId)
+    ? pickPokemonFromTierPools(agentId, areaTierPools, maxPokemonId, spawnOptions)
     : null;
   if (!pokemonId) {
-    pokemonId = pickPokemonFromTierPools(agentId, catalog.tierPools, maxPokemonId);
+    pokemonId = pickPokemonFromTierPools(agentId, catalog.tierPools, maxPokemonId, spawnOptions);
   }
   if (pokemonId) {
     return pokemonId;
@@ -283,6 +350,7 @@ module.exports = {
   AREA_IDS,
   normalizeAreaId,
   getPokemonAreaId,
+  getPokemonAreaTotals,
   getPokemonRarityTier,
   getPokemonIdForAgent,
   getEvolutionPath,

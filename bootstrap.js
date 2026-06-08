@@ -56,7 +56,11 @@ function filterStateByProvider(data, provider) {
     version: data.version,
     savedAt: data.savedAt,
     seenPokemonIds: data.seenPokemonIds || [],
+    caughtPokemonIds: data.caughtPokemonIds || [],
     firstDiscoveryByPokemon: data.firstDiscoveryByPokemon || {},
+    firstCatchByPokemon: data.firstCatchByPokemon || {},
+    claimedCatchMilestones: data.claimedCatchMilestones || [],
+    claimedAreaCatchMilestones: data.claimedAreaCatchMilestones || [],
     rateLimits: rateLimitsByProvider[provider] || null,
     rateLimitsByProvider,
     agents: Array.isArray(data.agents) ? data.agents.filter(matches) : [],
@@ -111,6 +115,10 @@ function mergeStateInto(base, incoming) {
   const seen = new Set([...(base.seenPokemonIds || []), ...(incoming.seenPokemonIds || [])]);
   base.seenPokemonIds = Array.from(seen).sort((a, b) => a - b);
 
+  // caughtPokemonIds: union
+  const caught = new Set([...(base.caughtPokemonIds || []), ...(incoming.caughtPokemonIds || [])]);
+  base.caughtPokemonIds = Array.from(caught).sort((a, b) => a - b);
+
   // firstDiscoveryByPokemon: earliest wins
   base.firstDiscoveryByPokemon = { ...(incoming.firstDiscoveryByPokemon || {}), ...(base.firstDiscoveryByPokemon || {}) };
   for (const [pid, when] of Object.entries(incoming.firstDiscoveryByPokemon || {})) {
@@ -118,6 +126,22 @@ function mergeStateInto(base, incoming) {
       base.firstDiscoveryByPokemon[pid] = when;
     }
   }
+
+  base.firstCatchByPokemon = { ...(incoming.firstCatchByPokemon || {}), ...(base.firstCatchByPokemon || {}) };
+  for (const [pid, when] of Object.entries(incoming.firstCatchByPokemon || {})) {
+    if (!base.firstCatchByPokemon[pid] || when < base.firstCatchByPokemon[pid]) {
+      base.firstCatchByPokemon[pid] = when;
+    }
+  }
+
+  base.claimedCatchMilestones = Array.from(new Set([
+    ...(base.claimedCatchMilestones || []),
+    ...(incoming.claimedCatchMilestones || [])
+  ])).sort();
+  base.claimedAreaCatchMilestones = Array.from(new Set([
+    ...(base.claimedAreaCatchMilestones || []),
+    ...(incoming.claimedAreaCatchMilestones || [])
+  ])).sort();
 
   // rateLimitsByProvider: shallow merge (per-provider keys)
   base.rateLimitsByProvider = { ...(base.rateLimitsByProvider || {}), ...(incoming.rateLimitsByProvider || {}) };
@@ -132,7 +156,11 @@ function emptyStateSnapshot() {
     version: 1,
     savedAt: 0,
     seenPokemonIds: [],
+    caughtPokemonIds: [],
     firstDiscoveryByPokemon: {},
+    firstCatchByPokemon: {},
+    claimedCatchMilestones: [],
+    claimedAreaCatchMilestones: [],
     rateLimits: null,
     rateLimitsByProvider: {},
     agents: [],
@@ -183,13 +211,30 @@ function migrateLegacyPokedex(persist) {
         // Union of seenPokemonIds, earliest firstDiscoveryByPokemon
         const seen = new Set([...(merged.seenPokemonIds || []), ...(data.seenPokemonIds || [])]);
         merged.seenPokemonIds = Array.from(seen).sort((a, b) => a - b);
+        const caught = new Set([...(merged.caughtPokemonIds || []), ...(data.caughtPokemonIds || [])]);
+        merged.caughtPokemonIds = Array.from(caught).sort((a, b) => a - b);
         merged.firstDiscoveryByPokemon = { ...(merged.firstDiscoveryByPokemon || {}) };
         for (const [pid, when] of Object.entries(data.firstDiscoveryByPokemon || {})) {
           if (!merged.firstDiscoveryByPokemon[pid] || when < merged.firstDiscoveryByPokemon[pid]) {
             merged.firstDiscoveryByPokemon[pid] = when;
           }
         }
+        merged.firstCatchByPokemon = { ...(merged.firstCatchByPokemon || {}) };
+        for (const [pid, when] of Object.entries(data.firstCatchByPokemon || {})) {
+          if (!merged.firstCatchByPokemon[pid] || when < merged.firstCatchByPokemon[pid]) {
+            merged.firstCatchByPokemon[pid] = when;
+          }
+        }
+        merged.claimedCatchMilestones = Array.from(new Set([
+          ...(merged.claimedCatchMilestones || []),
+          ...(data.claimedCatchMilestones || [])
+        ])).sort();
+        merged.claimedAreaCatchMilestones = Array.from(new Set([
+          ...(merged.claimedAreaCatchMilestones || []),
+          ...(data.claimedAreaCatchMilestones || [])
+        ])).sort();
         merged.discovered = (merged.seenPokemonIds || []).length;
+        merged.caught = (merged.caughtPokemonIds || []).length;
       }
     } catch (error) {
       process.stderr.write(`[pokedex] migrate skip ${file}: ${error.message}\n`);
@@ -274,8 +319,16 @@ function savePokedex(state, persist) {
       pokemonCatalogMax: POKEDEX_MAX,
       updatedAt: Date.now(),
       seenPokemonIds: pokedex.seenPokemonIds,
+      caughtPokemonIds: pokedex.caughtPokemonIds,
       firstDiscoveryByPokemon: pokedex.firstDiscoveryByPokemon,
+      firstCatchByPokemon: pokedex.firstCatchByPokemon,
+      claimedCatchMilestones: pokedex.catchMilestones
+        .filter((entry) => entry.claimed)
+        .map((entry) => entry.id),
+      claimedAreaCatchMilestones: pokedex.areaCatchProgress
+        .flatMap((area) => area.milestones.filter((entry) => entry.claimed).map((entry) => entry.id)),
       discovered: pokedex.discoveredCount,
+      caught: pokedex.caughtCount,
       total: POKEDEX_MAX
     };
     fs.writeFileSync(persist.pokedexFile, JSON.stringify(data, null, 2), 'utf8');
@@ -301,7 +354,14 @@ function loadPokedex(state, persist) {
     }
     if (!data) return false;
     state.mergeSeenPokemonIds(data.seenPokemonIds, data.firstDiscoveryByPokemon);
-    process.stdout.write(`[pokedex] restored ${Array.isArray(data.seenPokemonIds) ? data.seenPokemonIds.length : 0} discovered pokemon\n`);
+    state.mergeCaughtPokemonIds(data.caughtPokemonIds, data.firstCatchByPokemon);
+    if (Array.isArray(data.claimedCatchMilestones)) {
+      state.claimedCatchMilestones = new Set(data.claimedCatchMilestones.filter((entry) => typeof entry === 'string' && entry));
+    }
+    if (Array.isArray(data.claimedAreaCatchMilestones)) {
+      state.claimedAreaCatchMilestones = new Set(data.claimedAreaCatchMilestones.filter((entry) => typeof entry === 'string' && entry));
+    }
+    process.stdout.write(`[pokedex] restored ${Array.isArray(data.seenPokemonIds) ? data.seenPokemonIds.length : 0} seen, ${Array.isArray(data.caughtPokemonIds) ? data.caughtPokemonIds.length : 0} caught pokemon\n`);
     return true;
   } catch (error) {
     process.stderr.write(`[pokedex] load failed: ${error.message}\n`);

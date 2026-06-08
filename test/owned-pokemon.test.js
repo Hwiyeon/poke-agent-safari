@@ -382,25 +382,45 @@ test('recruit pricing spends points and discovers unknown pokemon', () => {
 
   const discovered = state.adoptOwnedPokemon({ speciesId: 10, inParty: false });
   assert.equal(discovered.ok, true);
-  assert.deepEqual(discovered.recruitCost, { tier: 1, discovered: true, pointCost: 100 });
-  assert.equal(state.snapshot().evolutionItems.itemPoints, 700);
+  assert.deepEqual(discovered.recruitCost, { tier: 1, discovered: true, caught: false, discount: null, pointCost: 100 });
+  assert.equal(discovered.catchRewards.totalPointReward, 110);
+  assert.equal(state.snapshot().evolutionItems.itemPoints, 810);
+  assert.ok(state.snapshot().pokedex.caughtPokemonIds.includes(10));
 
   state.evolutionItems.itemPoints = 500;
   const undiscovered = state.adoptOwnedPokemon({ speciesId: 13, inParty: false, skipRecruitCost: true });
   assert.equal(undiscovered.ok, true);
-  assert.deepEqual(undiscovered.recruitCost, { tier: 1, discovered: false, pointCost: 500 });
+  assert.deepEqual(undiscovered.recruitCost, { tier: 1, discovered: false, caught: false, discount: null, pointCost: 500 });
   let snapshot = state.snapshot();
-  assert.equal(snapshot.evolutionItems.itemPoints, 0);
+  assert.equal(snapshot.evolutionItems.itemPoints, 10);
   assert.ok(snapshot.pokedex.seenPokemonIds.includes(13));
+  assert.ok(snapshot.pokedex.caughtPokemonIds.includes(13));
 
   state.evolutionItems.itemPoints = 499;
   const insufficient = state.adoptOwnedPokemon({ speciesId: 16, inParty: false });
   assert.equal(insufficient.ok, false);
-  assert.deepEqual(insufficient.recruitCost, { tier: 1, discovered: false, pointCost: 500 });
+  assert.deepEqual(insufficient.recruitCost, { tier: 1, discovered: false, caught: false, discount: null, pointCost: 500 });
   snapshot = state.snapshot();
   assert.equal(snapshot.evolutionItems.itemPoints, 499);
   assert.equal(snapshot.recruitPricing.discovered[1], 100);
+  assert.equal(snapshot.recruitPricing.caught[1], 80);
   assert.equal(snapshot.recruitPricing.undiscovered[5], 10000);
+});
+
+test('already caught pokemon use discounted recruit pricing without catch rewards', () => {
+  const state = createState({});
+  state.evolutionItems.itemPoints = 1000;
+  state.mergeSeenPokemonIds([10]);
+
+  const first = state.adoptOwnedPokemon({ speciesId: 10, inParty: false });
+  assert.equal(first.ok, true);
+
+  state.evolutionItems.itemPoints = 100;
+  const duplicate = state.adoptOwnedPokemon({ speciesId: 10, inParty: false });
+  assert.equal(duplicate.ok, true);
+  assert.deepEqual(duplicate.recruitCost, { tier: 1, discovered: true, caught: true, discount: 0.8, pointCost: 80 });
+  assert.equal(duplicate.catchRewards.isNewCatch, false);
+  assert.equal(state.snapshot().evolutionItems.itemPoints, 20);
 });
 
 test('item evolutions consume the required item', () => {
@@ -421,6 +441,8 @@ test('item evolutions consume the required item', () => {
 
   assert.equal(evolved.ok, true);
   assert.equal(state.snapshot().ownedPokemon[0].speciesId, 26);
+  assert.ok(state.snapshot().pokedex.caughtPokemonIds.includes(26));
+  assert.equal(state.snapshot().pokedex.firstCatchByPokemon[26].source, 'evolution');
   assert.equal(state.snapshot().evolutionItems.inventory['thunder-stone'], undefined);
 });
 
@@ -459,6 +481,7 @@ test('hard reset clears owned pokemon and training state', () => {
   assert.deepEqual(snapshot.projectTraining, {});
   assert.deepEqual(snapshot.trainingEvents, []);
   assert.deepEqual(snapshot.evolutionItems.inventory, {});
+  assert.deepEqual(snapshot.pokedex.caughtPokemonIds, []);
 });
 
 test('released pokemon are removed from project training state', () => {
@@ -472,6 +495,7 @@ test('released pokemon are removed from project training state', () => {
 
   assert.equal(result.ok, true);
   assert.deepEqual(state.snapshot().ownedPokemon, []);
+  assert.ok(state.snapshot().pokedex.caughtPokemonIds.includes(25));
   assert.deepEqual(state.snapshot().projectTraining, {});
   assert.deepEqual(state.snapshot().trainingEvents, []);
 });

@@ -5,7 +5,10 @@ const { EVENT_TYPES } = require('./parser');
 const {
   POKEDEX_MIN,
   POKEDEX_MAX,
+  AREA_IDS,
   getPokemonIdForAgent,
+  getPokemonAreaId,
+  getPokemonAreaTotals,
   normalizeAreaId,
   getPokemonRarityTier
 } = require('./pokemon');
@@ -52,6 +55,29 @@ const OWNED_LEVEL_100_EXP = 30115800;
 const OWNED_MEDIUM_FAST_LEVEL_100_EXP = 1000000;
 const RECRUIT_POINT_COSTS_DISCOVERED = Object.freeze({ 1: 100, 2: 300, 3: 700, 4: 1000, 5: 2000 });
 const RECRUIT_POINT_COSTS_UNDISCOVERED = Object.freeze({ 1: 500, 2: 1500, 3: 3500, 4: 5000, 5: 10000 });
+const RECRUIT_ALREADY_CAUGHT_DISCOUNT = 0.8;
+const FIRST_CATCH_POINT_REWARDS = Object.freeze({ 1: 10, 2: 30, 3: 70, 4: 120, 5: 250 });
+const CATCH_MILESTONES = Object.freeze([
+  Object.freeze({ id: 'caught-1', count: 1, pointReward: 100 }),
+  Object.freeze({ id: 'caught-5', count: 5, pointReward: 250 }),
+  Object.freeze({ id: 'caught-10', count: 10, pointReward: 500 }),
+  Object.freeze({ id: 'caught-25', count: 25, pointReward: 800 }),
+  Object.freeze({ id: 'caught-50', count: 50, pointReward: 1200, badge: 'bronze-dex' }),
+  Object.freeze({ id: 'caught-100', count: 100, pointReward: 2000, globalRadarLevel: 1 }),
+  Object.freeze({ id: 'caught-150', count: 150, pointReward: 2500 }),
+  Object.freeze({ id: 'caught-200', count: 200, pointReward: 3500, globalRadarLevel: 2 }),
+  Object.freeze({ id: 'caught-300', count: 300, pointReward: 5000 }),
+  Object.freeze({ id: 'caught-400', count: 400, pointReward: 7000, globalRadarLevel: 3 }),
+  Object.freeze({ id: 'caught-500', count: 500, pointReward: 9000 }),
+  Object.freeze({ id: 'caught-649', count: 649, pointReward: 15000, badge: 'national-dex-complete' })
+]);
+const AREA_CATCH_MILESTONES = Object.freeze([
+  Object.freeze({ level: 1, percent: 0.10, pointReward: 50 }),
+  Object.freeze({ level: 2, percent: 0.25, pointReward: 150, notCaughtMultiplier: 1.5 }),
+  Object.freeze({ level: 3, percent: 0.50, pointReward: 350, notCaughtMultiplier: 2, rareBoostLevel: 1 }),
+  Object.freeze({ level: 4, percent: 0.75, pointReward: 700, notCaughtMultiplier: 3, rareBoostLevel: 2 }),
+  Object.freeze({ level: 5, percent: 1.00, pointReward: 1500, notCaughtMultiplier: 3, rareBoostLevel: 3, badge: 'area-master' })
+]);
 const DEFAULT_COUNTERS = Object.freeze({
   seen: 0,
   toolStarts: 0,
@@ -254,15 +280,73 @@ function discoveryPokemonIdsByAgent(firstDiscoveryByPokemon) {
   return byAgentId;
 }
 
-function recruitPointCostForSpecies(speciesId, discovered) {
+function recruitPointCostForSpecies(speciesId, discovered, caught = false) {
   const normalizedId = clampPokemonId(speciesId);
   const tier = Math.max(1, Math.min(5, Number(getPokemonRarityTier(normalizedId)) || 1));
-  const costs = discovered ? RECRUIT_POINT_COSTS_DISCOVERED : RECRUIT_POINT_COSTS_UNDISCOVERED;
+  const baseCosts = discovered ? RECRUIT_POINT_COSTS_DISCOVERED : RECRUIT_POINT_COSTS_UNDISCOVERED;
+  const basePointCost = baseCosts[tier] || baseCosts[1];
+  const pointCost = caught
+    ? Math.max(1, Math.round((RECRUIT_POINT_COSTS_DISCOVERED[tier] || RECRUIT_POINT_COSTS_DISCOVERED[1]) * RECRUIT_ALREADY_CAUGHT_DISCOUNT))
+    : basePointCost;
   return {
     tier,
     discovered: !!discovered,
-    pointCost: costs[tier] || costs[1]
+    caught: !!caught,
+    discount: caught ? RECRUIT_ALREADY_CAUGHT_DISCOUNT : null,
+    pointCost
   };
+}
+
+function firstCatchPointRewardForSpecies(speciesId) {
+  const normalizedId = clampPokemonId(speciesId);
+  const tier = Math.max(1, Math.min(5, Number(getPokemonRarityTier(normalizedId)) || 1));
+  return {
+    tier,
+    pointReward: FIRST_CATCH_POINT_REWARDS[tier] || FIRST_CATCH_POINT_REWARDS[1]
+  };
+}
+
+function normalizePokemonIdList(ids) {
+  const out = [];
+  const seen = new Set();
+  if (!Array.isArray(ids)) {
+    return out;
+  }
+  for (const rawId of ids) {
+    const pokemonId = clampPokemonId(rawId);
+    if (!pokemonId || seen.has(pokemonId)) {
+      continue;
+    }
+    seen.add(pokemonId);
+    out.push(pokemonId);
+  }
+  return out.sort((a, b) => a - b);
+}
+
+function normalizeStringSet(values) {
+  const out = new Set();
+  if (!Array.isArray(values)) {
+    return out;
+  }
+  for (const value of values) {
+    const normalized = normalizeOwnedText(value, 120);
+    if (normalized) {
+      out.add(normalized);
+    }
+  }
+  return out;
+}
+
+function areaMilestoneId(areaId, level) {
+  return `${areaId}:L${level}`;
+}
+
+function areaMilestoneThreshold(totalCount, milestone) {
+  const total = Math.max(0, Number(totalCount) || 0);
+  if (total <= 0) {
+    return Infinity;
+  }
+  return Math.max(1, Math.ceil(total * milestone.percent));
 }
 
 function normalizeOwnedText(value, maxLength = 80) {
@@ -447,7 +531,11 @@ class AgentState extends EventEmitter {
     this.rateLimits = null;
     this.rateLimitsByProvider = {};
     this.seenPokemonIds = new Set();
+    this.caughtPokemonIds = new Set();
     this.firstDiscoveryByPokemon = {};
+    this.firstCatchByPokemon = {};
+    this.claimedCatchMilestones = new Set();
+    this.claimedAreaCatchMilestones = new Set();
     this.confirmedSessionIds = new Set(); // sessionIds confirmed alive via PID check
     this.suppressedSessions = new Set(); // sessionIds suppressed after hard-reset until USER_QUERY
   }
@@ -482,7 +570,11 @@ class AgentState extends EventEmitter {
     }
 
     agent.assignedPokemonId = clampPokemonId(pokemonId, maxPokemonId) ||
-      getPokemonIdForAgent(agent.agentId, { areaId: this.explorationAreaId, maxPokemonId });
+      getPokemonIdForAgent(agent.agentId, {
+        areaId: this.explorationAreaId,
+        maxPokemonId,
+        ...this.spawnOptionsForArea(this.explorationAreaId)
+      });
   }
 
   setExplorationArea(areaId) {
@@ -526,6 +618,224 @@ class AgentState extends EventEmitter {
       parentId,
       parentName: parentAgent ? (parentAgent.displayName || parentAgent.subagentType || parentAgent.agentId) : null,
       viaSubagent: !!parentId
+    };
+  }
+
+  catchInfoForPokemon(speciesId, ts = Date.now(), context = {}) {
+    const sourceAgent = context.sourceAgent || null;
+    return {
+      speciesId,
+      source: context.source || 'recruit',
+      agentId: sourceAgent ? sourceAgent.agentId : (context.agentId || null),
+      agentName: sourceAgent ? (sourceAgent.displayName || sourceAgent.subagentType || sourceAgent.agentId) : (context.agentName || null),
+      provider: context.provider || (sourceAgent && sourceAgent.provider) || 'recruit',
+      projectId: context.projectId || (sourceAgent && sourceAgent.projectId) || null,
+      sessionId: context.sessionId || (sourceAgent && sourceAgent.sessionId) || null,
+      ownedPokemonId: context.ownedPokemonId || null,
+      fromSpeciesId: clampPokemonId(context.fromSpeciesId),
+      caughtAt: ts
+    };
+  }
+
+  ensureSeenForCaughtPokemon(speciesId, ts = Date.now(), context = {}) {
+    const pokemonId = clampPokemonId(speciesId);
+    if (!pokemonId || this.seenPokemonIds.has(pokemonId)) {
+      return false;
+    }
+    this.seenPokemonIds.add(pokemonId);
+    this.firstDiscoveryByPokemon[pokemonId] = {
+      agentId: context.agentId || null,
+      agentName: context.agentName || (context.source === 'evolution' ? 'Evolution' : 'Recruit'),
+      provider: context.provider || context.source || 'catch',
+      projectId: context.projectId || null,
+      sessionId: context.sessionId || null,
+      createdAt: ts,
+      discoveredAt: ts,
+      parentId: null,
+      parentName: null,
+      viaSubagent: false
+    };
+    return true;
+  }
+
+  caughtCountByArea(areaId) {
+    let count = 0;
+    for (const pokemonId of this.caughtPokemonIds) {
+      if (getPokemonAreaId(pokemonId) === areaId) {
+        count += 1;
+      }
+    }
+    return count;
+  }
+
+  globalRadarLevel() {
+    let level = 0;
+    for (const milestone of CATCH_MILESTONES) {
+      if (milestone.globalRadarLevel && this.claimedCatchMilestones.has(milestone.id)) {
+        level = Math.max(level, milestone.globalRadarLevel);
+      }
+    }
+    return level;
+  }
+
+  areaCatchBonus(areaId) {
+    const normalizedAreaId = normalizeAreaId(areaId);
+    if (normalizedAreaId === 'all') {
+      return { notCaughtMultiplier: 1, rareBoostLevel: 0 };
+    }
+    let notCaughtMultiplier = 1;
+    let rareBoostLevel = 0;
+    for (const milestone of AREA_CATCH_MILESTONES) {
+      const key = areaMilestoneId(normalizedAreaId, milestone.level);
+      if (!this.claimedAreaCatchMilestones.has(key)) {
+        continue;
+      }
+      notCaughtMultiplier = Math.max(notCaughtMultiplier, Number(milestone.notCaughtMultiplier) || 1);
+      rareBoostLevel = Math.max(rareBoostLevel, Number(milestone.rareBoostLevel) || 0);
+    }
+    return { notCaughtMultiplier, rareBoostLevel };
+  }
+
+  spawnOptionsForArea(areaId) {
+    const normalizedAreaId = normalizeAreaId(areaId);
+    if (normalizedAreaId === 'all') {
+      const radarLevel = this.globalRadarLevel();
+      const radarMultiplier = radarLevel >= 3 ? 2 : (radarLevel === 2 ? 1.5 : (radarLevel === 1 ? 1.25 : 1));
+      return {
+        caughtPokemonIds: this.caughtPokemonIds,
+        notCaughtMultiplier: radarMultiplier,
+        rareBoostLevel: 0
+      };
+    }
+    const areaBonus = this.areaCatchBonus(normalizedAreaId);
+    return {
+      caughtPokemonIds: this.caughtPokemonIds,
+      notCaughtMultiplier: areaBonus.notCaughtMultiplier,
+      rareBoostLevel: areaBonus.rareBoostLevel
+    };
+  }
+
+  catchMilestoneSnapshot(caughtCount = this.caughtPokemonIds.size) {
+    return CATCH_MILESTONES.map((milestone) => ({
+      ...milestone,
+      reached: caughtCount >= milestone.count,
+      claimed: this.claimedCatchMilestones.has(milestone.id)
+    }));
+  }
+
+  areaCatchProgressSnapshot() {
+    const totals = getPokemonAreaTotals();
+    return AREA_IDS.map((areaId) => {
+      const totalCount = totals[areaId] || 0;
+      const caughtCount = this.caughtCountByArea(areaId);
+      return {
+        areaId,
+        caughtCount,
+        totalCount,
+        percent: totalCount > 0 ? caughtCount / totalCount : 0,
+        milestones: AREA_CATCH_MILESTONES.map((milestone) => {
+          const threshold = areaMilestoneThreshold(totalCount, milestone);
+          const id = areaMilestoneId(areaId, milestone.level);
+          return {
+            ...milestone,
+            id,
+            threshold,
+            reached: caughtCount >= threshold,
+            claimed: this.claimedAreaCatchMilestones.has(id)
+          };
+        })
+      };
+    });
+  }
+
+  registerCaughtPokemon(speciesId, context = {}) {
+    const pokemonId = clampPokemonId(speciesId);
+    if (!pokemonId) {
+      return { isNewCatch: false, rewards: [], totalPointReward: 0 };
+    }
+    const now = Date.now();
+    const wasCaught = this.caughtPokemonIds.has(pokemonId);
+    this.ensureSeenForCaughtPokemon(pokemonId, now, context);
+
+    if (wasCaught) {
+      return {
+        isNewCatch: false,
+        speciesId: pokemonId,
+        rewards: [],
+        totalPointReward: 0,
+        caughtCount: this.caughtPokemonIds.size
+      };
+    }
+
+    this.caughtPokemonIds.add(pokemonId);
+    this.firstCatchByPokemon[pokemonId] = this.catchInfoForPokemon(pokemonId, now, context);
+
+    const rewards = [];
+    const firstCatchReward = firstCatchPointRewardForSpecies(pokemonId);
+    if (firstCatchReward.pointReward > 0) {
+      rewards.push({
+        type: 'first-catch',
+        speciesId: pokemonId,
+        tier: firstCatchReward.tier,
+        pointReward: firstCatchReward.pointReward
+      });
+    }
+
+    const caughtCount = this.caughtPokemonIds.size;
+    for (const milestone of CATCH_MILESTONES) {
+      if (caughtCount < milestone.count || this.claimedCatchMilestones.has(milestone.id)) {
+        continue;
+      }
+      this.claimedCatchMilestones.add(milestone.id);
+      rewards.push({
+        type: 'catch-milestone',
+        id: milestone.id,
+        count: milestone.count,
+        pointReward: milestone.pointReward || 0,
+        globalRadarLevel: milestone.globalRadarLevel || null,
+        badge: milestone.badge || null
+      });
+    }
+
+    const areaId = getPokemonAreaId(pokemonId);
+    if (areaId) {
+      const totals = getPokemonAreaTotals();
+      const areaCaughtCount = this.caughtCountByArea(areaId);
+      const totalCount = totals[areaId] || 0;
+      for (const milestone of AREA_CATCH_MILESTONES) {
+        const threshold = areaMilestoneThreshold(totalCount, milestone);
+        const id = areaMilestoneId(areaId, milestone.level);
+        if (areaCaughtCount < threshold || this.claimedAreaCatchMilestones.has(id)) {
+          continue;
+        }
+        this.claimedAreaCatchMilestones.add(id);
+        rewards.push({
+          type: 'area-catch-milestone',
+          id,
+          areaId,
+          level: milestone.level,
+          threshold,
+          pointReward: milestone.pointReward || 0,
+          notCaughtMultiplier: milestone.notCaughtMultiplier || null,
+          rareBoostLevel: milestone.rareBoostLevel || null,
+          badge: milestone.badge || null
+        });
+      }
+    }
+
+    const totalPointReward = rewards.reduce((sum, reward) => sum + (Number(reward.pointReward) || 0), 0);
+    if (totalPointReward > 0) {
+      this.evolutionItems.itemPoints += totalPointReward;
+    }
+
+    this.emit('pokedex', this.pokedexSnapshot());
+    return {
+      isNewCatch: true,
+      speciesId: pokemonId,
+      areaId,
+      rewards,
+      totalPointReward,
+      caughtCount
     };
   }
 
@@ -573,6 +883,51 @@ class AgentState extends EventEmitter {
       this.emit('pokedex', this.pokedexSnapshot());
     }
     return changed;
+  }
+
+  mergeCaughtPokemonIds(ids, firstCatchByPokemon = null, options = {}) {
+    let changed = false;
+    for (const pokemonId of normalizePokemonIdList(ids)) {
+      if (this.caughtPokemonIds.has(pokemonId)) {
+        continue;
+      }
+      this.caughtPokemonIds.add(pokemonId);
+      this.ensureSeenForCaughtPokemon(pokemonId, Date.now(), { source: 'restore', provider: 'restore' });
+      if (firstCatchByPokemon && firstCatchByPokemon[pokemonId]) {
+        this.firstCatchByPokemon[pokemonId] = { ...firstCatchByPokemon[pokemonId] };
+      } else if (!this.firstCatchByPokemon[pokemonId]) {
+        this.firstCatchByPokemon[pokemonId] = this.catchInfoForPokemon(pokemonId, Date.now(), { source: 'restore', provider: 'restore' });
+      }
+      changed = true;
+    }
+
+    if (options.claimLegacyMilestones) {
+      this.claimEligibleCatchMilestones();
+    }
+
+    if (changed) {
+      this.emit('pokedex', this.pokedexSnapshot());
+    }
+    return changed;
+  }
+
+  claimEligibleCatchMilestones() {
+    const caughtCount = this.caughtPokemonIds.size;
+    for (const milestone of CATCH_MILESTONES) {
+      if (caughtCount >= milestone.count) {
+        this.claimedCatchMilestones.add(milestone.id);
+      }
+    }
+    const totals = getPokemonAreaTotals();
+    for (const areaId of AREA_IDS) {
+      const areaCaughtCount = this.caughtCountByArea(areaId);
+      const totalCount = totals[areaId] || 0;
+      for (const milestone of AREA_CATCH_MILESTONES) {
+        if (areaCaughtCount >= areaMilestoneThreshold(totalCount, milestone)) {
+          this.claimedAreaCatchMilestones.add(areaMilestoneId(areaId, milestone.level));
+        }
+      }
+    }
   }
 
   refreshSeenPokemonFromAgents(options = {}) {
@@ -654,17 +1009,31 @@ class AgentState extends EventEmitter {
 
   pokedexSnapshot() {
     const seenPokemonIds = Array.from(this.seenPokemonIds).sort((a, b) => a - b);
+    const caughtPokemonIds = Array.from(this.caughtPokemonIds).sort((a, b) => a - b);
     const firstDiscoveryByPokemon = {};
     for (const pokemonId of seenPokemonIds) {
       if (this.firstDiscoveryByPokemon[pokemonId]) {
         firstDiscoveryByPokemon[pokemonId] = { ...this.firstDiscoveryByPokemon[pokemonId] };
       }
     }
+    const firstCatchByPokemon = {};
+    for (const pokemonId of caughtPokemonIds) {
+      if (this.firstCatchByPokemon[pokemonId]) {
+        firstCatchByPokemon[pokemonId] = { ...this.firstCatchByPokemon[pokemonId] };
+      }
+    }
     return {
       seenPokemonIds,
+      caughtPokemonIds,
       firstDiscoveryByPokemon,
+      firstCatchByPokemon,
+      seenCount: seenPokemonIds.length,
+      caughtCount: caughtPokemonIds.length,
       discoveredCount: seenPokemonIds.length,
-      totalCount: POKEDEX_MAX - POKEDEX_MIN + 1
+      totalCount: POKEDEX_MAX - POKEDEX_MIN + 1,
+      catchMilestones: this.catchMilestoneSnapshot(caughtPokemonIds.length),
+      areaCatchProgress: this.areaCatchProgressSnapshot(),
+      globalRadarLevel: this.globalRadarLevel()
     };
   }
 
@@ -728,7 +1097,11 @@ class AgentState extends EventEmitter {
     if (!normalizedId) {
       return null;
     }
-    return recruitPointCostForSpecies(normalizedId, this.seenPokemonIds.has(normalizedId));
+    return recruitPointCostForSpecies(
+      normalizedId,
+      this.seenPokemonIds.has(normalizedId),
+      this.caughtPokemonIds.has(normalizedId)
+    );
   }
 
   adoptOwnedPokemon(options = {}) {
@@ -748,7 +1121,8 @@ class AgentState extends EventEmitter {
     }
 
     const wasDiscovered = this.seenPokemonIds.has(speciesId);
-    const recruitCost = recruitPointCostForSpecies(speciesId, wasDiscovered);
+    const wasCaught = this.caughtPokemonIds.has(speciesId);
+    const recruitCost = recruitPointCostForSpecies(speciesId, wasDiscovered, wasCaught);
     if (this.evolutionItems.itemPoints < recruitCost.pointCost) {
       return {
         ok: false,
@@ -757,22 +1131,6 @@ class AgentState extends EventEmitter {
       };
     }
     this.evolutionItems.itemPoints -= recruitCost.pointCost;
-
-    if (!wasDiscovered) {
-      this.seenPokemonIds.add(speciesId);
-      this.firstDiscoveryByPokemon[speciesId] = {
-        agentId: null,
-        agentName: 'Recruit',
-        provider: 'recruit',
-        projectId: sourceAgent ? sourceAgent.projectId : null,
-        sessionId: sourceAgent ? sourceAgent.sessionId : null,
-        createdAt: now,
-        discoveredAt: now,
-        parentId: null,
-        parentName: null,
-        viaSubagent: false
-      };
-    }
 
     const shouldJoinParty = options.inParty !== false && options.boxOnly !== true && options.toBox !== true;
     const openSlot = shouldJoinParty ? this.firstOpenPartySlot() : null;
@@ -794,11 +1152,21 @@ class AgentState extends EventEmitter {
     }, now);
 
     this.ownedPokemon.push(owned);
+    const catchRewards = this.registerCaughtPokemon(speciesId, {
+      source: 'recruit',
+      provider: 'recruit',
+      sourceAgent,
+      ownedPokemonId: owned.id,
+      projectId: sourceAgent ? sourceAgent.projectId : null,
+      sessionId: sourceAgent ? sourceAgent.sessionId : null,
+      agentId: sourceAgent ? sourceAgent.agentId : null,
+      agentName: sourceAgent ? (sourceAgent.displayName || sourceAgent.subagentType || sourceAgent.agentId) : 'Recruit'
+    });
     this.compactPartySlots();
     this.ensurePokemonBoxes();
     this.lastUpdate = now;
     this.emit('update', this.snapshot());
-    return { ok: true, pokemon: cloneOwnedPokemon(owned), recruitCost };
+    return { ok: true, pokemon: cloneOwnedPokemon(owned), recruitCost, catchRewards };
   }
 
   ensurePokemonBoxes() {
@@ -1000,12 +1368,23 @@ class AgentState extends EventEmitter {
       return { ok: false, error: 'Required evolution item is missing.', candidates };
     }
 
+    const fromSpeciesId = pokemon.speciesId;
     pokemon.speciesId = selected.nextSpeciesId;
     pokemon.evolutionHeld = false;
     pokemon.updatedAt = Date.now();
+    const catchRewards = this.registerCaughtPokemon(pokemon.speciesId, {
+      source: 'evolution',
+      provider: 'evolution',
+      ownedPokemonId: pokemon.id,
+      fromSpeciesId,
+      projectId: pokemon.sourceProjectId || pokemon.assignedProjectId || null,
+      sessionId: pokemon.sourceSessionId || null,
+      agentId: pokemon.sourceAgentId || null,
+      agentName: 'Evolution'
+    });
     this.lastUpdate = pokemon.updatedAt;
     this.emit('update', this.snapshot());
-    return { ok: true, pokemon: cloneOwnedPokemon(pokemon) };
+    return { ok: true, pokemon: cloneOwnedPokemon(pokemon), catchRewards };
   }
 
   setEvolutionPickupItem(itemId) {
@@ -1861,7 +2240,12 @@ class AgentState extends EventEmitter {
       evolutionItems: evolutionItemSnapshot(this.evolutionItems),
       recruitPricing: {
         discovered: { ...RECRUIT_POINT_COSTS_DISCOVERED },
-        undiscovered: { ...RECRUIT_POINT_COSTS_UNDISCOVERED }
+        undiscovered: { ...RECRUIT_POINT_COSTS_UNDISCOVERED },
+        caught: Object.fromEntries(Object.entries(RECRUIT_POINT_COSTS_DISCOVERED).map(([tier, cost]) => [
+          tier,
+          Math.max(1, Math.round(cost * RECRUIT_ALREADY_CAUGHT_DISCOUNT))
+        ])),
+        caughtDiscount: RECRUIT_ALREADY_CAUGHT_DISCOUNT
       },
       projectTraining: { ...this.projectTraining },
       trainingEvents: this.trainingEvents.slice(-80)
@@ -1904,7 +2288,11 @@ class AgentState extends EventEmitter {
       savedAt: Date.now(),
       explorationAreaId: this.explorationAreaId,
       seenPokemonIds: Array.from(this.seenPokemonIds).sort((a, b) => a - b),
+      caughtPokemonIds: Array.from(this.caughtPokemonIds).sort((a, b) => a - b),
       firstDiscoveryByPokemon: { ...this.firstDiscoveryByPokemon },
+      firstCatchByPokemon: { ...this.firstCatchByPokemon },
+      claimedCatchMilestones: Array.from(this.claimedCatchMilestones).sort(),
+      claimedAreaCatchMilestones: Array.from(this.claimedAreaCatchMilestones).sort(),
       rateLimits: this.rateLimits,
       rateLimitsByProvider: cloneRateLimitsByProvider(this.rateLimitsByProvider),
       agents,
@@ -1922,6 +2310,10 @@ class AgentState extends EventEmitter {
     if (!data || data.version !== 1) return false;
 
     this.mergeSeenPokemonIds(data.seenPokemonIds, data.firstDiscoveryByPokemon);
+    const hasPersistedCaughtProgress = Array.isArray(data.caughtPokemonIds);
+    this.mergeCaughtPokemonIds(data.caughtPokemonIds, data.firstCatchByPokemon);
+    this.claimedCatchMilestones = normalizeStringSet(data.claimedCatchMilestones);
+    this.claimedAreaCatchMilestones = normalizeStringSet(data.claimedAreaCatchMilestones);
     const restorePokemonMax = inferLegacyPokemonCatalogMax(data);
     const discoveryByAgentId = discoveryPokemonIdsByAgent(data.firstDiscoveryByPokemon);
     const assignmentOptionsFor = (raw) => ({
@@ -1954,6 +2346,13 @@ class AgentState extends EventEmitter {
     this.ownedPokemon = Array.isArray(data.ownedPokemon)
       ? data.ownedPokemon.map((entry) => normalizeOwnedPokemon(entry, now)).filter(Boolean)
       : [];
+    if (!hasPersistedCaughtProgress && this.ownedPokemon.length > 0) {
+      this.mergeCaughtPokemonIds(
+        this.ownedPokemon.map((pokemon) => pokemon.speciesId),
+        null,
+        { claimLegacyMilestones: true }
+      );
+    }
     this.pokemonBoxes = Array.isArray(data.pokemonBoxes)
       ? data.pokemonBoxes.map((entry) => normalizePokemonBox(entry, now)).filter(Boolean)
       : [defaultPokemonBox(now)];
@@ -2047,7 +2446,11 @@ class AgentState extends EventEmitter {
     this.trainingEvents = [];
     this.recentEvents = [];
     this.seenPokemonIds = new Set();
+    this.caughtPokemonIds = new Set();
     this.firstDiscoveryByPokemon = {};
+    this.firstCatchByPokemon = {};
+    this.claimedCatchMilestones = new Set();
+    this.claimedAreaCatchMilestones = new Set();
     this.lastUpdate = now;
 
     for (const agent of preservedAgents) {

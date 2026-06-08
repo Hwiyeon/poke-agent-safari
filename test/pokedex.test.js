@@ -40,6 +40,74 @@ test('state tracks discovered pokemon in snapshot and serialization', () => {
   assert.equal(state.snapshot().pokedex.firstDiscoveryByPokemon[133].sessionId, 'sess-b');
 });
 
+test('state tracks caught pokemon separately from seen progress', () => {
+  const state = new AgentState({});
+  state.evolutionItems.itemPoints = 5000;
+  state.mergeSeenPokemonIds([25, 133]);
+
+  const result = state.adoptOwnedPokemon({ speciesId: 25, inParty: false });
+  const snapshot = state.snapshot();
+
+  assert.equal(result.ok, true);
+  assert.deepEqual(snapshot.pokedex.seenPokemonIds, [25, 133]);
+  assert.deepEqual(snapshot.pokedex.caughtPokemonIds, [25]);
+  assert.equal(snapshot.pokedex.seenCount, 2);
+  assert.equal(snapshot.pokedex.caughtCount, 1);
+  assert.equal(snapshot.pokedex.discoveredCount, 2);
+  assert.deepEqual(state.serialize().caughtPokemonIds, [25]);
+  assert.equal(snapshot.pokedex.firstCatchByPokemon[25].source, 'recruit');
+});
+
+test('state restore preserves caught pokemon and claimed catch milestones', () => {
+  const state = new AgentState({});
+  const restored = state.restore({
+    version: 1,
+    seenPokemonIds: [25, 133],
+    caughtPokemonIds: [25],
+    firstCatchByPokemon: {
+      25: { speciesId: 25, source: 'recruit', caughtAt: 100 }
+    },
+    claimedCatchMilestones: ['caught-1'],
+    claimedAreaCatchMilestones: ['forest:L1'],
+    agents: [],
+    boxedAgents: [],
+    subagentHistory: []
+  });
+  const snapshot = state.snapshot();
+
+  assert.equal(restored, true);
+  assert.deepEqual(snapshot.pokedex.caughtPokemonIds, [25]);
+  assert.equal(snapshot.pokedex.firstCatchByPokemon[25].caughtAt, 100);
+  assert.equal(snapshot.pokedex.catchMilestones.find((entry) => entry.id === 'caught-1').claimed, true);
+  assert.equal(state.serialize().claimedAreaCatchMilestones.includes('forest:L1'), true);
+});
+
+test('area catch milestones award points once', () => {
+  const state = new AgentState({});
+  const ruinIds = [];
+  for (let pokemonId = 1; pokemonId <= 649 && ruinIds.length < 3; pokemonId += 1) {
+    if (getPokemonAreaId(pokemonId) === 'ruin') {
+      ruinIds.push(pokemonId);
+    }
+  }
+  assert.equal(ruinIds.length, 3);
+
+  let last = null;
+  for (const pokemonId of ruinIds) {
+    last = state.registerCaughtPokemon(pokemonId, { source: 'test' });
+  }
+
+  const areaReward = last.rewards.find((reward) => reward.type === 'area-catch-milestone' && reward.areaId === 'ruin' && reward.level === 1);
+  assert.ok(areaReward);
+  assert.equal(areaReward.pointReward, 50);
+  assert.equal(state.snapshot().pokedex.areaCatchProgress.find((entry) => entry.areaId === 'ruin').milestones[0].claimed, true);
+
+  const before = state.snapshot().evolutionItems.itemPoints;
+  const duplicate = state.registerCaughtPokemon(ruinIds[0], { source: 'test' });
+  assert.equal(duplicate.isNewCatch, false);
+  assert.equal(state.snapshot().evolutionItems.itemPoints, before);
+});
+
 test('state restore backfills discovered pokemon from restored agents', () => {
   const state = new AgentState({
     resolvePokemonId(agentId) {

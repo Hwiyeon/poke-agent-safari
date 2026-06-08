@@ -122,6 +122,16 @@
           </div>
           <div class="pokedex-panel-actions">
             <label class="pokedex-sort-control">
+              <span data-i18n="pokedexFilter">Filter</span>
+              <select id="pokedex-filter" aria-label="Pokedex filter">
+                <option value="all" data-i18n="pokedexFilterAll">All</option>
+                <option value="unseen" data-i18n="pokedexFilterUnseen">Unseen</option>
+                <option value="seen" data-i18n="pokedexFilterSeen">Seen</option>
+                <option value="caught" data-i18n="pokedexFilterCaught">Caught</option>
+                <option value="seen-not-caught" data-i18n="pokedexFilterSeenNotCaught">Seen not caught</option>
+              </select>
+            </label>
+            <label class="pokedex-sort-control">
               <span data-i18n="pokedexSort">Sort</span>
               <select id="pokedex-sort" aria-label="Pokedex sort">
                 <option value="number" data-i18n="pokedexSortNumber">Number</option>
