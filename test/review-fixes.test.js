@@ -140,6 +140,132 @@ test('seen counter only increments for AGENT_SEEN events', () => {
   assert.equal(state.agents.get('agent-1').counters.seen, 1);
 });
 
+test('Claude metadata-only transcript lines do not create activity events', () => {
+  const context = {
+    filePath: '/tmp/demo-project/session-123.jsonl',
+    configuredRoot: '/tmp'
+  };
+  const metadataLines = [
+    { type: 'permission-mode', permissionMode: 'auto', sessionId: 'session-123' },
+    { type: 'mode', mode: 'normal', sessionId: 'session-123' },
+    { type: 'ai-title', aiTitle: 'Demo title', sessionId: 'session-123' },
+    { type: 'last-prompt', lastPrompt: 'old prompt', sessionId: 'session-123' }
+  ];
+
+  for (const line of metadataLines) {
+    assert.deepEqual(normalizeLine(JSON.stringify(line), context), []);
+  }
+});
+
+test('stale replay events do not wake sleeping agents', () => {
+  const state = new AgentState({
+    activeTimeoutSec: 60,
+    staleTimeoutSec: 300
+  });
+
+  state.applyEvent({
+    type: EVENT_TYPES.AGENT_SEEN,
+    agentId: 'agent-1',
+    ts: 100,
+    meta: {
+      projectId: 'project-a',
+      sessionId: 'session-a'
+    }
+  });
+  state.tick(61001);
+
+  const sleepingAgent = state.agents.get('agent-1');
+  assert.equal(sleepingAgent.lifecycle, 'sleeping');
+  assert.equal(sleepingAgent.status, 'Sleeping');
+
+  state.applyEvent({
+    type: EVENT_TYPES.ASSISTANT_OUTPUT,
+    agentId: 'agent-1',
+    ts: 100,
+    meta: {
+      projectId: 'project-a',
+      sessionId: 'session-a',
+      replay: true,
+      totalTokens: 500
+    }
+  });
+
+  const afterStaleReplay = state.agents.get('agent-1');
+  assert.equal(afterStaleReplay.lifecycle, 'sleeping');
+  assert.equal(afterStaleReplay.status, 'Sleeping');
+  assert.equal(afterStaleReplay.lastSeen, 100);
+
+  state.applyEvent({
+    type: EVENT_TYPES.ASSISTANT_OUTPUT,
+    agentId: 'agent-1',
+    ts: 70000,
+    meta: {
+      projectId: 'project-a',
+      sessionId: 'session-a',
+      replay: true,
+      totalTokens: 500
+    }
+  });
+
+  const afterNewReplay = state.agents.get('agent-1');
+  assert.equal(afterNewReplay.lifecycle, 'active');
+  assert.equal(afterNewReplay.status, 'Outputting');
+  assert.equal(afterNewReplay.lastSeen, 70000);
+});
+
+test('fresh replayed user queries wake sleeping agents', () => {
+  const state = new AgentState({
+    activeTimeoutSec: 60,
+    staleTimeoutSec: 300
+  });
+
+  state.applyEvent({
+    type: EVENT_TYPES.AGENT_SEEN,
+    agentId: 'session-a:main',
+    ts: 100,
+    meta: {
+      projectId: 'project-a',
+      sessionId: 'session-a'
+    }
+  });
+  state.tick(61001);
+  assert.equal(state.agents.get('session-a:main').status, 'Sleeping');
+
+  const events = normalizeLine(
+    JSON.stringify({
+      type: 'user',
+      projectId: 'project-a',
+      sessionId: 'session-a',
+      timestamp: '1970-01-01T00:01:10.000Z',
+      message: {
+        role: 'user',
+        content: 'resume this session'
+      }
+    }),
+    {
+      filePath: '/tmp/project-a/session-a.jsonl',
+      configuredRoot: '/tmp'
+    }
+  ).map((event) => ({
+    ...event,
+    meta: {
+      ...event.meta,
+      replay: true
+    }
+  }));
+
+  assert.deepEqual(events.map((event) => event.type), [EVENT_TYPES.AGENT_SEEN, EVENT_TYPES.USER_QUERY]);
+  for (const event of events) {
+    state.applyEvent(event);
+  }
+
+  const agent = state.agents.get('session-a:main');
+  assert.equal(agent.lifecycle, 'active');
+  assert.equal(agent.status, 'Thinking');
+  assert.equal(agent.lastSeen, 70000);
+  assert.equal(agent.lastUserQuery, 'resume this session');
+});
+
 test('subagents are removed on done without entering the box', () => {
   const state = new AgentState();
 

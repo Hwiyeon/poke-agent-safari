@@ -79,7 +79,13 @@ npm run setup
 npm run setup:cli
 ```
 
-`npm install`은 `poke-as` 명령 등록을 best-effort로 자동 실행합니다. `npm run setup`은 CLI shim을 다시 등록하고, `public/vendor/pokeapi-sprites` 아래에 sparse PokeAPI sprite checkout을 만들거나 갱신하고, 필요한 item sprite를 `public/item-sprites`로 복사하며, `data/map_assets`의 필수 지도 asset을 검증합니다.
+선택 사항: Claude/Codex runtime permission 정리만 다시 실행
+
+```bash
+npm run setup:permissions
+```
+
+`npm install`은 `poke-as` 명령 등록을 best-effort로 자동 실행합니다. `npm run setup`은 로컬 Claude/Codex runtime 경로 권한을 정리하고, CLI shim을 다시 등록하고, `public/vendor/pokeapi-sprites` 아래에 sparse PokeAPI sprite checkout을 만들거나 갱신하고, 필요한 item sprite를 `public/item-sprites`로 복사하며, `data/map_assets`의 필수 지도 asset을 검증합니다.
 
 Ubuntu 22.04에서는 Electron 실행을 위해 표준 데스크톱 runtime library가 필요할 수 있습니다.
 
