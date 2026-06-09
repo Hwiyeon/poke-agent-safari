@@ -59,6 +59,7 @@ function filterStateByProvider(data, provider) {
     caughtPokemonIds: data.caughtPokemonIds || [],
     firstDiscoveryByPokemon: data.firstDiscoveryByPokemon || {},
     firstCatchByPokemon: data.firstCatchByPokemon || {},
+    claimedSeenMilestones: data.claimedSeenMilestones || [],
     claimedCatchMilestones: data.claimedCatchMilestones || [],
     claimedAreaCatchMilestones: data.claimedAreaCatchMilestones || [],
     rateLimits: rateLimitsByProvider[provider] || null,
@@ -138,6 +139,10 @@ function mergeStateInto(base, incoming) {
     ...(base.claimedCatchMilestones || []),
     ...(incoming.claimedCatchMilestones || [])
   ])).sort();
+  base.claimedSeenMilestones = Array.from(new Set([
+    ...(base.claimedSeenMilestones || []),
+    ...(incoming.claimedSeenMilestones || [])
+  ])).sort();
   base.claimedAreaCatchMilestones = Array.from(new Set([
     ...(base.claimedAreaCatchMilestones || []),
     ...(incoming.claimedAreaCatchMilestones || [])
@@ -159,6 +164,7 @@ function emptyStateSnapshot() {
     caughtPokemonIds: [],
     firstDiscoveryByPokemon: {},
     firstCatchByPokemon: {},
+    claimedSeenMilestones: [],
     claimedCatchMilestones: [],
     claimedAreaCatchMilestones: [],
     rateLimits: null,
@@ -228,6 +234,10 @@ function migrateLegacyPokedex(persist) {
         merged.claimedCatchMilestones = Array.from(new Set([
           ...(merged.claimedCatchMilestones || []),
           ...(data.claimedCatchMilestones || [])
+        ])).sort();
+        merged.claimedSeenMilestones = Array.from(new Set([
+          ...(merged.claimedSeenMilestones || []),
+          ...(data.claimedSeenMilestones || [])
         ])).sort();
         merged.claimedAreaCatchMilestones = Array.from(new Set([
           ...(merged.claimedAreaCatchMilestones || []),
@@ -322,6 +332,9 @@ function savePokedex(state, persist) {
       caughtPokemonIds: pokedex.caughtPokemonIds,
       firstDiscoveryByPokemon: pokedex.firstDiscoveryByPokemon,
       firstCatchByPokemon: pokedex.firstCatchByPokemon,
+      claimedSeenMilestones: pokedex.seenMilestones
+        .filter((entry) => entry.claimed)
+        .map((entry) => entry.id),
       claimedCatchMilestones: pokedex.catchMilestones
         .filter((entry) => entry.claimed)
         .map((entry) => entry.id),
@@ -355,6 +368,9 @@ function loadPokedex(state, persist) {
     if (!data) return false;
     state.mergeSeenPokemonIds(data.seenPokemonIds, data.firstDiscoveryByPokemon);
     state.mergeCaughtPokemonIds(data.caughtPokemonIds, data.firstCatchByPokemon);
+    if (Array.isArray(data.claimedSeenMilestones)) {
+      state.claimedSeenMilestones = new Set(data.claimedSeenMilestones.filter((entry) => typeof entry === 'string' && entry));
+    }
     if (Array.isArray(data.claimedCatchMilestones)) {
       state.claimedCatchMilestones = new Set(data.claimedCatchMilestones.filter((entry) => typeof entry === 'string' && entry));
     }

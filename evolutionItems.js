@@ -78,6 +78,27 @@ const ITEM_SELL_POINT_VALUE = 10;
 const ITEM_BUY_POINT_COST = null;
 const ITEM_CLAIM_TICKET_COST = 20;
 const MAX_PULL_HISTORY = 40;
+const PULL_SUCCESS_REWARD_POOL = Object.freeze([
+  Object.freeze({ type: 'item', weight: 80 }),
+  Object.freeze({ type: 'ticket', minTier: 1, weight: 10 }),
+  Object.freeze({ type: 'ticket', minTier: 2, weight: 6 }),
+  Object.freeze({ type: 'ticket', minTier: 3, weight: 3 }),
+  Object.freeze({ type: 'ticket', minTier: 4, weight: 1 })
+]);
+const TICKET_TIER_LABELS = Object.freeze({
+  1: 'Common+',
+  2: 'Uncommon+',
+  3: 'Rare+',
+  4: 'Very Rare+',
+  5: 'Legend'
+});
+const RECRUIT_TICKET_POOL = Object.freeze([
+  Object.freeze({ id: 'recruit-ticket-common', nameEn: 'Common+ Recruit Ticket', nameKo: 'Common+ 영입 티켓', minTier: 1 }),
+  Object.freeze({ id: 'recruit-ticket-uncommon', nameEn: 'Uncommon+ Recruit Ticket', nameKo: 'Uncommon+ 영입 티켓', minTier: 2 }),
+  Object.freeze({ id: 'recruit-ticket-rare', nameEn: 'Rare+ Recruit Ticket', nameKo: 'Rare+ 영입 티켓', minTier: 3 }),
+  Object.freeze({ id: 'recruit-ticket-very-rare', nameEn: 'Very Rare+ Recruit Ticket', nameKo: 'Very Rare+ 영입 티켓', minTier: 4 }),
+  Object.freeze({ id: 'recruit-ticket-legend', nameEn: 'Legend Recruit Ticket', nameKo: 'Legend 영입 티켓', minTier: 5 })
+]);
 
 let cachedEvolutionRules = null;
 
@@ -85,8 +106,29 @@ function isEvolutionItemId(itemId) {
   return EVOLUTION_ITEM_IDS.has(String(itemId || ''));
 }
 
+const RECRUIT_TICKET_IDS = new Set(RECRUIT_TICKET_POOL.map((item) => item.id));
+const INVENTORY_ITEM_IDS = new Set([
+  ...EVOLUTION_ITEM_POOL.map((item) => item.id),
+  ...RECRUIT_TICKET_POOL.map((item) => item.id)
+]);
+
+function isRecruitTicketItemId(itemId) {
+  return RECRUIT_TICKET_IDS.has(String(itemId || ''));
+}
+
+function isInventoryItemId(itemId) {
+  return INVENTORY_ITEM_IDS.has(String(itemId || ''));
+}
+
+function inventoryItemById(itemId) {
+  const id = String(itemId || '');
+  return EVOLUTION_ITEM_POOL.find((item) => item.id === id) ||
+    RECRUIT_TICKET_POOL.find((item) => item.id === id) ||
+    null;
+}
+
 function itemNameKo(itemId) {
-  const item = EVOLUTION_ITEM_POOL.find((candidate) => candidate.id === itemId);
+  const item = inventoryItemById(itemId);
   return item ? item.nameKo : String(itemId || '');
 }
 
@@ -101,7 +143,7 @@ function normalizeInventory(rawInventory) {
     return inventory;
   }
   for (const [itemId, count] of Object.entries(rawInventory)) {
-    if (!isEvolutionItemId(itemId)) continue;
+    if (!isInventoryItemId(itemId)) continue;
     const normalizedCount = clampNonNegativeInteger(count);
     if (normalizedCount > 0) {
       inventory[itemId] = normalizedCount;
@@ -122,6 +164,8 @@ function normalizePullHistory(rawHistory) {
       createdAt: Number.isFinite(Number(entry.createdAt)) ? Number(entry.createdAt) : Date.now(),
       success: !!entry.success,
       itemId: isEvolutionItemId(entry.itemId) ? entry.itemId : null,
+      rewardType: entry.rewardType === 'ticket' ? 'ticket' : 'item',
+      ticketMinTier: normalizeTicketMinTier(entry.ticketMinTier),
       source: entry.source === 'ticket' ? 'ticket' : 'points',
       pickupItemId: isEvolutionItemId(entry.pickupItemId) ? entry.pickupItemId : null
     }));
@@ -167,7 +211,7 @@ function addEffectiveRewardTokens(state, tokens) {
 }
 
 function addInventoryItem(state, itemId, count = 1) {
-  if (!isEvolutionItemId(itemId)) {
+  if (!isInventoryItemId(itemId)) {
     return false;
   }
   const amount = clampNonNegativeInteger(count);
@@ -178,8 +222,40 @@ function addInventoryItem(state, itemId, count = 1) {
   return true;
 }
 
+function normalizeTicketMinTier(value) {
+  const tier = Math.floor(Number(value) || 0);
+  return tier >= 1 && tier <= 5 ? tier : null;
+}
+
+function ticketRewardForMinTier(minTier, count = 1) {
+  const normalizedMinTier = normalizeTicketMinTier(minTier);
+  if (!normalizedMinTier) {
+    return null;
+  }
+  return {
+    type: 'random-recruit-ticket',
+    minTier: normalizedMinTier,
+    count: Math.max(1, clampNonNegativeInteger(count) || 1),
+    label: TICKET_TIER_LABELS[normalizedMinTier] || 'Common+'
+  };
+}
+
+function recruitTicketItemForMinTier(minTier) {
+  const normalizedMinTier = normalizeTicketMinTier(minTier);
+  if (!normalizedMinTier) {
+    return null;
+  }
+  const item = RECRUIT_TICKET_POOL.find((candidate) => candidate.minTier === normalizedMinTier);
+  return item ? { ...item, label: TICKET_TIER_LABELS[normalizedMinTier] || 'Common+' } : null;
+}
+
+function ticketRewardForItemId(itemId) {
+  const item = RECRUIT_TICKET_POOL.find((candidate) => candidate.id === String(itemId || ''));
+  return item ? ticketRewardForMinTier(item.minTier, 1) : null;
+}
+
 function removeInventoryItem(state, itemId, count = 1) {
-  if (!isEvolutionItemId(itemId)) {
+  if (!isInventoryItemId(itemId)) {
     return false;
   }
   const amount = clampNonNegativeInteger(count);
@@ -199,6 +275,8 @@ function pushPullHistory(state, entry) {
     createdAt: entry.createdAt || Date.now(),
     success: !!entry.success,
     itemId: entry.itemId || null,
+    rewardType: entry.rewardType === 'ticket' ? 'ticket' : 'item',
+    ticketMinTier: normalizeTicketMinTier(entry.ticketMinTier),
     source: entry.source === 'ticket' ? 'ticket' : 'points',
     pickupItemId: entry.pickupItemId || null
   });
@@ -238,6 +316,18 @@ function pickWeightedItem(pool, rng, options = {}) {
   return weightedPool[weightedPool.length - 1].id;
 }
 
+function pickPullSuccessReward(rng) {
+  const totalWeight = PULL_SUCCESS_REWARD_POOL.reduce((sum, entry) => sum + entry.weight, 0);
+  let roll = Math.max(0, Math.min(0.999999999, Number(rng()) || 0)) * totalWeight;
+  for (const entry of PULL_SUCCESS_REWARD_POOL) {
+    if (roll < entry.weight) {
+      return entry;
+    }
+    roll -= entry.weight;
+  }
+  return PULL_SUCCESS_REWARD_POOL[PULL_SUCCESS_REWARD_POOL.length - 1];
+}
+
 function pullEvolutionItem(state, options = {}) {
   const source = 'points';
   if (state.itemPoints < RANDOM_PULL_POINT_COST) {
@@ -255,9 +345,25 @@ function pullEvolutionItem(state, options = {}) {
     return { ok: true, success: false, source, itemId: null };
   }
 
-  let itemId = null;
+  const rewardEntry = pickPullSuccessReward(rng);
+  if (rewardEntry.type === 'ticket') {
+    const ticketReward = ticketRewardForMinTier(rewardEntry.minTier, 1);
+    const ticketItem = recruitTicketItemForMinTier(rewardEntry.minTier);
+    if (ticketItem) {
+      addInventoryItem(state, ticketItem.id, 1);
+    }
+    pushPullHistory(state, {
+      success: true,
+      rewardType: 'ticket',
+      ticketMinTier: rewardEntry.minTier,
+      source,
+      pickupItemId: state.pickupItemId
+    });
+    return { ok: true, success: true, source, rewardType: 'ticket', itemId: ticketItem ? ticketItem.id : null, ticketReward };
+  }
+
   const pickupItemId = state.pickupItemId;
-  itemId = pickWeightedItem(
+  const itemId = pickWeightedItem(
     EVOLUTION_ITEM_POOL.map((item) => item.id),
     rng,
     { pickupItemId }
@@ -267,8 +373,8 @@ function pullEvolutionItem(state, options = {}) {
   if (pickupItemId && itemId !== pickupItemId) {
     state.targetTickets += 1;
   }
-  pushPullHistory(state, { success: true, itemId, source, pickupItemId });
-  return { ok: true, success: true, source, itemId };
+  pushPullHistory(state, { success: true, rewardType: 'item', itemId, source, pickupItemId });
+  return { ok: true, success: true, source, rewardType: 'item', itemId };
 }
 
 function buyEvolutionItem(state, itemId, currency = 'points') {
@@ -288,6 +394,9 @@ function buyEvolutionItem(state, itemId, currency = 'points') {
 }
 
 function sellEvolutionItem(state, itemId) {
+  if (!isEvolutionItemId(itemId)) {
+    return { ok: false, error: 'Item cannot be sold.' };
+  }
   if (!removeInventoryItem(state, itemId, 1)) {
     return { ok: false, error: 'Item is not in inventory.' };
   }
@@ -328,11 +437,17 @@ function evolutionItemSnapshot(state) {
   return {
     ...normalized,
     pool: EVOLUTION_ITEM_POOL.map((item) => ({ ...item, weight: itemWeight(item.id) })),
+    recruitTickets: RECRUIT_TICKET_POOL.map((item) => ({
+      ...item,
+      label: TICKET_TIER_LABELS[item.minTier] || item.nameEn
+    })),
     itemWeightTotal: EVOLUTION_ITEM_WEIGHT_TOTAL,
     pickupWeightMultiplier: PICKUP_WEIGHT_MULTIPLIER,
     tokenPerItemPoint: TOKEN_PER_ITEM_POINT,
     randomPullPointCost: RANDOM_PULL_POINT_COST,
+    pullSuccessRate: PULL_SUCCESS_RATE,
     pullFailurePointRefund: PULL_FAILURE_POINT_REFUND,
+    pullSuccessRewardPool: PULL_SUCCESS_REWARD_POOL.map((entry) => ({ ...entry })),
     itemSellPointValue: ITEM_SELL_POINT_VALUE,
     itemBuyPointCost: ITEM_BUY_POINT_COST,
     itemBuyPickupPointCost: ITEM_CLAIM_TICKET_COST,
@@ -346,13 +461,22 @@ module.exports = {
   EVOLUTION_ITEM_WEIGHT_TOTAL,
   PICKUP_WEIGHT_MULTIPLIER,
   TOKEN_PER_ITEM_POINT,
+  PULL_SUCCESS_RATE,
   RANDOM_PULL_POINT_COST,
   PULL_FAILURE_POINT_REFUND,
   ITEM_SELL_POINT_VALUE,
   ITEM_BUY_POINT_COST,
   ITEM_CLAIM_TICKET_COST,
   ITEM_BUY_PICKUP_POINT_COST: ITEM_CLAIM_TICKET_COST,
+  PULL_SUCCESS_REWARD_POOL,
+  TICKET_TIER_LABELS,
+  RECRUIT_TICKET_POOL,
+  ticketRewardForMinTier,
+  recruitTicketItemForMinTier,
+  ticketRewardForItemId,
   isEvolutionItemId,
+  isRecruitTicketItemId,
+  isInventoryItemId,
   itemNameKo,
   normalizeEvolutionItemState,
   cloneEvolutionItemState,

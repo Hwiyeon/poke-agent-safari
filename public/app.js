@@ -67,15 +67,12 @@
       pokedexSortNumber: 'Number',
       pokedexSortArea: 'Area',
       pokedexSortRarity: 'Rarity',
-      pokedexFilter: 'Filter',
-      pokedexFilterAll: 'All',
-      pokedexFilterUnseen: 'Unseen',
-      pokedexFilterSeen: 'Seen',
-      pokedexFilterCaught: 'Caught',
-      pokedexFilterSeenNotCaught: 'Seen not caught',
       pokedexEntries: 'Entries',
       pokedexRewards: 'Rewards',
       pokedexRewardsReady: '{count} ready',
+      pokedexRewardStage: 'Reward stage {level}',
+      pokedexRewardProgressFull: '{caught} caught out of {total}',
+      pokedexFeaturedReward: 'Featured reward',
       pokedexNationalDex: 'National Dex',
       pokedexAreaDex: 'Area Dex',
       pokedexNextReward: 'Next reward',
@@ -84,9 +81,16 @@
       pokedexRewardClaimed: 'Claimed',
       pokedexRewardLocked: 'Locked',
       pokedexRewardClaim: 'Claim',
+      pokedexRewardClaiming: 'Claiming...',
       pokedexCaughtMilestone: 'Caught {count}',
+      pokedexSeenMilestone: 'Seen {count}',
+      pokedexSeenPass: 'Encounter Pass',
+      pokedexOwnedPass: 'Recruit Pass',
+      pokedexTicketReward: '{ticket} recruit ticket x{count}',
+      pokedexRecruitTicketCount: 'Recruit ticket x{count}',
       pokedexAreaMilestone: 'Lv.{level} - {percent}%',
       pokedexRewardProgress: '{caught} / {target} caught',
+      pokedexSeenRewardProgress: '{seen} / {target} seen',
       pokedexAreaProgress: '{caught} / {total} caught',
       pokedexPointsReward: '+{points} pts',
       pokedexGlobalRadar: 'Global radar Lv.{level}',
@@ -95,6 +99,7 @@
       pokedexRareBoost: 'Rare boost Lv.{level}',
       pokedexBadgeReward: 'Badge: {badge}',
       pokedexClaimedReward: 'Claimed {reward}.',
+      pokedexClaimResult: 'Pokedex Reward',
       pokedexRewardClaimFailed: 'Reward claim failed.',
       selectedArea: 'selected area',
       agentsOutsideArea: 'Agents outside {area}',
@@ -119,10 +124,13 @@
       itemRules: 'Item Rules',
       evolutionItemWallet: 'Evolution item wallet',
       itemPointProgress: 'Item point progress',
+      evolutionItems: 'Evolution Items',
+      recruitTickets: 'Recruit Tickets',
       points: 'Points',
       draw: 'Draw',
       target: 'Target',
       tickets: 'Tickets',
+      use: 'Use',
       sell: 'Sell',
       nextPoint: 'Next point',
       claimTarget: 'Claim Target',
@@ -147,10 +155,19 @@
       consumes: 'Consumes',
       actionFailed: 'Action failed.',
       itemRulesPoints: '{tokens} total tokens = 1 point. Cached input tokens count.',
-      itemRulesDraw: 'Costs {cost} pts. Success rate is 30%.',
-      itemRulesTarget: 'Successful draws have a 15% chance to hit the selected target item.',
-      itemRulesTickets: 'If a successful targeted draw misses the target, target ticket +1. Spend {cost} tickets to claim the target.',
+      itemRulesDraw: 'Costs {cost} pts. Success rate is 30%; successful pulls are 80% items and 20% recruit tickets.',
+      itemRulesTarget: 'Target only applies when a successful pull produces an evolution item.',
+      itemRulesTickets: 'If a successful item pull misses the target item, target ticket +1. Spend {cost} tickets to claim the target.',
       itemRulesSell: 'Sell gives +{value} pts. Point buying is disabled.',
+      itemRulesChanceTable: 'Draw chances',
+      itemRulesReward: 'Reward',
+      itemRulesChance: 'Chance',
+      itemRulesChanceOpen: 'Open chance table',
+      itemRulesFailure: 'No reward',
+      itemRulesEvolutionItemReward: 'Evolution item',
+      itemRulesEvolutionItemTotal: 'Evolution items total',
+      itemRulesTicketReward: '{ticket} recruit ticket',
+      itemRulesTargetMark: 'Target',
       noTarget: 'No target',
       noEvolutionItems: 'No evolution items available.',
       noDiscoveredPokemon: 'No discovered Pokemon available yet.',
@@ -191,9 +208,14 @@
       requestSent: 'Request was sent.',
       noItemThisTime: 'No item this time.',
       youDrewItem: 'You drew {item}.',
+      youDrewTicket: 'You drew a {ticket} recruit ticket.',
       boughtItem: 'Bought {item}.',
       claimedItem: 'Claimed {item}.',
       soldItem: 'Sold {item}. +{value} pts gained.',
+      useTicketPrompt: 'Use {ticket} recruit ticket?',
+      usedTicket: '{pokemon} joined from {ticket} recruit ticket.',
+      ticketRecruitedPokemon: 'Recruited {pokemon}.',
+      pointsEarned: '+{points} pts earned',
       evolutionRequestSent: 'Evolution request was sent.',
       evolvedInto: '{from} evolved into {to}.',
       evolved: '{from} evolved.',
@@ -332,6 +354,40 @@
       pokedexSortNumber: '번호순',
       pokedexSortArea: '지역순',
       pokedexSortRarity: '레어도 순',
+      pokedexEntries: '도감 목록',
+      pokedexRewards: '도감 보상',
+      pokedexRewardsReady: '{count}개 수령 가능',
+      pokedexRewardStage: '달성 단계 {level}',
+      pokedexRewardProgressFull: '{total}마리 중 {caught}마리 포획',
+      pokedexFeaturedReward: '주요 보상',
+      pokedexNationalDex: '전국 도감',
+      pokedexAreaDex: '지역 도감',
+      pokedexNextReward: '다음 보상',
+      pokedexNoPendingReward: '남은 보상 없음',
+      pokedexRewardReady: '수령 가능',
+      pokedexRewardClaimed: '수령 완료',
+      pokedexRewardLocked: '미달성',
+      pokedexRewardClaim: '수령',
+      pokedexRewardClaiming: '수령 중...',
+      pokedexCaughtMilestone: '{count}마리 포획',
+      pokedexSeenMilestone: '{count}마리 발견',
+      pokedexSeenPass: '발견 패스',
+      pokedexOwnedPass: '영입 패스',
+      pokedexTicketReward: '{ticket} 영입 티켓 x{count}',
+      pokedexRecruitTicketCount: '영입 티켓 x{count}',
+      pokedexAreaMilestone: 'Lv.{level} - {percent}%',
+      pokedexRewardProgress: '{caught} / {target} 포획',
+      pokedexSeenRewardProgress: '{seen} / {target} 발견',
+      pokedexAreaProgress: '{caught} / {total} 포획',
+      pokedexPointsReward: '+{points} pts',
+      pokedexGlobalRadar: '전역 탐색 보정 Lv.{level}',
+      pokedexAreaBoost: '지역 보너스',
+      pokedexNotCaughtBoost: '미포획 등장 x{multiplier}',
+      pokedexRareBoost: '레어도 보정 Lv.{level}',
+      pokedexBadgeReward: '배지: {badge}',
+      pokedexClaimedReward: '{reward} 보상을 수령했습니다.',
+      pokedexClaimResult: '도감 보상',
+      pokedexRewardClaimFailed: '보상 수령에 실패했습니다.',
       selectedArea: '선택 지역',
       agentsOutsideArea: 'Agents outside {area}',
       myPokemon: '내 포켓몬',
@@ -355,10 +411,13 @@
       itemRules: '아이템 규칙',
       evolutionItemWallet: '진화 아이템 지갑',
       itemPointProgress: '아이템 포인트 진행도',
+      evolutionItems: '진화 아이템',
+      recruitTickets: '영입 티켓',
       points: '포인트',
       draw: '뽑기',
       target: '타깃',
       tickets: '티켓',
+      use: '사용',
       sell: '판매',
       nextPoint: '다음 포인트',
       claimTarget: '타깃 확정',
@@ -383,10 +442,19 @@
       consumes: '소모',
       actionFailed: '작업에 실패했습니다.',
       itemRulesPoints: '{tokens} total tokens마다 1 point를 얻습니다. 캐시된 입력 토큰도 포함됩니다.',
-      itemRulesDraw: '{cost} pts를 사용합니다. 성공률은 30%입니다.',
-      itemRulesTarget: '뽑기 성공 시 선택한 타깃 아이템이 나올 확률은 15%입니다.',
+      itemRulesDraw: '{cost} pts를 사용합니다. 성공률은 30%, 성공 보상은 진화 아이템 80% / 영입 티켓 20%입니다.',
+      itemRulesTarget: '타깃은 뽑기 성공 보상이 진화 아이템일 때만 적용됩니다.',
       itemRulesTickets: '타깃 뽑기에 성공했지만 타깃이 아니면 티켓 +1. {cost} tickets로 타깃을 확정 획득합니다.',
       itemRulesSell: '판매하면 +{value} pts를 얻습니다. 일반 포인트 구매는 비활성화되어 있습니다.',
+      itemRulesChanceTable: '뽑기 확률표',
+      itemRulesReward: '보상',
+      itemRulesChance: '확률',
+      itemRulesChanceOpen: '확률표 보기',
+      itemRulesFailure: '보상 없음',
+      itemRulesEvolutionItemReward: '진화 아이템',
+      itemRulesEvolutionItemTotal: '진화 아이템 전체',
+      itemRulesTicketReward: '{ticket} 영입 티켓',
+      itemRulesTargetMark: '타깃',
       noTarget: '타깃 없음',
       noEvolutionItems: '사용 가능한 진화 아이템이 없습니다.',
       noDiscoveredPokemon: '아직 영입 가능한 발견 포켓몬이 없습니다.',
@@ -397,10 +465,17 @@
       dragToArrange: '드래그해서 정렬',
       boxedCount: '박스 {count}마리',
       discoveredCount: '{count} / {total} 발견',
+      pokedexProgressFull: '본 포켓몬 {seen} / {total} | 잡은 포켓몬 {caught} / {total}',
       availableCount: '{count}마리 가능',
       availablePokedexCount: '{count} / {total} 가능',
       seen: '만남',
+      unseen: '못 봄',
+      caught: '잡음',
+      seenNotCaught: '봤지만 안 잡음',
       newEntryShort: '신규',
+      firstCatchBonus: '첫 포획 보너스',
+      catchReward: '포획 보상',
+      alreadyCaughtDiscount: '포획 할인',
       pokedexStatus: '\uc0c1\ud0dc',
       pokedexStatusAll: '\uc804\uccb4',
       pokedexStatusUndiscovered: '\ubbf8\ubc1c\uacac',
@@ -420,9 +495,14 @@
       requestSent: '요청을 보냈습니다.',
       noItemThisTime: '이번에는 아이템이 나오지 않았습니다.',
       youDrewItem: '{item} 획득!',
+      youDrewTicket: '{ticket} 영입 티켓 획득!',
       boughtItem: '{item} 구매 완료.',
       claimedItem: '{item} 확정 획득 완료.',
       soldItem: '{item} 판매 완료. +{value} pts 획득.',
+      useTicketPrompt: '{ticket} 영입 티켓을 사용할까요?',
+      usedTicket: '{ticket} 영입 티켓에서 {pokemon}이(가) 나왔습니다.',
+      ticketRecruitedPokemon: '{pokemon}을(를) 영입했습니다.',
+      pointsEarned: '+{points} pts 획득',
       evolutionRequestSent: '진화 요청을 보냈습니다.',
       evolvedInto: '{from} -> {to} 진화 완료.',
       evolved: '{from} 진화 완료.',
@@ -554,6 +634,49 @@
     return String(text).replace(/\{([a-zA-Z0-9_]+)\}/g, function (_, name) {
       return params && params[name] !== undefined ? String(params[name]) : '';
     });
+  }
+
+  function hasHangulFinalConsonant(value) {
+    var chars = Array.from(String(value || '').trim());
+    if (chars.length === 0) return false;
+    var code = chars[chars.length - 1].charCodeAt(0);
+    if (code < 0xAC00 || code > 0xD7A3) return false;
+    return ((code - 0xAC00) % 28) !== 0;
+  }
+
+  function objectParticleKo(value) {
+    return hasHangulFinalConsonant(value) ? '을' : '를';
+  }
+
+  function subjectParticleKo(value) {
+    return hasHangulFinalConsonant(value) ? '이' : '가';
+  }
+
+  function directionParticleKo(value) {
+    var chars = Array.from(String(value || '').trim());
+    if (chars.length === 0) return '로';
+    var code = chars[chars.length - 1].charCodeAt(0);
+    if (code < 0xAC00 || code > 0xD7A3) return '로';
+    var finalIndex = (code - 0xAC00) % 28;
+    return finalIndex !== 0 && finalIndex !== 8 ? '으로' : '로';
+  }
+
+  function recruitedPokemonText(pokemonName) {
+    if (currentLanguage() === 'ko') {
+      return pokemonName + objectParticleKo(pokemonName) + ' 영입했습니다.';
+    }
+    return t('ticketRecruitedPokemon', { pokemon: pokemonName });
+  }
+
+  function ticketRecruitedPokemonText(pokemonName) {
+    return recruitedPokemonText(pokemonName);
+  }
+
+  function evolvedPokemonText(beforeName, afterName) {
+    if (currentLanguage() === 'ko' && afterName) {
+      return beforeName + subjectParticleKo(beforeName) + ' ' + afterName + directionParticleKo(afterName) + ' 진화했습니다.';
+    }
+    return afterName ? t('evolvedInto', { from: beforeName, to: afterName }) : t('evolved', { from: beforeName });
   }
 
   function applyStaticTranslations(root) {
@@ -694,6 +817,8 @@
         path = '/api/items/buy';
       } else if (action === 'sell') {
         path = '/api/items/sell';
+      } else if (action === 'use-ticket') {
+        path = '/api/items/use-ticket';
       }
       if (!path) return Promise.resolve({ ok: false, status: 400 });
       return fetch(path, {
@@ -750,6 +875,13 @@
   const PROMO_BOX_STORAGE_KEY = 'poke-agents-promo-box-v1';
   const PROMO_EXPORT_SCALE = 2;
   const PROMO_STATUSES = ['Idle', 'Thinking', 'Tool-Running', 'Outputting', 'Waiting', 'Sleeping'];
+  const RECRUIT_TICKET_ITEM_IDS_BY_MIN_TIER = Object.freeze({
+    1: 'recruit-ticket-common',
+    2: 'recruit-ticket-uncommon',
+    3: 'recruit-ticket-rare',
+    4: 'recruit-ticket-very-rare',
+    5: 'recruit-ticket-legend'
+  });
 
   // Pokeball spawn/despawn animation constants
   const SPAWN_DURATION_MS = 900;   // total spawn animation
@@ -1041,7 +1173,6 @@
   const pokedexTabRewardsEl = document.getElementById('pokedex-tab-rewards');
   const pokedexRewardCountEl = document.getElementById('pokedex-reward-count');
   const pokedexGridEl = document.getElementById('pokedex-grid');
-  const pokedexFilterEl = document.getElementById('pokedex-filter');
   const pokedexCategoryControlEl = document.getElementById('pokedex-category-control');
   const pokedexSortEl = document.getElementById('pokedex-sort');
   const pokedexLangButtonEl = document.getElementById('pokedex-lang-button');
@@ -1056,13 +1187,13 @@
     ownedRecruitOpen: false,
     ownedRecruitMode: 'available',
     selectedEvolutionItemId: null,
+    ownedItemChanceOpen: false,
     draggedOwnedId: null,
     ownedBoxPopoverTimer: null,
     boxHistoryOpen: false,
     subhistoryOpen: false,
     subhistoryParentId: null,
     pokedexSort: 'number',
-    pokedexFilter: 'all',
     pokedexCategory: 'all',
     pokedexTab: 'entries',
     pokedexLanguage: activeUiLanguage,
@@ -2140,26 +2271,8 @@
     return value === 'area' || value === 'rarity' ? value : 'number';
   }
 
-  function normalizePokedexFilter(value) {
-    if (value === 'unseen' || value === 'seen' || value === 'caught' || value === 'seen-not-caught') {
-      return value;
-    }
-    return 'all';
-  }
-
   function normalizePokedexTab(value) {
     return value === 'rewards' ? 'rewards' : 'entries';
-  }
-
-  function pokemonMatchesPokedexFilter(pokemonId) {
-    var filter = normalizePokedexFilter(uiState.pokedexFilter);
-    if (filter === 'all') return true;
-    var status = pokedexStatusForPokemon(pokemonId);
-    if (filter === 'unseen') return status === 'undiscovered';
-    if (filter === 'seen') return status === 'discovered' || status === 'caught';
-    if (filter === 'caught') return status === 'caught';
-    if (filter === 'seen-not-caught') return status === 'discovered';
-    return true;
   }
 
   function pokemonIdCompare(a, b) {
@@ -2255,19 +2368,10 @@
   function sortedPokedexPokemonIds() {
     var ids = [];
     for (var pokemonId = POKEDEX_MIN; pokemonId <= POKEDEX_MAX; pokemonId++) {
-      if (pokemonMatchesPokedexFilter(pokemonId)) {
-        ids.push(pokemonId);
-      }
+      ids.push(pokemonId);
     }
     ids.sort(comparePokedexPokemon);
     return ids;
-  }
-
-  function syncPokedexFilterControl() {
-    if (!pokedexFilterEl) return;
-    uiState.pokedexFilter = normalizePokedexFilter(uiState.pokedexFilter);
-    pokedexFilterEl.value = uiState.pokedexFilter;
-    pokedexFilterEl.setAttribute('aria-label', t('pokedexFilter'));
   }
 
   function syncPokedexSortControl() {
@@ -2275,18 +2379,6 @@
     uiState.pokedexSort = normalizePokedexSort(uiState.pokedexSort);
     pokedexSortEl.value = uiState.pokedexSort;
     pokedexSortEl.setAttribute('aria-label', t('pokedexSort'));
-  }
-
-  function setPokedexFilter(filter) {
-    var nextFilter = normalizePokedexFilter(filter);
-    if (uiState.pokedexFilter === nextFilter) {
-      syncPokedexFilterControl();
-      return;
-    }
-    uiState.pokedexFilter = nextFilter;
-    if (pokedexGridEl) pokedexGridEl.scrollTop = 0;
-    hidePokedexTooltip();
-    renderPokedex();
   }
 
   function setPokedexSort(sort) {
@@ -2314,9 +2406,7 @@
     }
     if (pokedexEntriesPanelEl) pokedexEntriesPanelEl.hidden = isRewards;
     if (pokedexRewardsPanelEl) pokedexRewardsPanelEl.hidden = !isRewards;
-    var filterControl = pokedexFilterEl && pokedexFilterEl.closest ? pokedexFilterEl.closest('.pokedex-sort-control') : null;
     var sortControl = pokedexSortEl && pokedexSortEl.closest ? pokedexSortEl.closest('.pokedex-sort-control') : null;
-    if (filterControl) filterControl.hidden = isRewards;
     if (sortControl) sortControl.hidden = isRewards;
   }
 
@@ -2350,11 +2440,27 @@
       .replace(/\b\w/g, function (match) { return match.toUpperCase(); });
   }
 
-  function pokedexRewardEffects(milestone) {
+  function pokedexTicketRewardLabel(ticketReward) {
+    if (!ticketReward) return '';
+    return ticketReward.label || 'Common+';
+  }
+
+  function pokedexTicketItemId(ticketReward) {
+    return recruitTicketItemIdForReward(ticketReward);
+  }
+
+  function pokedexRewardEffects(milestone, options) {
     var effects = [];
     if (!milestone) return effects;
+    var includePoints = !options || options.includePoints !== false;
     var points = Number(milestone.pointReward) || 0;
-    if (points > 0) effects.push(t('pokedexPointsReward', { points: formatTokenCount(points) }));
+    if (includePoints && points > 0) effects.push(t('pokedexPointsReward', { points: formatTokenCount(points) }));
+    if (milestone.ticketReward) {
+      effects.push(t('pokedexTicketReward', {
+        ticket: pokedexTicketRewardLabel(milestone.ticketReward),
+        count: Number(milestone.ticketReward.count) || 1
+      }));
+    }
     if (milestone.globalRadarLevel) effects.push(t('pokedexGlobalRadar', { level: milestone.globalRadarLevel }));
     if (milestone.notCaughtMultiplier) effects.push(t('pokedexNotCaughtBoost', { multiplier: milestone.notCaughtMultiplier }));
     if (milestone.rareBoostLevel) effects.push(t('pokedexRareBoost', { level: milestone.rareBoostLevel }));
@@ -2362,12 +2468,77 @@
     return effects;
   }
 
-  function pokedexRewardEffectsHtml(milestone) {
-    var effects = pokedexRewardEffects(milestone);
-    if (effects.length === 0) return '';
-    var html = '<div class="pokedex-reward-effects">';
-    for (var i = 0; i < effects.length; i++) {
-      html += '<span class="pokedex-reward-effect">' + escapeHtml(effects[i]) + '</span>';
+  function pokedexRewardTextSizeClass(text) {
+    var length = String(text || '').length;
+    if (length >= 29) return ' tiny';
+    if (length >= 23) return ' compact';
+    return '';
+  }
+
+  function pokedexRewardItemRows(milestone, options) {
+    var rows = [];
+    if (!milestone) return rows;
+    options = options || {};
+    var includePoints = options.includePoints !== false;
+    var includeTickets = options.includeTickets !== false;
+    var includeBonuses = options.includeBonuses !== false;
+    var points = Number(milestone.pointReward) || 0;
+    if (includePoints && points > 0) {
+      var pointsText = t('pokedexPointsReward', { points: formatTokenCount(points) });
+      rows.push({
+        type: 'points',
+        iconText: 'P',
+        label: pointsText
+      });
+    }
+    if (includeTickets && milestone.ticketReward) {
+      var ticketCount = Number(milestone.ticketReward.count) || 1;
+      rows.push({
+        type: 'ticket',
+        itemId: pokedexTicketItemId(milestone.ticketReward),
+        label: pokedexTicketRewardLabel(milestone.ticketReward),
+        detail: t('pokedexRecruitTicketCount', { count: ticketCount })
+      });
+    }
+    if (includeBonuses) {
+      var bonusEffects = pokedexRewardEffects(milestone, { includePoints: false }).filter(function (effect) {
+        return !milestone.ticketReward || effect !== t('pokedexTicketReward', {
+          ticket: pokedexTicketRewardLabel(milestone.ticketReward),
+          count: Number(milestone.ticketReward.count) || 1
+        });
+      });
+      for (var i = 0; i < bonusEffects.length; i++) {
+        rows.push({
+          type: 'bonus',
+          label: bonusEffects[i]
+        });
+      }
+    }
+    return rows;
+  }
+
+  function pokedexRewardEffectsHtml(milestone, options) {
+    var rows = pokedexRewardItemRows(milestone, options);
+    if (rows.length === 0) return '';
+    var html = '<div class="pokedex-reward-effects rows-' + Math.min(rows.length, 3) + '">';
+    for (var i = 0; i < rows.length; i++) {
+      var row = rows[i];
+      var labelClass = 'pokedex-reward-effect-label' + pokedexRewardTextSizeClass(row.label);
+      html += '<span class="pokedex-reward-effect ' + escapeHtml(row.type) + '">';
+      if (row.type === 'ticket') {
+        html += '<img class="pokedex-reward-effect-icon" src="' + escapeHtml(itemSpriteUrl(row.itemId)) + '" alt="" loading="lazy" />';
+      } else if (row.type === 'points') {
+        html += '<span class="pokedex-reward-effect-icon points" aria-hidden="true">' + escapeHtml(row.iconText) + '</span>';
+      } else {
+        html += '<span class="pokedex-reward-effect-icon bonus" aria-hidden="true">+</span>';
+      }
+      html += '<span class="' + labelClass + '">';
+      html += '<span>' + escapeHtml(row.label) + '</span>';
+      if (row.detail) {
+        html += '<span class="pokedex-reward-effect-detail">' + escapeHtml(row.detail) + '</span>';
+      }
+      html += '</span>';
+      html += '</span>';
     }
     html += '</div>';
     return html;
@@ -2390,7 +2561,40 @@
       var percent = Math.round((Number(milestone.percent) || 0) * 100);
       return t('pokedexAreaMilestone', { level: milestone.level, percent: percent });
     }
+    if (type === 'seen') {
+      return t('pokedexSeenMilestone', { count: milestone.count });
+    }
     return t('pokedexCaughtMilestone', { count: milestone.count });
+  }
+
+  function pokedexRewardClaimButton(milestone, type, extraClass) {
+    if (!milestone) return '';
+    var id = milestone.id || '';
+    var status = pokedexRewardStatus(milestone);
+    var classes = ['pokedex-reward-claim'];
+    if (extraClass) classes.push(extraClass);
+    if (status !== 'claimable') classes.push('state', status);
+    if (status === 'claimable') {
+      return '<button class="' + escapeHtml(classes.join(' ')) + '" type="button" data-pokedex-action="claim-reward" data-reward-type="' + escapeHtml(type) + '" data-reward-id="' + escapeHtml(id) + '">' + escapeHtml(t('pokedexRewardClaim')) + '</button>';
+    }
+    return '<button class="' + escapeHtml(classes.join(' ')) + '" type="button" disabled>' + escapeHtml(pokedexRewardStatusLabel(status)) + '</button>';
+  }
+
+  function pokedexRewardClaimSlotHtml(milestone, type) {
+    return '<div class="pokedex-reward-claim-slot">' + pokedexRewardClaimButton(milestone, type, 'track') + '</div>';
+  }
+
+  function pokedexRewardVisualHtml(milestone, type) {
+    if (!milestone) return '';
+    var html = '<div class="pokedex-pass-reward-visual">';
+    var rewardRows = pokedexRewardItemRows(milestone, { includeBonuses: false });
+    if (rewardRows.length > 0) {
+      html += pokedexRewardEffectsHtml(milestone, { includeBonuses: false });
+    } else {
+      html += '<span class="pokedex-pass-area-token">L' + escapeHtml(milestone.level || 1) + '</span>';
+    }
+    html += '</div>';
+    return html;
   }
 
   function renderPokedexRewardRow(milestone, type, progressText, progressRatio) {
@@ -2398,75 +2602,141 @@
     var status = pokedexRewardStatus(milestone);
     var id = milestone.id || '';
     var ratio = Math.max(0, Math.min(1, Number(progressRatio) || 0));
-    var html = '<div class="pokedex-reward-row ' + escapeHtml(status) + '">';
-    html += '<div class="pokedex-reward-row-main">';
-    html += '<div class="pokedex-reward-row-title">';
-    html += '<span>' + escapeHtml(pokedexRewardTitle(milestone, type)) + '</span>';
-    html += '<span class="pokedex-reward-status ' + escapeHtml(status) + '">' + escapeHtml(pokedexRewardStatusLabel(status)) + '</span>';
+    var nodeLabel = type === 'area' ? 'L' + String(milestone.level || 1) : String(milestone.count || '');
+    var html = '<div class="pokedex-reward-row ' + escapeHtml(status) + '" data-reward-id="' + escapeHtml(id) + '" style="--reward-progress:' + (ratio * 100).toFixed(1) + '%">';
+    html += '<div class="pokedex-pass-reward-card">';
+    html += pokedexRewardVisualHtml(milestone, type);
+    html += pokedexRewardEffectsHtml(milestone, { includePoints: false, includeTickets: false, includeBonuses: true });
+    html += '<strong class="pokedex-pass-reward-title">' + escapeHtml(pokedexRewardTitle(milestone, type)) + '</strong>';
     html += '</div>';
-    html += '<div class="pokedex-reward-progress-line">';
-    html += '<span>' + escapeHtml(progressText) + '</span>';
-    html += '<span>' + Math.round(ratio * 100) + '%</span>';
+    html += pokedexRewardClaimSlotHtml(milestone, type);
+    html += '<div class="pokedex-pass-node"><span>' + escapeHtml(nodeLabel) + '</span></div>';
+    html += '<span class="pokedex-pass-step-progress">' + escapeHtml(progressText) + '</span>';
     html += '</div>';
-    html += '<div class="pokedex-reward-meter" aria-hidden="true"><span style="width:' + (ratio * 100).toFixed(1) + '%"></span></div>';
-    html += pokedexRewardEffectsHtml(milestone);
+    return html;
+  }
+
+  function renderPokedexNextReward(nextReward, type, progressText, progressRatio) {
+    var status = pokedexRewardStatus(nextReward);
+    var html = '<div class="pokedex-next-reward ' + escapeHtml(status) + '">';
+    html += '<div class="pokedex-next-copy">';
+    html += '<span class="pokedex-next-label">' + escapeHtml(t('pokedexFeaturedReward')) + '</span>';
+    html += '<strong class="pokedex-next-title">' + escapeHtml(nextReward ? pokedexRewardTitle(nextReward, type) : t('pokedexNoPendingReward')) + '</strong>';
+    html += '<span class="pokedex-next-progress">' + escapeHtml(progressText || '') + '</span>';
     html += '</div>';
-    if (status === 'claimable') {
-      html += '<button class="pokedex-reward-claim" type="button" data-pokedex-action="claim-reward" data-reward-type="' + escapeHtml(type) + '" data-reward-id="' + escapeHtml(id) + '">' + escapeHtml(t('pokedexRewardClaim')) + '</button>';
-    } else {
-      html += '<span class="pokedex-reward-claim-spacer" aria-hidden="true"></span>';
+    if (nextReward) {
+      html += pokedexRewardVisualHtml(nextReward, type);
+      html += '<div class="pokedex-reward-meter" aria-hidden="true"><span style="width:' + (Math.max(0, Math.min(1, Number(progressRatio) || 0)) * 100).toFixed(1) + '%"></span></div>';
+      html += pokedexRewardEffectsHtml(nextReward, { includePoints: false, includeTickets: false });
+      html += pokedexRewardClaimButton(nextReward, type, 'featured');
     }
     html += '</div>';
     return html;
   }
 
-  function renderPokedexNextReward(nextReward, type, progressText) {
-    var html = '<div class="pokedex-next-reward">';
-    html += '<span class="pokedex-next-label">' + escapeHtml(t('pokedexNextReward')) + '</span>';
-    if (nextReward) {
-      html += '<span class="pokedex-next-title">' + escapeHtml(pokedexRewardTitle(nextReward, type)) + '</span>';
-      html += '<span class="pokedex-next-progress">' + escapeHtml(progressText) + '</span>';
-    } else {
-      html += '<span class="pokedex-next-title">' + escapeHtml(t('pokedexNoPendingReward')) + '</span>';
+  function pokedexPassTrackRatio(milestones, type, value, total) {
+    var safeMilestones = Array.isArray(milestones) ? milestones.filter(Boolean) : [];
+    if (safeMilestones.length <= 1) {
+      return total > 0 ? Math.max(0, Math.min(1, value / total)) : 0;
     }
-    html += '</div>';
+    var current = Math.max(0, Number(value) || 0);
+    var thresholds = safeMilestones.map(function (milestone) {
+      return type === 'area' ? Number(milestone.threshold) || total : Number(milestone.count) || total;
+    });
+    var lastIndex = thresholds.length - 1;
+    if (current <= thresholds[0]) return 0;
+    if (current >= thresholds[lastIndex]) return 1;
+    for (var i = 1; i < thresholds.length; i++) {
+      var target = thresholds[i];
+      if (current <= target) {
+        var previous = thresholds[i - 1];
+        var segmentSize = Math.max(1, target - previous);
+        var segmentProgress = Math.max(0, Math.min(1, (current - previous) / segmentSize));
+        return Math.max(0, Math.min(1, ((i - 1 + segmentProgress) / lastIndex)));
+      }
+    }
+    return 1;
+  }
+
+  function renderPokedexRewardTrack(milestones, type, caught, total, compact) {
+    var safeMilestones = Array.isArray(milestones) ? milestones : [];
+    var ratio = pokedexPassTrackRatio(safeMilestones, type, caught, total);
+    var html = '<div class="pokedex-pass-track-wrap ' + (compact ? 'compact' : '') + '">';
+    html += '<div class="pokedex-pass-track" style="--pass-progress:' + (ratio * 100).toFixed(1) + '%">';
+    html += '<div class="pokedex-pass-track-rail" aria-hidden="true"><span style="width:' + (ratio * 100).toFixed(1) + '%"></span></div>';
+    for (var i = 0; i < safeMilestones.length; i++) {
+      var milestone = safeMilestones[i];
+      var target = type === 'area' ? Number(milestone.threshold) || total : Number(milestone.count) || total;
+      var progressText = type === 'seen'
+        ? t('pokedexSeenRewardProgress', { seen: Math.min(caught, target), target: target })
+        : t('pokedexRewardProgress', { caught: Math.min(caught, target), target: target });
+      html += renderPokedexRewardRow(
+        milestone,
+        type,
+        progressText,
+        target > 0 ? caught / target : 0
+      );
+    }
+    html += '</div></div>';
     return html;
   }
 
   function renderPokedexRewards() {
     if (!pokedexRewardsPanelEl) return;
     var pokedex = appState.snapshot.pokedex || {};
+    var seen = typeof pokedex.seenCount === 'number'
+      ? pokedex.seenCount
+      : (typeof pokedex.discoveredCount === 'number' ? pokedex.discoveredCount : 0);
     var caught = typeof pokedex.caughtCount === 'number' ? pokedex.caughtCount : 0;
     var total = typeof pokedex.totalCount === 'number' ? pokedex.totalCount : POKEDEX_TOTAL;
     var claimableCount = Number(pokedex.claimableRewardCount) || 0;
+    var seenMilestones = Array.isArray(pokedex.seenMilestones) ? pokedex.seenMilestones : [];
     var catchMilestones = Array.isArray(pokedex.catchMilestones) ? pokedex.catchMilestones : [];
     var areaProgress = Array.isArray(pokedex.areaCatchProgress) ? pokedex.areaCatchProgress : [];
-    var nationalNext = nextUnclaimedPokedexReward(catchMilestones);
+    var seenNext = nextUnclaimedPokedexReward(seenMilestones);
+    var ownedNext = nextUnclaimedPokedexReward(catchMilestones);
+    var nationalNext = ownedNext || seenNext;
+    var nationalNextType = nationalNext && String(nationalNext.id || '').startsWith('seen-') ? 'seen' : 'catch';
     var nationalTarget = nationalNext ? Number(nationalNext.count) || total : total;
-    var html = '<div class="pokedex-rewards-summary">';
-    html += '<div><span class="pokedex-rewards-kicker">' + escapeHtml(t('pokedexRewards')) + '</span>';
-    html += '<strong>' + escapeHtml(t('pokedexRewardsReady', { count: claimableCount })) + '</strong></div>';
-    html += '<span>' + escapeHtml(t('pokedexRewardProgress', { caught: caught, target: total })) + '</span>';
+    var nationalRatio = pokedexPassTrackRatio(catchMilestones, 'catch', caught, total);
+    var seenRatio = total > 0 ? Math.max(0, Math.min(1, seen / total)) : 0;
+    var passLevel = Math.max(1, catchMilestones.filter(function (milestone) { return milestone && milestone.reached; }).length || 1);
+    var html = '<div class="pokedex-pass-shell">';
+    html += '<section class="pokedex-pass-hero">';
+    html += '<div class="pokedex-pass-copy">';
+    html += '<span class="pokedex-rewards-kicker">' + escapeHtml(t('pokedexRewards')) + '</span>';
+    html += '<h3>' + escapeHtml(t('pokedexRewards')) + '</h3>';
+    html += '<div class="pokedex-pass-level"><b>' + escapeHtml(String(passLevel)) + '</b><span>' + escapeHtml(t('pokedexRewardStage', { level: passLevel })) + '</span></div>';
+    html += '<div class="pokedex-pass-progress-row"><span>' + escapeHtml(t('pokedexRewardProgressFull', { caught: caught, total: total })) + '</span><strong>' + Math.round(nationalRatio * 100) + '%</strong></div>';
+    html += '<div class="pokedex-pass-progress" aria-hidden="true"><span style="width:' + (nationalRatio * 100).toFixed(1) + '%"></span></div>';
+    html += '<div class="pokedex-pass-ready"><span>' + escapeHtml(t('pokedexRewardsReady', { count: claimableCount })) + '</span></div>';
     html += '</div>';
+    html += '<div class="pokedex-pass-stage reward-only" aria-hidden="true">' + (nationalNext ? pokedexRewardVisualHtml(nationalNext, nationalNextType) : '<span class="pokedex-pass-area-token">OK</span>') + '</div>';
+    html += renderPokedexNextReward(
+      nationalNext,
+      nationalNextType,
+      nationalNext ? (nationalNextType === 'seen'
+        ? t('pokedexSeenRewardProgress', { seen: Math.min(seen, nationalTarget), target: nationalTarget })
+        : t('pokedexRewardProgress', { caught: Math.min(caught, nationalTarget), target: nationalTarget })) : '',
+      nationalTarget > 0 ? (nationalNextType === 'seen' ? seen : caught) / nationalTarget : 0
+    );
+    html += '</section>';
 
     html += '<section class="pokedex-reward-section">';
     html += '<div class="pokedex-reward-section-head">';
-    html += '<div><h3>' + escapeHtml(t('pokedexNationalDex')) + '</h3>';
-    html += '<p>' + escapeHtml(t('pokedexRewardProgress', { caught: caught, target: total })) + '</p></div>';
-    html += renderPokedexNextReward(nationalNext, 'catch', nationalNext ? t('pokedexRewardProgress', { caught: caught, target: nationalTarget }) : '');
+    html += '<div><h3>' + escapeHtml(t('pokedexSeenPass')) + '</h3>';
+    html += '<p>' + escapeHtml(t('pokedexSeenRewardProgress', { seen: seen, target: total })) + '</p></div>';
     html += '</div>';
-    html += '<div class="pokedex-reward-list">';
-    for (var i = 0; i < catchMilestones.length; i++) {
-      var milestone = catchMilestones[i];
-      var target = Number(milestone.count) || total;
-      html += renderPokedexRewardRow(
-        milestone,
-        'catch',
-        t('pokedexRewardProgress', { caught: Math.min(caught, target), target: target }),
-        target > 0 ? caught / target : 0
-      );
-    }
-    html += '</div></section>';
+    html += renderPokedexRewardTrack(seenMilestones, 'seen', seen, total, false);
+    html += '</section>';
+
+    html += '<section class="pokedex-reward-section">';
+    html += '<div class="pokedex-reward-section-head">';
+    html += '<div><h3>' + escapeHtml(t('pokedexOwnedPass')) + '</h3>';
+    html += '<p>' + escapeHtml(t('pokedexRewardProgress', { caught: caught, target: total })) + '</p></div>';
+    html += '</div>';
+    html += renderPokedexRewardTrack(catchMilestones, 'catch', caught, total, false);
+    html += '</section>';
 
     html += '<section class="pokedex-reward-section">';
     html += '<div class="pokedex-reward-section-head">';
@@ -2490,22 +2760,13 @@
       html += renderPokedexNextReward(
         areaNext,
         'area',
-        areaNext ? t('pokedexRewardProgress', { caught: areaCaught, target: Number(areaNext.threshold) || areaTotal }) : ''
+        areaNext ? t('pokedexRewardProgress', { caught: Math.min(areaCaught, Number(areaNext.threshold) || areaTotal), target: Number(areaNext.threshold) || areaTotal }) : '',
+        areaNext ? areaCaught / (Number(areaNext.threshold) || areaTotal || 1) : 0
       );
-      html += '<div class="pokedex-reward-list compact">';
-      for (var m = 0; m < areaMilestones.length; m++) {
-        var areaMilestone = areaMilestones[m];
-        var areaTarget = Number(areaMilestone.threshold) || areaTotal;
-        html += renderPokedexRewardRow(
-          areaMilestone,
-          'area',
-          t('pokedexRewardProgress', { caught: Math.min(areaCaught, areaTarget), target: areaTarget }),
-          areaTarget > 0 ? areaCaught / areaTarget : 0
-        );
-      }
-      html += '</div></div>';
+      html += renderPokedexRewardTrack(areaMilestones, 'area', areaCaught, areaTotal, true);
+      html += '</div>';
     }
-    html += '</div></section>';
+    html += '</div></section></div>';
     pokedexRewardsPanelEl.innerHTML = html;
   }
 
@@ -4181,6 +4442,13 @@
     return Math.max(0, Math.floor(value || 0)).toLocaleString('en-US');
   }
 
+  function formatProbability(value) {
+    var percent = Math.max(0, Number(value) || 0) * 100;
+    if (percent === 0) return '0%';
+    var digits = percent < 10 ? 2 : 0;
+    return percent.toFixed(digits).replace(/\.0+$/, '').replace(/(\.\d*[1-9])0+$/, '$1') + '%';
+  }
+
   async function readActionResult(actionPromise) {
     try {
       var response = await Promise.resolve(actionPromise);
@@ -4259,6 +4527,49 @@
     }
   }
 
+  function applyPokedexRewardClaimResult(result) {
+    if (!result || !result.ok) return;
+    var baseSnapshot = appState.liveSnapshot || appState.snapshot;
+    if (!baseSnapshot) return;
+
+    var nextSnapshot = baseSnapshot;
+    if (result.pokedex) {
+      nextSnapshot = {
+        ...nextSnapshot,
+        pokedex: result.pokedex
+      };
+    }
+
+    if (result.evolutionItems) {
+      nextSnapshot = {
+        ...nextSnapshot,
+        evolutionItems: result.evolutionItems
+      };
+    }
+
+    var itemPoints = Number(result.itemPoints);
+    if (Number.isFinite(itemPoints)) {
+      nextSnapshot = {
+        ...nextSnapshot,
+        evolutionItems: {
+          ...(nextSnapshot.evolutionItems || {}),
+          itemPoints: itemPoints
+        }
+      };
+    }
+
+    var ticketResults = Array.isArray(result.ticketResults) ? result.ticketResults : [];
+    for (var i = 0; i < ticketResults.length; i++) {
+      if (ticketResults[i] && ticketResults[i].pokemon) {
+        nextSnapshot = mergeOwnedPokemonIntoSnapshot(nextSnapshot, ticketResults[i].pokemon, null);
+      }
+    }
+
+    if (nextSnapshot !== baseSnapshot) {
+      applySnapshot(nextSnapshot);
+    }
+  }
+
   function localizedActionText(en, ko) {
     return currentLanguage() === 'ko' ? ko : en;
   }
@@ -4293,6 +4604,58 @@
       '<span>' + escapeHtml(label) + '</span>',
       '</div>'
     ].join('');
+  }
+
+  function pokedexRewardPopupEntries(reward) {
+    var rows = pokedexRewardItemRows(reward, { includePoints: true, includeTickets: true, includeBonuses: true });
+    return rows.map(function (row) {
+      if (row.type === 'ticket') {
+        return {
+          type: row.type,
+          itemId: row.itemId,
+          label: row.label,
+          detail: row.detail
+        };
+      }
+      return {
+        type: row.type,
+        iconText: row.iconText || '+',
+        label: row.label
+      };
+    });
+  }
+
+  function pokedexRewardPopupVisual(reward) {
+    var entries = pokedexRewardPopupEntries(reward);
+    if (entries.length === 0) return null;
+    return {
+      type: 'pokedex-reward',
+      entries: entries
+    };
+  }
+
+  function actionPokedexRewardVisualHtml(visual) {
+    var entries = Array.isArray(visual && visual.entries) ? visual.entries : [];
+    if (entries.length === 0) return '';
+    var html = '<div class="action-pokedex-reward-showcase">';
+    for (var i = 0; i < entries.length; i++) {
+      var entry = entries[i] || {};
+      html += '<div class="action-pokedex-reward-card ' + escapeHtml(entry.type || 'bonus') + '">';
+      if (entry.type === 'ticket' && entry.itemId) {
+        html += '<span class="action-pokedex-reward-icon item"><img src="' + escapeHtml(itemSpriteUrl(entry.itemId)) + '" alt="" loading="lazy" /></span>';
+      } else {
+        html += '<span class="action-pokedex-reward-icon ' + escapeHtml(entry.type || 'bonus') + '">' + escapeHtml(entry.iconText || '+') + '</span>';
+      }
+      html += '<span class="action-pokedex-reward-text">';
+      html += '<strong>' + escapeHtml(entry.label || '') + '</strong>';
+      if (entry.detail) {
+        html += '<span>' + escapeHtml(entry.detail) + '</span>';
+      }
+      html += '</span>';
+      html += '</div>';
+    }
+    html += '</div>';
+    return html;
   }
 
   function actionRecruitVisualHtml(visual) {
@@ -4364,12 +4727,37 @@
     return html;
   }
 
+  function actionTicketResultVisualHtml(visual) {
+    if (!visual || !visual.pokemonId) return '';
+    var pokemonName = visual.name || pokemonDisplayName(visual.pokemonId);
+    var rarityHtml = pokemonRarityBadgeHtml(visual.pokemonId, 'action-ticket-result-rarity');
+    var html = '';
+    html += '<div class="action-ticket-result-showcase">';
+    html += '<div class="action-pokemon-card">';
+    html += '<span>' + escapeHtml(t('recruitResult')) + '</span>';
+    html += '<img src="' + escapeHtml(pokemonSpriteBySpeciesId(visual.pokemonId)) + '" alt="" loading="lazy" />';
+    html += '<strong>' + escapeHtml(pokemonName) + '</strong>';
+    html += '</div>';
+    if (visual.itemId || rarityHtml) {
+      html += '<div class="action-consume-strip">';
+      if (visual.itemId) {
+        html += '<img src="' + escapeHtml(itemSpriteUrl(visual.itemId)) + '" alt="" loading="lazy" />';
+      }
+      html += rarityHtml || '<span>' + escapeHtml(t('unknown')) + '</span>';
+      html += '</div>';
+    }
+    html += '</div>';
+    return html;
+  }
+
   function actionVisualHtml(visual) {
     if (!visual || !visual.type) return '';
     if (visual.type === 'item') return actionItemVisualHtml(visual);
     if (visual.type === 'points') return actionPointsVisualHtml(visual);
+    if (visual.type === 'pokedex-reward') return actionPokedexRewardVisualHtml(visual);
     if (visual.type === 'recruit') return actionRecruitVisualHtml(visual);
     if (visual.type === 'evolution') return actionEvolutionVisualHtml(visual);
+    if (visual.type === 'ticket-result') return actionTicketResultVisualHtml(visual);
     return '';
   }
 
@@ -4399,13 +4787,18 @@
     if (actionPanelEl) {
       actionPanelEl.classList.toggle('evolution', !!(config && config.visual && config.visual.type === 'evolution'));
       actionPanelEl.classList.toggle('recruit', !!(config && config.visual && config.visual.type === 'recruit'));
+      actionPanelEl.classList.toggle('pokedex-reward', !!(config && config.visual && config.visual.type === 'pokedex-reward'));
     }
     if (actionVisualEl) {
       actionVisualEl.innerHTML = visualHtml;
       actionVisualEl.hidden = !visualHtml;
     }
     actionTitleEl.textContent = (config && config.title) || t('action');
-    actionMessageEl.textContent = (config && config.message) || '';
+    if (config && config.messageHtml) {
+      actionMessageEl.innerHTML = config.messageHtml;
+    } else {
+      actionMessageEl.textContent = (config && config.message) || '';
+    }
     actionMessageEl.classList.toggle('error', !!(config && config.isError));
     actionCancelEl.hidden = !isConfirm;
     actionCancelEl.textContent = (config && config.cancelText) || t('no');
@@ -4435,6 +4828,7 @@
       mode: 'result',
       title: localizedActionText(titleEn, titleKo),
       message: localizedActionText(messageEn, messageKo),
+      messageHtml: options.messageHtml || '',
       visual: options.visual || null,
       isError: !!options.isError,
       confirmText: t('ok')
@@ -4458,9 +4852,7 @@
   }
 
   function catchRewardMessage(result) {
-    var catchRewards = result && result.catchRewards;
-    if (!catchRewards || !catchRewards.isNewCatch) return '';
-    var total = Number(catchRewards.totalPointReward) || 0;
+    var total = catchRewardPoints(result);
     if (total <= 0) return '';
     return ' ' + t('catchReward') + ': +' + formatTokenCount(total) + ' pts.';
   }
@@ -5829,7 +6221,7 @@
     var rarity = getPokemonRarity(pokemonId);
     var labels = pokedexTooltipLabels();
     var name = pokemonDisplayName(pokemonId);
-    var status = pokedexStatusForPokemon(pokemonId, null, pokedexOwnedSpeciesLookup());
+    var status = pokedexStatusForPokemon(pokemonId, null, pokedexCaughtSpeciesLookup());
     var statusLabel = pokedexStatusLabel(status);
     var encounterText = String(pokedexEncounterCount(pokemonId));
     var habitatName = pokedexHabitatLabel(pokemonId);
@@ -6120,6 +6512,7 @@
   function evolutionItemState() {
     var fallback = {
       pool: [],
+      recruitTickets: [],
       inventory: {},
       itemPoints: 0,
       targetTickets: 0,
@@ -6127,7 +6520,15 @@
       pickupItemId: null,
       tokenPerItemPoint: 10000,
       randomPullPointCost: 250,
+      pullSuccessRate: 0.3,
       pullFailurePointRefund: 0,
+      pullSuccessRewardPool: [
+        { type: 'item', weight: 80 },
+        { type: 'ticket', minTier: 1, weight: 10 },
+        { type: 'ticket', minTier: 2, weight: 6 },
+        { type: 'ticket', minTier: 3, weight: 3 },
+        { type: 'ticket', minTier: 4, weight: 1 }
+      ],
       itemBuyPointCost: null,
       itemBuyPickupPointCost: 20,
       itemClaimTicketCost: 20,
@@ -6137,11 +6538,47 @@
   }
 
   function evolutionItemById(itemId) {
-    var items = evolutionItemState().pool || [];
+    var itemState = evolutionItemState();
+    var items = (itemState.pool || []).concat(itemState.recruitTickets || []);
     for (var i = 0; i < items.length; i++) {
       if (items[i].id === itemId) return items[i];
     }
     return null;
+  }
+
+  function inventoryCatalogItems(itemState) {
+    itemState = itemState || evolutionItemState();
+    return (itemState.pool || []).concat(itemState.recruitTickets || []);
+  }
+
+  function evolutionInventoryItems(itemState) {
+    itemState = itemState || evolutionItemState();
+    return itemState.pool || [];
+  }
+
+  function recruitTicketInventoryItems(itemState) {
+    itemState = itemState || evolutionItemState();
+    return itemState.recruitTickets || [];
+  }
+
+  function isRecruitTicketItem(itemOrId) {
+    var item = typeof itemOrId === 'string' ? evolutionItemById(itemOrId) : itemOrId;
+    return !!(item && typeof item.id === 'string' && item.id.indexOf('recruit-ticket-') === 0);
+  }
+
+  function recruitTicketLabel(itemOrId) {
+    var item = typeof itemOrId === 'string' ? evolutionItemById(itemOrId) : itemOrId;
+    return (item && String(item.label || item.nameEn || item.nameKo || '').replace(/\s*(Recruit Ticket|영입 티켓)$/i, '')) || 'Common+';
+  }
+
+  function recruitTicketItemIdForReward(ticketReward) {
+    var minTier = Math.max(1, Math.min(5, Math.floor(Number(ticketReward && ticketReward.minTier) || 1)));
+    var fallbackItemId = RECRUIT_TICKET_ITEM_IDS_BY_MIN_TIER[minTier] || RECRUIT_TICKET_ITEM_IDS_BY_MIN_TIER[1];
+    var tickets = evolutionItemState().recruitTickets || [];
+    for (var i = 0; i < tickets.length; i++) {
+      if (Number(tickets[i].minTier) === minTier) return tickets[i].id;
+    }
+    return fallbackItemId;
   }
 
   function fallbackEvolutionItemName(itemId) {
@@ -6155,6 +6592,9 @@
   function evolutionItemDisplayName(itemOrId) {
     var item = typeof itemOrId === 'string' ? evolutionItemById(itemOrId) : itemOrId;
     if (!item) return fallbackEvolutionItemName(itemOrId);
+    if (isRecruitTicketItem(item)) {
+      return recruitTicketLabel(item);
+    }
     if (uiState.pokedexLanguage === 'ko') {
       return item.nameKo || item.nameEn || fallbackEvolutionItemName(item.id);
     }
@@ -6173,6 +6613,95 @@
     return null;
   }
 
+  function firstTicketResult(result) {
+    var ticketResults = Array.isArray(result && result.ticketResults) ? result.ticketResults : [];
+    for (var i = 0; i < ticketResults.length; i++) {
+      var pokemon = ticketResults[i] && ticketResults[i].pokemon;
+      if (pokemon && validPokemonId(pokemon.speciesId)) {
+        return ticketResults[i];
+      }
+    }
+    return null;
+  }
+
+  function firstTicketResultPokemon(result) {
+    var ticketResult = firstTicketResult(result);
+    return ticketResult ? ticketResult.pokemon : null;
+  }
+
+  function catchRewardPoints(result) {
+    var catchRewards = result && result.catchRewards;
+    if (!catchRewards || !catchRewards.isNewCatch) return 0;
+    var total = Number(catchRewards.totalPointReward) || 0;
+    return total > 0 ? total : 0;
+  }
+
+  function catchRewardRowsHtml(result) {
+    var catchRewards = result && result.catchRewards;
+    if (!catchRewards || !catchRewards.isNewCatch) return '';
+    var rewards = Array.isArray(catchRewards.rewards) ? catchRewards.rewards : [];
+    var html = '';
+    var renderedPointTotal = 0;
+    for (var i = 0; i < rewards.length; i++) {
+      var reward = rewards[i] || {};
+      var pointReward = Math.max(0, Number(reward.pointReward) || 0);
+      if (reward.itemId) {
+        var itemName = reward.itemName || evolutionItemLabel(reward.itemId);
+        var count = Math.max(1, Number(reward.count) || 1);
+        html += '<div class="action-result-row item">';
+        html += '<span class="action-result-row-icon item"><img src="' + escapeHtml(itemSpriteUrl(reward.itemId)) + '" alt="" loading="lazy" /></span>';
+        html += '<span>' + escapeHtml(itemName + (count > 1 ? ' x' + count : '')) + '</span>';
+        html += '</div>';
+      } else if (pointReward > 0) {
+        renderedPointTotal += pointReward;
+        html += '<div class="action-result-row points">';
+        html += '<span class="action-result-row-icon points" aria-hidden="true">PT</span>';
+        html += '<span>' + escapeHtml(t('pointsEarned', { points: formatTokenCount(pointReward) })) + '</span>';
+        html += '</div>';
+      }
+    }
+    var total = catchRewardPoints(result);
+    if (total > renderedPointTotal) {
+      html += '<div class="action-result-row points">';
+      html += '<span class="action-result-row-icon points" aria-hidden="true">PT</span>';
+      html += '<span>' + escapeHtml(t('pointsEarned', { points: formatTokenCount(total - renderedPointTotal) })) + '</span>';
+      html += '</div>';
+    }
+    return html;
+  }
+
+  function actionResultRowsHtml(primary) {
+    var options = arguments.length > 1 && arguments[1] ? arguments[1] : {};
+    if (!primary || !primary.text) return '';
+    var html = '<div class="action-result-rows">';
+    var iconClass = primary.iconClass || 'pokemon';
+    html += '<div class="action-result-row ' + escapeHtml(primary.tone || 'primary') + '">';
+    html += '<span class="action-result-row-icon ' + escapeHtml(iconClass) + '">';
+    if (primary.iconUrl) {
+      html += '<img src="' + escapeHtml(primary.iconUrl) + '" alt="" loading="lazy" />';
+    } else {
+      html += escapeHtml(primary.iconText || '');
+    }
+    html += '</span>';
+    html += '<span>' + escapeHtml(primary.text) + '</span>';
+    html += '</div>';
+    if (options.catchRewardSource) html += catchRewardRowsHtml(options.catchRewardSource);
+    html += '</div>';
+    return html;
+  }
+
+  function ticketUseResultRowsHtml(pokemon, pokemonName, ticketResult) {
+    if (!pokemon || !validPokemonId(pokemon.speciesId)) return '';
+    return actionResultRowsHtml({
+      text: ticketRecruitedPokemonText(pokemonName),
+      iconUrl: spriteUrl('icon', pokemon.speciesId, 'png'),
+      iconClass: 'pokemon',
+      tone: 'recruited'
+    }, {
+      catchRewardSource: ticketResult
+    });
+  }
+
   function showDrawActionResult(result) {
     if (!result || !result.ok) {
       showActionPopup(t('drawResult'), t('drawResult'), actionErrorMessage(result), actionErrorMessage(result));
@@ -6188,6 +6717,19 @@
         t('drawResult'),
         t('noItemThisTime'),
         t('noItemThisTime')
+      );
+      return;
+    }
+    if (result.rewardType === 'ticket' || result.ticketReward) {
+      var ticketName = result.ticketReward && result.ticketReward.label ? result.ticketReward.label : 'Common+';
+      var ticketItemId = result.itemId || recruitTicketItemIdForReward(result.ticketReward);
+      var ticketItemName = evolutionItemLabel(ticketItemId);
+      showActionPopup(
+        t('drawResult'),
+        t('drawResult'),
+        t('youDrewTicket', { ticket: ticketName }),
+        t('youDrewTicket', { ticket: ticketName }),
+        { visual: { type: 'item', itemId: ticketItemId, name: ticketItemName, label: t('drawResult') } }
       );
       return;
     }
@@ -6252,6 +6794,40 @@
     }
   }
 
+  function showTicketUseActionResult(result, itemId) {
+    var ticketName = evolutionItemLabel((result && result.itemId) || itemId);
+    if (!result || !result.ok) {
+      showActionPopup(t('recruitResult'), t('recruitResult'), actionErrorMessage(result), actionErrorMessage(result), { isError: true });
+      return;
+    }
+    if (result.pending) {
+      showActionPopup(t('recruitResult'), t('recruitResult'), t('requestSent'), t('requestSent'));
+      return;
+    }
+    var ticketResult = firstTicketResult(result);
+    var pokemon = ticketResult && ticketResult.pokemon ? ticketResult.pokemon : null;
+    var pokemonName = pokemon ? pokemonDisplayName(pokemon.speciesId) : t('pokemon');
+    var message = pokemon
+      ? ticketRecruitedPokemonText(pokemonName)
+      : t('usedTicket', { ticket: ticketName, pokemon: pokemonName });
+    showActionPopup(
+      t('recruitResult'),
+      t('recruitResult'),
+      message,
+      message,
+      {
+        visual: pokemon ? {
+          type: 'ticket-result',
+          pokemonId: pokemon.speciesId,
+          name: pokemonName,
+          itemId: (result && result.itemId) || itemId,
+          ticketName: ticketName
+        } : null,
+        messageHtml: ticketUseResultRowsHtml(pokemon, pokemonName, ticketResult)
+      }
+    );
+  }
+
   function showEvolutionActionResult(result, beforePokemon, targetSpeciesId, consumedItemId) {
     var beforeName = ownedDisplayName(beforePokemon);
     var afterSpeciesId = result && result.pokemon && result.pokemon.speciesId
@@ -6266,8 +6842,7 @@
       showActionPopup(t('evolutionResult'), t('evolutionResult'), t('evolutionRequestSent'), t('evolutionRequestSent'));
       return;
     }
-    var evolutionMessage = afterName ? t('evolvedInto', { from: beforeName, to: afterName }) : t('evolved', { from: beforeName });
-    evolutionMessage += catchRewardMessage(result);
+    var evolutionMessage = evolvedPokemonText(beforeName, afterName);
     showActionPopup(
       t('evolutionResult'),
       t('evolutionResult'),
@@ -6281,7 +6856,15 @@
           afterSpeciesId: afterSpeciesId,
           afterName: afterName,
           itemId: consumedItemId || (result && result.itemId) || null
-        }
+        },
+        messageHtml: actionResultRowsHtml({
+          text: evolutionMessage,
+          iconUrl: afterSpeciesId ? spriteUrl('icon', afterSpeciesId, 'png') : '',
+          iconClass: 'pokemon',
+          tone: 'evolved'
+        }, {
+          catchRewardSource: result
+        })
       }
     );
     return;
@@ -6533,6 +7116,16 @@
     if (!ownedItemInfoEl || !ownedItemInfoPopoverEl) return;
     ownedItemInfoPopoverEl.hidden = !isOpen;
     ownedItemInfoEl.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+    if (!isOpen) setOwnedItemChanceOpen(false);
+  }
+
+  function setOwnedItemChanceOpen(isOpen) {
+    uiState.ownedItemChanceOpen = !!isOpen;
+    if (!ownedItemInfoPopoverEl) return;
+    var chancePopover = ownedItemInfoPopoverEl.querySelector('[data-item-rules-chances]');
+    var chanceToggle = ownedItemInfoPopoverEl.querySelector('[data-item-rules-action="toggle-chances"]');
+    if (chancePopover) chancePopover.hidden = !uiState.ownedItemChanceOpen;
+    if (chanceToggle) chanceToggle.setAttribute('aria-expanded', uiState.ownedItemChanceOpen ? 'true' : 'false');
   }
 
   function setOwnedRecruitOpen(isOpen) {
@@ -6627,7 +7220,7 @@
   function recruitCostForAgent(agent) {
     var pokemonId = getRenderPokemonId(agent);
     var discovered = isPokemonDiscovered(pokemonId);
-    var caughtLookup = pokedexOwnedSpeciesLookup();
+    var caughtLookup = pokedexCaughtSpeciesLookup();
     var caught = !!caughtLookup[pokemonId];
     var costInfo = recruitCostForPokemon(pokemonId, discovered, caught);
     return {
@@ -6671,7 +7264,7 @@
     var availableIds = recruitablePokemonIds();
     var availableLookup = {};
     for (var i = 0; i < availableIds.length; i++) availableLookup[availableIds[i]] = true;
-    var caughtLookup = pokedexOwnedSpeciesLookup();
+    var caughtLookup = pokedexCaughtSpeciesLookup();
     var showPokedex = uiState.ownedRecruitMode === 'pokedex';
     var ids = showPokedex ? [] : availableIds;
     if (showPokedex) {
@@ -6726,18 +7319,99 @@
 
   function ensureSelectedEvolutionItemId(itemState) {
     var pool = itemState.pool || [];
+    var inventoryItems = inventoryCatalogItems(itemState);
     var selected = uiState.selectedEvolutionItemId;
-    var exists = selected && pool.some(function (item) { return item.id === selected; });
+    var exists = selected && inventoryItems.some(function (item) { return item.id === selected; });
     if (!exists) {
       var inventory = itemState.inventory || {};
-      var ownedItem = pool.find(function (item) { return (inventory[item.id] || 0) > 0; });
+      var ownedItem = inventoryItems.find(function (item) { return (inventory[item.id] || 0) > 0; });
       selected = (ownedItem && ownedItem.id) || itemState.pickupItemId || (pool[0] && pool[0].id) || null;
       uiState.selectedEvolutionItemId = selected;
     }
     return selected;
   }
 
-  function renderEvolutionItemInfoContent(tokenPerPoint, drawCost, pickupClaimCost, sellValue) {
+  function pullSuccessRateForItemState(itemState) {
+    var rate = Number(itemState && itemState.pullSuccessRate);
+    if (!Number.isFinite(rate)) rate = 0.3;
+    return Math.max(0, Math.min(1, rate));
+  }
+
+  function pullRewardEntryLabel(entry) {
+    if (entry && entry.type === 'ticket') {
+      return t('itemRulesTicketReward', {
+        ticket: recruitTicketLabel(recruitTicketItemIdForReward({ minTier: entry.minTier }))
+      });
+    }
+    return t('itemRulesEvolutionItemReward');
+  }
+
+  function adjustedEvolutionItemWeight(item, itemState) {
+    var weight = Math.max(0, Number(item && item.weight) || 0);
+    if (!item || !itemState || item.id !== itemState.pickupItemId) return weight;
+    return weight * Math.max(1, Number(itemState.pickupWeightMultiplier) || 1);
+  }
+
+  function evolutionItemChanceRows(itemState, itemRewardChance) {
+    var pool = Array.isArray(itemState && itemState.pool) ? itemState.pool : [];
+    var totalWeight = pool.reduce(function (sum, item) {
+      return sum + adjustedEvolutionItemWeight(item, itemState);
+    }, 0);
+    if (itemRewardChance <= 0 || totalWeight <= 0) return [];
+    return pool.map(function (item) {
+      var label = evolutionItemDisplayName(item);
+      if (itemState && item.id === itemState.pickupItemId) {
+        label += ' (' + t('itemRulesTargetMark') + ')';
+      }
+      return {
+        reward: label,
+        chance: itemRewardChance * (adjustedEvolutionItemWeight(item, itemState) / totalWeight),
+        tone: 'item'
+      };
+    });
+  }
+
+  function pullChanceRows(itemState) {
+    var successRate = pullSuccessRateForItemState(itemState);
+    var rewardPool = Array.isArray(itemState && itemState.pullSuccessRewardPool)
+      ? itemState.pullSuccessRewardPool
+      : [];
+    var totalWeight = rewardPool.reduce(function (sum, entry) {
+      return sum + Math.max(0, Number(entry && entry.weight) || 0);
+    }, 0);
+    var rows = [
+      { reward: t('itemRulesFailure'), chance: 1 - successRate, tone: 'summary' }
+    ];
+    if (successRate <= 0 || totalWeight <= 0) return rows;
+    var itemRewardChance = 0;
+    var ticketRows = [];
+    for (var i = 0; i < rewardPool.length; i++) {
+      var entry = rewardPool[i];
+      var weight = Math.max(0, Number(entry && entry.weight) || 0);
+      if (weight <= 0) continue;
+      var chance = successRate * (weight / totalWeight);
+      if (entry && entry.type === 'item') {
+        itemRewardChance += chance;
+        continue;
+      }
+      ticketRows.push({
+        reward: pullRewardEntryLabel(entry),
+        chance: chance,
+        tone: 'ticket'
+      });
+    }
+    if (itemRewardChance > 0) {
+      rows.push({
+        reward: t('itemRulesEvolutionItemTotal'),
+        chance: itemRewardChance,
+        tone: 'summary'
+      });
+      rows = rows.concat(evolutionItemChanceRows(itemState, itemRewardChance));
+    }
+    return rows.concat(ticketRows);
+  }
+
+  function renderEvolutionItemInfoContent(itemState, tokenPerPoint, drawCost, pickupClaimCost, sellValue) {
     if (!ownedItemInfoPopoverEl) return;
     if (ownedItemInfoEl) {
       ownedItemInfoEl.setAttribute('aria-label', t('itemRules'));
@@ -6754,15 +7428,73 @@
       html += '<li><b>' + escapeHtml(rows[i][0]) + '</b><span>' + escapeHtml(rows[i][1]) + '</span></li>';
     }
     html += '</ul>';
+    var chanceRows = pullChanceRows(itemState);
+    if (chanceRows.length > 0) {
+      var chanceOpen = !!uiState.ownedItemChanceOpen;
+      html += '<div class="owned-item-chance-wrap">';
+      html += '<button type="button" class="owned-item-chance-toggle" data-item-rules-action="toggle-chances" aria-expanded="' + (chanceOpen ? 'true' : 'false') + '" aria-controls="owned-item-chance-popover">';
+      html += escapeHtml(t('itemRulesChanceOpen'));
+      html += '</button>';
+      html += '<div id="owned-item-chance-popover" class="owned-item-chance-popover" data-item-rules-chances' + (chanceOpen ? '' : ' hidden') + '>';
+      html += '<div class="owned-item-chance-head">';
+      html += '<h5>' + escapeHtml(t('itemRulesChanceTable')) + '</h5>';
+      html += '<button type="button" class="owned-item-chance-close" data-item-rules-action="close-chances" aria-label="' + escapeHtml(t('close')) + '">&times;</button>';
+      html += '</div>';
+      html += '<table class="owned-item-rules-table">';
+      html += '<thead><tr><th scope="col">' + escapeHtml(t('itemRulesReward')) + '</th><th scope="col">' + escapeHtml(t('itemRulesChance')) + '</th></tr></thead>';
+      html += '<tbody>';
+      for (var j = 0; j < chanceRows.length; j++) {
+        var tone = chanceRows[j].tone ? ' class="chance-row-' + escapeHtml(chanceRows[j].tone) + '"' : '';
+        html += '<tr' + tone + '><td>' + escapeHtml(chanceRows[j].reward) + '</td><td>' + escapeHtml(formatProbability(chanceRows[j].chance)) + '</td></tr>';
+      }
+      html += '</tbody></table></div></div>';
+    }
     ownedItemInfoPopoverEl.innerHTML = html;
+  }
+
+  function renderInventoryItemChip(item, count, selectedItemId) {
+    var itemLabel = evolutionItemDisplayName(item);
+    var isTicket = isRecruitTicketItem(item);
+    var ticketClass = isTicket
+      ? ' ticket tier-' + (Number(item.minTier) || 1) + (count <= 0 ? ' placeholder' : '')
+      : '';
+    var html = '';
+    html += '<button type="button" class="owned-item-chip' + ticketClass + (item.id === selectedItemId ? ' selected' : '') + (count <= 0 ? ' empty' : '') + '" data-item-id="' + escapeHtml(item.id) + '" data-item-kind="' + (isTicket ? 'recruit-ticket' : 'evolution') + '" title="' + escapeHtml(itemLabel) + '">';
+    html += '<img src="' + escapeHtml(itemSpriteUrl(item.id)) + '" alt="" loading="lazy" />';
+    html += '<span>' + escapeHtml(itemLabel) + '</span>';
+    html += '<b>x' + count + '</b>';
+    html += '</button>';
+    return html;
+  }
+
+  function renderInventoryCategory(title, items, inventory, selectedItemId, extraClass) {
+    var total = items.reduce(function (sum, item) {
+      return sum + (inventory[item.id] || 0);
+    }, 0);
+    var html = '<section class="owned-item-category' + (extraClass ? ' ' + extraClass : '') + '">';
+    html += '<div class="owned-item-category-head">';
+    html += '<h4>' + escapeHtml(title) + '</h4>';
+    html += '<span>' + escapeHtml(t('itemCount', { count: total })) + '</span>';
+    html += '</div>';
+    html += '<div class="owned-item-category-grid">';
+    for (var i = 0; i < items.length; i++) {
+      html += renderInventoryItemChip(items[i], inventory[items[i].id] || 0, selectedItemId);
+    }
+    html += '</div>';
+    html += '</section>';
+    return html;
   }
 
   function renderEvolutionItemPanel() {
     if (!ownedItemInventoryEl) return;
     var itemState = evolutionItemState();
     var pool = itemState.pool || [];
+    var inventoryItems = inventoryCatalogItems(itemState);
+    var evolutionItems = evolutionInventoryItems(itemState);
+    var recruitTicketItems = recruitTicketInventoryItems(itemState);
     var inventory = itemState.inventory || {};
     var selectedItemId = ensureSelectedEvolutionItemId(itemState);
+    var selectedItem = evolutionItemById(selectedItemId);
     var tokenPerPoint = Math.max(1, Number(itemState.tokenPerItemPoint) || 10000);
     var drawCost = Math.max(1, Number(itemState.randomPullPointCost) || 250);
     var pickupClaimCost = Math.max(1, Number(itemState.itemClaimTicketCost || itemState.itemBuyPickupPointCost) || 20);
@@ -6771,7 +7503,7 @@
     var targetTickets = Math.max(0, Number(itemState.targetTickets !== undefined ? itemState.targetTickets : itemState.pickupPoints) || 0);
     var remainder = Math.max(0, Math.min(tokenPerPoint, Number(itemState.rewardTokenRemainder) || 0));
     var progress = Math.max(0, Math.min(100, (remainder / tokenPerPoint) * 100));
-    var totalOwnedItems = pool.reduce(function (sum, item) {
+    var totalOwnedItems = inventoryItems.reduce(function (sum, item) {
       return sum + (inventory[item.id] || 0);
     }, 0);
 
@@ -6803,24 +7535,24 @@
         '<span>' + escapeHtml(t('claimTarget')) + '</span>' +
         '<b>' + escapeHtml(String(pickupClaimCost)) + ' tickets</b>';
     }
-    renderEvolutionItemInfoContent(tokenPerPoint, drawCost, pickupClaimCost, sellValue);
+    renderEvolutionItemInfoContent(itemState, tokenPerPoint, drawCost, pickupClaimCost, sellValue);
 
     var canPull = (itemState.itemPoints || 0) >= drawCost;
     if (ownedItemPullEl) ownedItemPullEl.disabled = !canPull;
     if (ownedItemBuyEl) ownedItemBuyEl.disabled = true;
-    if (ownedItemSellEl) ownedItemSellEl.disabled = !selectedItemId || (inventory[selectedItemId] || 0) <= 0;
+    if (ownedItemSellEl) {
+      ownedItemSellEl.disabled = !selectedItemId ||
+        isRecruitTicketItem(selectedItem) ||
+        (inventory[selectedItemId] || 0) <= 0;
+    }
     if (ownedItemClaimPickupEl) ownedItemClaimPickupEl.disabled = !pickupTargetId || targetTickets < pickupClaimCost;
 
     var html = '';
-    for (var j = 0; j < pool.length; j++) {
-      var item = pool[j];
-      var count = inventory[item.id] || 0;
-      var itemLabel = evolutionItemDisplayName(item);
-      html += '<button type="button" class="owned-item-chip' + (item.id === selectedItemId ? ' selected' : '') + (count <= 0 ? ' empty' : '') + '" data-item-id="' + escapeHtml(item.id) + '" title="' + escapeHtml(itemLabel) + '">';
-      html += '<img src="' + escapeHtml(itemSpriteUrl(item.id)) + '" alt="" loading="lazy" />';
-      html += '<span>' + escapeHtml(itemLabel) + '</span>';
-      html += '<b>x' + count + '</b>';
-      html += '</button>';
+    if (evolutionItems.length > 0) {
+      html += renderInventoryCategory(t('evolutionItems'), evolutionItems, inventory, selectedItemId, 'evolution-items');
+    }
+    if (recruitTicketItems.length > 0) {
+      html += renderInventoryCategory(t('recruitTickets'), recruitTicketItems, inventory, selectedItemId, 'recruit-tickets');
     }
     ownedItemInventoryEl.innerHTML = html || '<div class="owned-empty compact">' + escapeHtml(t('noEvolutionItems')) + '</div>';
   }
@@ -6983,7 +7715,6 @@
         html += '<span class="pokedex-unknown">?</span>';
       }
       html += '</div>';
-      html += '<span class="pokedex-status ' + status + '">' + escapeHtml(pokedexStatusLabel(status)) + '</span>';
       html += '</div>';
     }
     pokedexGridEl.innerHTML = html;
@@ -7797,13 +8528,27 @@
       }
       applyOwnedPokemonActionResult(result);
       var spent = result.recruitCost && Number(result.recruitCost.pointCost) ? Number(result.recruitCost.pointCost) : costInfo.pointCost;
-      var recruitMessage = t('recruitedPokemon', { pokemon: costInfo.pokemonName }) + catchRewardMessage(result);
+      var recruitedSpeciesId = result.pokemon && validPokemonId(result.pokemon.speciesId)
+        ? result.pokemon.speciesId
+        : costInfo.pokemonId;
+      var recruitedName = recruitedSpeciesId ? pokemonDisplayName(recruitedSpeciesId) : costInfo.pokemonName;
+      var recruitMessage = recruitedPokemonText(recruitedName);
       showActionPopup(
         t('recruitResult'),
         t('recruitResult'),
         recruitMessage,
         recruitMessage,
-        { visual: { type: 'points', value: '-' + spent + ' pts', label: t('spent') } }
+        {
+          visual: { type: 'points', value: '-' + spent + ' pts', label: t('spent') },
+          messageHtml: actionResultRowsHtml({
+            text: recruitMessage,
+            iconUrl: recruitedSpeciesId ? spriteUrl('icon', recruitedSpeciesId, 'png') : '',
+            iconClass: 'pokemon',
+            tone: 'recruited'
+          }, {
+            catchRewardSource: result
+          })
+        }
       );
     }
 
@@ -7993,6 +8738,15 @@
     if (ownedItemInfoPopoverEl) {
       ownedItemInfoPopoverEl.addEventListener('click', function (e) {
         e.stopPropagation();
+        var actionBtn = e.target.closest('[data-item-rules-action]');
+        if (!actionBtn || !ownedItemInfoPopoverEl.contains(actionBtn)) return;
+        e.preventDefault();
+        if (actionBtn.getAttribute('data-item-rules-action') === 'toggle-chances') {
+          var chancePopover = ownedItemInfoPopoverEl.querySelector('[data-item-rules-chances]');
+          setOwnedItemChanceOpen(chancePopover ? chancePopover.hidden : true);
+        } else {
+          setOwnedItemChanceOpen(false);
+        }
       });
     }
     ownedModalEl.addEventListener('click', function (e) {
@@ -8130,11 +8884,34 @@
       });
     }
     if (ownedItemInventoryEl) {
-      ownedItemInventoryEl.addEventListener('click', function (e) {
+      ownedItemInventoryEl.addEventListener('click', async function (e) {
         var itemBtn = e.target.closest('[data-item-id]');
         if (!itemBtn) return;
-        uiState.selectedEvolutionItemId = itemBtn.getAttribute('data-item-id');
+        var itemId = itemBtn.getAttribute('data-item-id');
+        uiState.selectedEvolutionItemId = itemId;
         renderEvolutionItemPanel();
+        var itemState = evolutionItemState();
+        var inventory = itemState.inventory || {};
+        if (itemBtn.getAttribute('data-item-kind') !== 'recruit-ticket' || (inventory[itemId] || 0) <= 0) {
+          return;
+        }
+        var ticketName = evolutionItemLabel(itemId);
+        var prompt = t('useTicketPrompt', { ticket: ticketName });
+        if (!(await confirmActionPopup(
+          prompt,
+          prompt,
+          {
+            visual: {
+              type: 'item',
+              itemId: itemId,
+              name: ticketName,
+              label: t('use')
+            },
+            message: prompt
+          }
+        ))) return;
+        var result = await readActionResult(transport.items('use-ticket', { itemId: itemId }));
+        showTicketUseActionResult(result, itemId);
       });
     }
     ownedBoxGridEl.addEventListener('click', function (e) {
@@ -8177,7 +8954,7 @@
       e.stopPropagation();
       var pokemonId = parseInt(btn.getAttribute('data-pokemon-id'), 10);
       if (!pokemonId) return;
-      var status = pokedexStatusForPokemon(pokemonId, null, pokedexOwnedSpeciesLookup());
+      var status = pokedexStatusForPokemon(pokemonId, null, pokedexCaughtSpeciesLookup());
       var discovered = status !== 'undiscovered';
       var caught = status === 'caught';
       var costInfo = recruitCostForPokemon(pokemonId, discovered, caught);
@@ -8208,8 +8985,21 @@
         return;
       }
       applyOwnedPokemonActionResult(result);
-      var recruitMessage = t('recruitedPokemon', { pokemon: pokemonName }) + catchRewardMessage(result);
-      showActionPopup(t('recruitResult'), t('recruitResult'), recruitMessage, recruitMessage);
+      var resultSpeciesId = result.pokemon && validPokemonId(result.pokemon.speciesId)
+        ? result.pokemon.speciesId
+        : pokemonId;
+      var resultPokemonName = resultSpeciesId ? pokemonDisplayName(resultSpeciesId) : pokemonName;
+      var recruitMessage = recruitedPokemonText(resultPokemonName);
+      showActionPopup(t('recruitResult'), t('recruitResult'), recruitMessage, recruitMessage, {
+        messageHtml: actionResultRowsHtml({
+          text: recruitMessage,
+          iconUrl: resultSpeciesId ? spriteUrl('icon', resultSpeciesId, 'png') : '',
+          iconClass: 'pokemon',
+          tone: 'recruited'
+        }, {
+          catchRewardSource: result
+        })
+      });
       setOwnedRecruitOpen(false);
     });
     function handleOwnedChange(e) {
@@ -8321,19 +9111,38 @@
         var rewardType = btn.getAttribute('data-reward-type');
         var rewardId = btn.getAttribute('data-reward-id');
         if (!rewardType || !rewardId) return;
+        var originalText = btn.textContent;
         btn.disabled = true;
-        var result = await readActionResult(transport.pokedex('claim', { rewardType: rewardType, id: rewardId }));
-        btn.disabled = false;
+        btn.textContent = t('pokedexRewardClaiming');
+        var result = null;
+        try {
+          result = await readActionResult(transport.pokedex('claim', { rewardType: rewardType, id: rewardId }));
+        } catch (err) {
+          result = { ok: false, error: err && err.message ? err.message : t('pokedexRewardClaimFailed') };
+        } finally {
+          if (btn.isConnected) {
+            btn.disabled = false;
+            btn.textContent = originalText;
+          }
+        }
         if (result && result.ok) {
+          applyPokedexRewardClaimResult(result);
           var reward = result.reward || {};
           var effects = pokedexRewardEffects(reward).join(', ');
-          var rewardName = rewardType === 'area' ? pokedexRewardTitle(reward, 'area') : pokedexRewardTitle(reward, 'catch');
+          var rewardTitleType = rewardType === 'area' ? 'area' : (rewardType === 'seen' || rewardType === 'encounter' ? 'seen' : 'catch');
+          var rewardName = pokedexRewardTitle(reward, rewardTitleType);
           var message = t('pokedexClaimedReward', { reward: rewardName }) + (effects ? ' ' + effects + '.' : '');
-          showActionPopup(t('claimResult'), t('claimResult'), message, message);
+          var ticketPokemon = firstTicketResultPokemon(result);
+          if (ticketPokemon) {
+            message += ' ' + t('recruitedPokemon', { pokemon: pokemonDisplayName(ticketPokemon.speciesId) });
+          }
+          showActionPopup(t('pokedexClaimResult'), t('pokedexClaimResult'), message, message, {
+            visual: pokedexRewardPopupVisual(reward)
+          });
           renderPokedex();
         } else {
           var errorMessage = result && result.error ? result.error : t('pokedexRewardClaimFailed');
-          showActionPopup(t('claimResult'), t('claimResult'), errorMessage, errorMessage, { isError: true });
+          showActionPopup(t('pokedexClaimResult'), t('pokedexClaimResult'), errorMessage, errorMessage, { isError: true });
           renderPokedex();
         }
       });

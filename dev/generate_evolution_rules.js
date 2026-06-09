@@ -128,6 +128,10 @@ function inRange(speciesId) {
 }
 
 function inferRule(fromSpeciesId, toSpeciesId, detail) {
+  if (detail && (detail.region || detail.base_form)) {
+    return null;
+  }
+
   const trigger = detail && detail.trigger && detail.trigger.name;
   if (trigger === 'use-item' && detail.item && ITEM_IDS.has(detail.item.name)) {
     return item(toSpeciesId, detail.item.name, 'pokeapi-use-item');
@@ -155,6 +159,28 @@ function inferRule(fromSpeciesId, toSpeciesId, detail) {
   return null;
 }
 
+function rulePreference(rule) {
+  const source = String(rule && rule.source || '');
+  let score = 0;
+  if (source.startsWith('special-')) score += 100;
+  if (rule.method === 'level') score += 20;
+  if (rule.method === 'item') score += 10;
+  if (source.startsWith('pokeapi-')) score += 1;
+  return score;
+}
+
+function shouldReplaceRule(existing, next) {
+  const existingScore = rulePreference(existing);
+  const nextScore = rulePreference(next);
+  if (nextScore !== existingScore) {
+    return nextScore > existingScore;
+  }
+  if (existing.method === 'level' && next.method === 'level') {
+    return Number(next.requiredLevel) < Number(existing.requiredLevel);
+  }
+  return false;
+}
+
 function addRule(rules, fromSpeciesId, rawRule) {
   if (!rawRule || !inRange(fromSpeciesId) || !inRange(rawRule.toSpeciesId)) {
     return;
@@ -172,6 +198,14 @@ function addRule(rules, fromSpeciesId, rawRule) {
   } else if (rawRule.method === 'item') {
     normalized.itemId = rawRule.itemId;
   } else {
+    return;
+  }
+
+  const sameTargetIndex = rules[fromSpeciesId].findIndex((rule) => rule.toSpeciesId === normalized.toSpeciesId);
+  if (sameTargetIndex >= 0) {
+    if (shouldReplaceRule(rules[fromSpeciesId][sameTargetIndex], normalized)) {
+      rules[fromSpeciesId][sameTargetIndex] = normalized;
+    }
     return;
   }
 
@@ -259,5 +293,6 @@ if (require.main === module) {
 module.exports = {
   SPECIAL_RULES,
   inferRule,
+  addRule,
   walkNode
 };

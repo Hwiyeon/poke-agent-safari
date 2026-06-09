@@ -230,6 +230,38 @@ function getPokemonRarityTier(pokemonId) {
   return catalog.pokemonRarityTiers[Number(pokemonId)] || 1;
 }
 
+function getRandomPokemonByMinTier(minTier = 1, options = {}) {
+  const catalog = loadPokemonCatalog();
+  const rng = typeof options.rng === 'function' ? options.rng : Math.random;
+  const normalizedMinTier = Math.max(1, Math.min(5, Math.floor(Number(minTier) || 1)));
+  const entries = TIER_IDS
+    .filter((tier) => tier >= normalizedMinTier)
+    .map((tier) => ({
+      tier,
+      pool: Array.isArray(catalog.tierPools[tier]) ? catalog.tierPools[tier] : [],
+      weight: TIER_WEIGHTS[tier] || 0
+    }))
+    .filter((entry) => entry.pool.length > 0 && entry.weight > 0);
+
+  if (entries.length === 0) {
+    return POKEDEX_MIN;
+  }
+
+  const totalWeight = entries.reduce((sum, entry) => sum + entry.weight, 0);
+  let tierRoll = Math.max(0, Math.min(0.999999999, Number(rng()) || 0)) * totalWeight;
+  let selected = entries[entries.length - 1];
+  for (const entry of entries) {
+    if (tierRoll < entry.weight) {
+      selected = entry;
+      break;
+    }
+    tierRoll -= entry.weight;
+  }
+
+  const speciesRoll = Math.max(0, Math.min(0.999999999, Number(rng()) || 0));
+  return selected.pool[Math.floor(speciesRoll * selected.pool.length)] || selected.pool[0] || POKEDEX_MIN;
+}
+
 function getPokemonAreaTotals() {
   const catalog = loadPokemonCatalog();
   return { ...catalog.areaTotals };
@@ -352,6 +384,7 @@ module.exports = {
   getPokemonAreaId,
   getPokemonAreaTotals,
   getPokemonRarityTier,
+  getRandomPokemonByMinTier,
   getPokemonIdForAgent,
   getEvolutionPath,
   getNextEvolution,

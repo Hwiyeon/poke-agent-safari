@@ -1,10 +1,10 @@
 {
-  "generated_at": "2026-06-03T15:05:16.342Z",
+  "generated_at": "2026-06-09T14:13:56.528Z",
   "source": "dev/.cache/pokeapi/evolution-chain",
   "range": "1-649",
   "special_rule_count": 96,
   "total_from_species": 303,
-  "total_rules": 324,
+  "total_rules": 320,
   "rules": {
     "1": [
       {
@@ -135,12 +135,6 @@
       }
     ],
     "27": [
-      {
-        "toSpeciesId": 28,
-        "method": "item",
-        "source": "pokeapi-use-item",
-        "itemId": "ice-stone"
-      },
       {
         "toSpeciesId": 28,
         "method": "level",
@@ -505,12 +499,6 @@
     "100": [
       {
         "toSpeciesId": 101,
-        "method": "item",
-        "source": "pokeapi-use-item",
-        "itemId": "leaf-stone"
-      },
-      {
-        "toSpeciesId": 101,
         "method": "level",
         "source": "pokeapi-level",
         "requiredLevel": 30
@@ -750,12 +738,6 @@
         "method": "level",
         "source": "pokeapi-level",
         "requiredLevel": 14
-      },
-      {
-        "toSpeciesId": 156,
-        "method": "level",
-        "source": "pokeapi-level",
-        "requiredLevel": 17
       }
     ],
     "156": [
@@ -2223,12 +2205,6 @@
       }
     ],
     "554": [
-      {
-        "toSpeciesId": 555,
-        "method": "item",
-        "source": "pokeapi-use-item",
-        "itemId": "ice-stone"
-      },
       {
         "toSpeciesId": 555,
         "method": "level",

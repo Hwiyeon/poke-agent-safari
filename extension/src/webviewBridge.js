@@ -102,6 +102,8 @@ function createWebviewBridge(options = {}) {
               actionResult = state.buyEvolutionItem(message.payload.itemId, message.payload.currency);
             } else if (message.action === 'sell' && message.payload) {
               actionResult = state.sellEvolutionItem(message.payload.itemId);
+            } else if (message.action === 'use-ticket' && message.payload) {
+              actionResult = state.useRecruitTicketItem(message.payload.itemId);
             }
             break;
           case 'pokedex':

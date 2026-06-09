@@ -184,6 +184,8 @@ class DashboardServer extends EventEmitter {
         result = this.state.buyEvolutionItem(body.itemId, body.currency);
       } else if (action === 'sell') {
         result = this.state.sellEvolutionItem(body.itemId);
+      } else if (action === 'use-ticket') {
+        result = this.state.useRecruitTicketItem(body.itemId);
       }
 
       this.sendJson(res, result.ok ? 200 : 400, result);

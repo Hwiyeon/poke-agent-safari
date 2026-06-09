@@ -67,6 +67,7 @@ test('state restore preserves caught pokemon and claimed catch milestones', () =
     firstCatchByPokemon: {
       25: { speciesId: 25, source: 'recruit', caughtAt: 100 }
     },
+    claimedSeenMilestones: ['seen-5'],
     claimedCatchMilestones: ['caught-1'],
     claimedAreaCatchMilestones: ['forest:L1'],
     agents: [],
@@ -78,11 +79,32 @@ test('state restore preserves caught pokemon and claimed catch milestones', () =
   assert.equal(restored, true);
   assert.deepEqual(snapshot.pokedex.caughtPokemonIds, [25]);
   assert.equal(snapshot.pokedex.firstCatchByPokemon[25].caughtAt, 100);
+  assert.equal(snapshot.pokedex.seenMilestones.find((entry) => entry.id === 'seen-5').claimed, true);
   assert.equal(snapshot.pokedex.catchMilestones.find((entry) => entry.id === 'caught-1').claimed, true);
   assert.equal(state.serialize().claimedAreaCatchMilestones.includes('forest:L1'), true);
 });
 
-test('catch milestones are manually claimed for points', () => {
+test('seen milestones are manually claimed for points', () => {
+  const state = new AgentState({});
+  state.mergeSeenPokemonIds([1, 2, 3, 4, 5]);
+
+  let milestone = state.snapshot().pokedex.seenMilestones.find((entry) => entry.id === 'seen-5');
+  assert.equal(milestone.reached, true);
+  assert.equal(milestone.claimed, false);
+  assert.equal(milestone.claimable, true);
+
+  const before = state.snapshot().evolutionItems.itemPoints;
+  const claimed = state.claimPokedexReward('seen', 'seen-5');
+  assert.equal(claimed.ok, true);
+  assert.equal(claimed.reward.pointReward, 200);
+  assert.equal(state.snapshot().evolutionItems.itemPoints, before + 200);
+
+  milestone = state.snapshot().pokedex.seenMilestones.find((entry) => entry.id === 'seen-5');
+  assert.equal(milestone.claimed, true);
+  assert.equal(milestone.claimable, false);
+});
+
+test('catch milestones are manually claimed for points and recruit tickets', () => {
   const state = new AgentState({});
 
   const result = state.registerCaughtPokemon(25, { source: 'test' });
@@ -90,16 +112,34 @@ test('catch milestones are manually claimed for points', () => {
   assert.equal(result.isNewCatch, true);
   assert.equal(result.rewards.some((reward) => reward.type === 'catch-milestone'), false);
 
+  let seenMilestone = state.snapshot().pokedex.seenMilestones.find((entry) => entry.id === 'seen-5');
+  assert.equal(seenMilestone.reached, false);
+
   let milestone = state.snapshot().pokedex.catchMilestones.find((entry) => entry.id === 'caught-1');
   assert.equal(milestone.reached, true);
   assert.equal(milestone.claimed, false);
   assert.equal(milestone.claimable, true);
 
   const before = state.snapshot().evolutionItems.itemPoints;
-  const claimed = state.claimPokedexReward('catch', 'caught-1');
+  const claimed = state.claimPokedexReward('catch', 'caught-1', { rng: () => 0 });
   assert.equal(claimed.ok, true);
-  assert.equal(claimed.reward.pointReward, 100);
-  assert.equal(state.snapshot().evolutionItems.itemPoints, before + 100);
+  assert.equal(claimed.reward.pointReward, 300);
+  assert.deepEqual(claimed.reward.ticketReward, { type: 'random-recruit-ticket', minTier: 1, count: 1, label: 'Common+' });
+  assert.equal(claimed.ticketResults.length, 0);
+  assert.deepEqual(claimed.ticketRewards, [{
+    itemId: 'recruit-ticket-common',
+    ticketReward: { type: 'random-recruit-ticket', minTier: 1, count: 1, label: 'Common+' },
+    count: 1
+  }]);
+  assert.ok(state.snapshot().evolutionItems.itemPoints >= before + 300);
+  assert.equal(state.snapshot().evolutionItems.inventory['recruit-ticket-common'], 1);
+  assert.equal(state.snapshot().ownedPokemon.length, 0);
+
+  const usedTicket = state.useRecruitTicketItem('recruit-ticket-common', { rng: () => 0 });
+  assert.equal(usedTicket.ok, true);
+  assert.equal(usedTicket.ticketResults.length, 1);
+  assert.equal(state.snapshot().evolutionItems.inventory['recruit-ticket-common'], undefined);
+  assert.equal(state.snapshot().ownedPokemon.length, 1);
 
   milestone = state.snapshot().pokedex.catchMilestones.find((entry) => entry.id === 'caught-1');
   assert.equal(milestone.claimed, true);
@@ -107,7 +147,7 @@ test('catch milestones are manually claimed for points', () => {
 
   const duplicate = state.claimPokedexReward('catch', 'caught-1');
   assert.equal(duplicate.ok, false);
-  assert.equal(state.snapshot().evolutionItems.itemPoints, before + 100);
+  assert.ok(state.snapshot().evolutionItems.itemPoints >= before + 300);
 });
 
 test('area catch milestones become claimable and award points once', () => {

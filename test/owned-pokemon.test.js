@@ -443,20 +443,42 @@ test('evolution item pulls, ticket claims, and selling update the item wallet', 
 
   state.evolutionItems.itemPoints = 250;
   state.evolutionItems.pickupItemId = 'thunder-stone';
-  const rolls = [0.1, 0.5];
+  const rolls = [0.1, 0.1, 0.5];
   const missedTarget = state.pullEvolutionItem({ rng: () => rolls.shift() });
   assert.equal(missedTarget.ok, true);
   assert.equal(missedTarget.success, true);
+  assert.equal(missedTarget.rewardType, 'item');
   assert.notEqual(missedTarget.itemId, 'thunder-stone');
   assert.equal(state.snapshot().evolutionItems.targetTickets, 1);
 
   state.evolutionItems.itemPoints = 250;
-  const hitRolls = [0.1, 0.75];
+  const hitRolls = [0.1, 0.1, 0.75];
   const hitTarget = state.pullEvolutionItem({ rng: () => hitRolls.shift() });
   assert.equal(hitTarget.ok, true);
   assert.equal(hitTarget.success, true);
+  assert.equal(hitTarget.rewardType, 'item');
   assert.equal(hitTarget.itemId, 'thunder-stone');
   assert.equal(state.snapshot().evolutionItems.targetTickets, 1);
+
+  state.evolutionItems.itemPoints = 250;
+  state.evolutionItems.pickupItemId = 'water-stone';
+  const ticketRolls = [0.1, 0.995, 0, 0];
+  const ticketPull = state.pullEvolutionItem({ rng: () => ticketRolls.shift() });
+  assert.equal(ticketPull.ok, true);
+  assert.equal(ticketPull.success, true);
+  assert.equal(ticketPull.rewardType, 'ticket');
+  assert.deepEqual(ticketPull.ticketReward, { type: 'random-recruit-ticket', minTier: 4, count: 1, label: 'Very Rare+' });
+  assert.equal(ticketPull.itemId, 'recruit-ticket-very-rare');
+  assert.equal(ticketPull.ticketResults.length, 0);
+  assert.equal(state.snapshot().evolutionItems.targetTickets, 1);
+  assert.equal(state.snapshot().evolutionItems.inventory['recruit-ticket-very-rare'], 1);
+  assert.equal(state.snapshot().ownedPokemon.length, 0);
+
+  const ticketUse = state.useRecruitTicketItem('recruit-ticket-very-rare', { rng: () => 0 });
+  assert.equal(ticketUse.ok, true);
+  assert.equal(ticketUse.ticketResults.length, 1);
+  assert.equal(state.snapshot().evolutionItems.inventory['recruit-ticket-very-rare'], undefined);
+  assert.equal(state.snapshot().ownedPokemon.length, 1);
 
   state.evolutionItems.itemPoints = 35;
   const bought = state.buyEvolutionItem('linking-cord', 'points');
@@ -558,6 +580,35 @@ test('item evolutions consume the required item', () => {
   assert.equal(snapshot.evolutionItems.inventory['thunder-stone'], undefined);
 });
 
+test('evolved pokemon keep their source species active for recruit', () => {
+  const state = createState({});
+  state.mergeSeenPokemonIds([92]);
+  const gastly = state.adoptOwnedPokemon({ speciesId: 92, inParty: false }).pokemon;
+
+  state.addOwnedExperience(gastly.id, 1539000, { record: false });
+  const evolved = state.evolveOwnedPokemon(gastly.id);
+
+  assert.equal(evolved.ok, true);
+  let snapshot = state.snapshot();
+  assert.deepEqual(
+    snapshot.pokedex.caughtPokemonIds.filter((speciesId) => speciesId === 92 || speciesId === 93),
+    [92, 93]
+  );
+  assert.equal(snapshot.ownedPokemon.find((pokemon) => pokemon.id === gastly.id).speciesId, 93);
+
+  const recruitCost = state.recruitCostForSpecies(92);
+  assert.equal(recruitCost.caught, true);
+  state.evolutionItems.itemPoints = recruitCost.pointCost;
+  const duplicateGastly = state.adoptOwnedPokemon({ speciesId: 92, inParty: false });
+
+  assert.equal(duplicateGastly.ok, true);
+  assert.equal(duplicateGastly.recruitCost.caught, true);
+  assert.equal(duplicateGastly.catchRewards.isNewCatch, false);
+  snapshot = state.snapshot();
+  assert.ok(snapshot.pokedex.caughtPokemonIds.includes(92));
+  assert.ok(snapshot.pokedex.caughtPokemonIds.includes(93));
+});
+
 test('trade evolutions use linking cord and branched evolutions require a target', () => {
   const state = createState({});
   state.mergeSeenPokemonIds([64, 61]);
@@ -623,10 +674,13 @@ test('released pokemon are removed from project training state', () => {
   const owned = state.adoptOwnedPokemon({ speciesId: 25, inParty: false }).pokemon;
   state.assignProjectTraining(owned.id, 'project-a');
   state.addOwnedExperience(owned.id, 100, { projectId: 'project-a' });
+  const beforeReleasePoints = state.snapshot().evolutionItems.itemPoints;
 
   const result = state.releaseOwnedPokemon(owned.id);
 
   assert.equal(result.ok, true);
+  assert.ok(result.releaseRefund.pointReward > 0);
+  assert.equal(state.snapshot().evolutionItems.itemPoints, beforeReleasePoints + result.releaseRefund.pointReward);
   assert.deepEqual(state.snapshot().ownedPokemon, []);
   assert.ok(state.snapshot().pokedex.caughtPokemonIds.includes(25));
   assert.deepEqual(state.snapshot().projectTraining, {});
