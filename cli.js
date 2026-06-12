@@ -125,10 +125,18 @@ function webArgv(argv) {
   return command === 'web' ? stripFirstPositionalArg(argv, 'web') : argv;
 }
 
-function shouldLaunchElectron(argv) {
+function shouldLaunchElectron(argv, env = process.env, platform = process.platform) {
   const command = firstPositionalArg(argv);
-  if (!command) return true;
+  if (!command) return !shouldUseHeadlessWebFallback(argv, env, platform);
   return command === 'sticker' || command === 'electron' || command === 'viewer' || command === 'mock';
+}
+
+function isHeadlessLinux(env = process.env, platform = process.platform) {
+  return platform === 'linux' && !env.DISPLAY && !env.WAYLAND_DISPLAY;
+}
+
+function shouldUseHeadlessWebFallback(argv, env = process.env, platform = process.platform) {
+  return !firstPositionalArg(argv) && isHeadlessLinux(env, platform);
 }
 
 function electronArgv(argv) {
@@ -421,6 +429,9 @@ async function run() {
     launchElectron(argv);
     return;
   }
+  if (shouldUseHeadlessWebFallback(argv)) {
+    process.stdout.write('[electron] no DISPLAY/WAYLAND detected; starting web dashboard instead\n');
+  }
   await runWeb(argv);
 }
 
@@ -436,6 +447,8 @@ module.exports = {
   clearPersistedFiles,
   performDashboardHardReset,
   readLiveSessionIds,
+  isHeadlessLinux,
+  shouldUseHeadlessWebFallback,
   shouldLaunchElectron,
   electronArgv,
   webArgv,

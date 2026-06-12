@@ -139,17 +139,17 @@ poke-as web --mock
 Remote Electron viewer over SSH:
 
 ```bash
-# Remote server
-poke-as web --host 127.0.0.1 --port 8123 --source all
+# Remote server. On headless Linux, plain `poke-as` falls back to this web mode.
+poke-as --host 127.0.0.1 --port 8123 --source all
 ```
 
 ```bash
 # Local machine
 ssh -N -L 8123:127.0.0.1:8123 user@server
-poke-as viewer --url http://127.0.0.1:8123
+poke-as viewer
 ```
 
-`viewer` does not watch local transcripts or start a local dashboard server. It only opens the remote dashboard in an always-on-top Electron sticker. With the tunnel above, `poke-as viewer` can omit `--url` because it defaults to `http://127.0.0.1:8123`.
+`viewer` does not watch local transcripts or start a local dashboard server. It only opens the remote dashboard in an always-on-top Electron sticker. With the tunnel above, `poke-as viewer` can omit `--url` because it defaults to `http://127.0.0.1:8123`. If the remote server has a GUI and you want to force web-only mode, use `poke-as web --host 127.0.0.1 --port 8123 --source all`.
 
 Legacy web aliases still work:
 

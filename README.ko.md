@@ -139,17 +139,17 @@ poke-as web --mock
 SSH 원격 Electron viewer:
 
 ```bash
-# 원격 서버
-poke-as web --host 127.0.0.1 --port 8123 --source all
+# 원격 서버. headless Linux에서는 그냥 `poke-as`가 이 web mode로 fallback합니다.
+poke-as --host 127.0.0.1 --port 8123 --source all
 ```
 
 ```bash
 # 로컬 머신
 ssh -N -L 8123:127.0.0.1:8123 user@server
-poke-as viewer --url http://127.0.0.1:8123
+poke-as viewer
 ```
 
-`viewer`는 로컬 transcript를 감시하거나 로컬 dashboard server를 띄우지 않습니다. 원격 dashboard를 always-on-top Electron sticker로 보여주기만 합니다. 위 터널 방식에서는 `poke-as viewer`가 기본값으로 `http://127.0.0.1:8123`을 사용하므로 `--url`을 생략할 수 있습니다.
+`viewer`는 로컬 transcript를 감시하거나 로컬 dashboard server를 띄우지 않습니다. 원격 dashboard를 always-on-top Electron sticker로 보여주기만 합니다. 위 터널 방식에서는 `poke-as viewer`가 기본값으로 `http://127.0.0.1:8123`을 사용하므로 `--url`을 생략할 수 있습니다. 원격 서버에 GUI가 있고 web-only mode를 강제하고 싶다면 `poke-as web --host 127.0.0.1 --port 8123 --source all`을 쓰면 됩니다.
 
 기존 web alias도 계속 동작합니다.
 

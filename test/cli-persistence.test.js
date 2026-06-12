@@ -18,6 +18,8 @@ const {
   loadPokedex,
   clearPersistedFiles,
   performDashboardHardReset,
+  isHeadlessLinux,
+  shouldUseHeadlessWebFallback,
   shouldLaunchElectron,
   electronArgv,
   webArgv
@@ -89,14 +91,31 @@ test('mock CLI flag can be explicitly disabled', () => {
   assert.equal(config.isMockMode, false);
 });
 
-test('default CLI launch targets the Electron sticker', () => {
-  assert.equal(shouldLaunchElectron([]), true);
-  assert.equal(shouldLaunchElectron(['--source', 'codex']), true);
-  assert.equal(shouldLaunchElectron(['--mock']), true);
-  assert.equal(shouldLaunchElectron(['mock']), true);
-  assert.equal(shouldLaunchElectron(['sticker', '--source', 'claude']), true);
-  assert.equal(shouldLaunchElectron(['viewer']), true);
+test('default CLI launch targets the Electron sticker when a GUI is available', () => {
+  const guiEnv = { DISPLAY: ':0' };
+  assert.equal(shouldLaunchElectron([], guiEnv, 'linux'), true);
+  assert.equal(shouldLaunchElectron(['--source', 'codex'], guiEnv, 'linux'), true);
+  assert.equal(shouldLaunchElectron(['--mock'], guiEnv, 'linux'), true);
+  assert.equal(shouldLaunchElectron(['mock'], guiEnv, 'linux'), true);
+  assert.equal(shouldLaunchElectron(['sticker', '--source', 'claude'], guiEnv, 'linux'), true);
+  assert.equal(shouldLaunchElectron(['viewer'], guiEnv, 'linux'), true);
   assert.deepEqual(electronArgv(['viewer', '--url', 'http://127.0.0.1:8123']), ['viewer', '--url', 'http://127.0.0.1:8123']);
+});
+
+test('headless Linux defaults to the web dashboard', () => {
+  assert.equal(isHeadlessLinux({}, 'linux'), true);
+  assert.equal(isHeadlessLinux({ DISPLAY: ':0' }, 'linux'), false);
+  assert.equal(isHeadlessLinux({ WAYLAND_DISPLAY: 'wayland-0' }, 'linux'), false);
+  assert.equal(isHeadlessLinux({}, 'win32'), false);
+
+  assert.equal(shouldUseHeadlessWebFallback([], {}, 'linux'), true);
+  assert.equal(shouldUseHeadlessWebFallback(['--source', 'codex'], {}, 'linux'), true);
+  assert.equal(shouldUseHeadlessWebFallback(['watch'], {}, 'linux'), false);
+  assert.equal(shouldUseHeadlessWebFallback(['viewer'], {}, 'linux'), false);
+  assert.equal(shouldLaunchElectron([], {}, 'linux'), false);
+  assert.equal(shouldLaunchElectron(['--mock'], {}, 'linux'), false);
+  assert.equal(shouldLaunchElectron(['viewer'], {}, 'linux'), true);
+  assert.equal(shouldLaunchElectron([], { DISPLAY: ':0' }, 'linux'), true);
 });
 
 test('web CLI command keeps browser dashboard mode available', () => {
