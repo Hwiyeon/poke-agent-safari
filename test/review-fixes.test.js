@@ -655,6 +655,15 @@ test('mock driver lets some root agents fall asleep after inactivity', async () 
   assert.ok(snapshot.agents.some((agent) => !agent.parentId && agent.isSleeping));
 });
 
+test('evolution action reads target select from the owned pokemon card', () => {
+  const appJs = fs.readFileSync(path.join(__dirname, '..', 'public', 'app.js'), 'utf8');
+
+  assert.match(appJs, /function ownedPokemonActionRoot\(element\)/);
+  assert.match(appJs, /ownedPokemonActionRoot\(btn\)/);
+  assert.match(appJs, /\.owned-party-card\[data-owned-id\], \.owned-card\[data-owned-id\], \.owned-box-tile\[data-owned-id\]/);
+  assert.equal(appJs.includes("btn.closest('[data-owned-id]')"), false);
+});
+
 test('watcher preserves multibyte utf8 across incremental reads', async () => {
   const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'poke-agents-'));
   const filePath = path.join(tempRoot, 'session.jsonl');

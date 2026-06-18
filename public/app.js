@@ -6929,6 +6929,11 @@
     return html;
   }
 
+  function ownedPokemonActionRoot(element) {
+    if (!element || !element.closest) return null;
+    return element.closest('.owned-party-card[data-owned-id], .owned-card[data-owned-id], .owned-box-tile[data-owned-id]');
+  }
+
   function ownedLevelDetails(pokemon) {
     var level = Math.max(1, Math.min(100, Number(pokemon && pokemon.level) || 1));
     var needed = pokemon && typeof pokemon.expToNextLevel === 'number'
@@ -8781,7 +8786,7 @@
         var evolvingPokemon = ownedPokemonByOwnedId(id);
         var evolutionInfo = ownedEvolutionInfo(evolvingPokemon);
         var targetSpeciesId = null;
-        var ownedRoot = btn.closest('[data-owned-id]');
+        var ownedRoot = ownedPokemonActionRoot(btn);
         var targetSelect = ownedRoot ? ownedRoot.querySelector('[data-owned-field="evolution-target"]') : null;
         if (targetSelect && targetSelect.value) {
           targetSpeciesId = parseInt(targetSelect.value, 10) || null;
