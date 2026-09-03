@@ -104,6 +104,8 @@ poke-as
 
 sticker의 `+` 버튼을 누르면 전체 대시보드로 확장됩니다.
 
+SSH 접속처럼 `DISPLAY`가 없는 셸에서는 해당 머신의 로컬 X 세션을 찾아 sticker를 띄우고, 없으면 web 대시보드로 fallback합니다.
+
 provider별 sticker 실행:
 
 ```bash
@@ -139,7 +141,7 @@ poke-as web --mock
 SSH 원격 Electron viewer:
 
 ```bash
-# 원격 서버. headless Linux에서는 그냥 `poke-as`가 이 web mode로 fallback합니다.
+# 원격 서버. 쓸 수 있는 X display가 없으면 그냥 `poke-as`가 이 web mode로 fallback합니다.
 poke-as --host 127.0.0.1 --port 8123 --source all
 ```
 

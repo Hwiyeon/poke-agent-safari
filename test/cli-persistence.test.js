@@ -19,6 +19,8 @@ const {
   clearPersistedFiles,
   performDashboardHardReset,
   isHeadlessLinux,
+  detectLinuxDisplay,
+  resolveLaunchEnv,
   shouldUseHeadlessWebFallback,
   shouldLaunchElectron,
   electronArgv,
@@ -116,6 +118,20 @@ test('headless Linux defaults to the web dashboard', () => {
   assert.equal(shouldLaunchElectron(['--mock'], {}, 'linux'), false);
   assert.equal(shouldLaunchElectron(['viewer'], {}, 'linux'), true);
   assert.equal(shouldLaunchElectron([], { DISPLAY: ':0' }, 'linux'), true);
+});
+
+test('headless Linux uses a local X display before falling back to web', () => {
+  assert.equal(detectLinuxDisplay([], []), null);
+  assert.equal(detectLinuxDisplay([1, 1001], []), ':1');
+  assert.equal(detectLinuxDisplay([0, 1001], [1001]), ':1001');
+
+  const withDisplay = resolveLaunchEnv({}, 'linux', () => ':1');
+  assert.equal(withDisplay.DISPLAY, ':1');
+  assert.equal(shouldLaunchElectron([], withDisplay, 'linux'), true);
+
+  assert.equal(resolveLaunchEnv({}, 'linux', () => null).DISPLAY, undefined);
+  assert.equal(resolveLaunchEnv({ DISPLAY: ':0' }, 'linux', () => ':1').DISPLAY, ':0');
+  assert.equal(resolveLaunchEnv({}, 'darwin', () => ':1').DISPLAY, undefined);
 });
 
 test('web CLI command keeps browser dashboard mode available', () => {

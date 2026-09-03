@@ -3,7 +3,7 @@
 
 const path = require('path');
 const fs = require('fs');
-const { spawn } = require('child_process');
+const { execFileSync, spawn } = require('child_process');
 
 const { AgentState } = require('./state');
 const { TranscriptWatcher } = require('./watcher');
@@ -139,6 +139,62 @@ function shouldUseHeadlessWebFallback(argv, env = process.env, platform = proces
   return !firstPositionalArg(argv) && isHeadlessLinux(env, platform);
 }
 
+const X11_SOCKET_DIR = '/tmp/.X11-unix';
+
+function listX11Displays(socketDir = X11_SOCKET_DIR) {
+  let entries;
+  try {
+    entries = fs.readdirSync(socketDir);
+  } catch (_) {
+    return [];
+  }
+
+  return entries
+    .map((name) => /^X(\d+)$/.exec(name))
+    .filter(Boolean)
+    .map((match) => Number(match[1]))
+    .sort((a, b) => a - b);
+}
+
+function listAuthorizedDisplays() {
+  let output;
+  try {
+    output = execFileSync('xauth', ['list'], {
+      encoding: 'utf8',
+      timeout: 2000,
+      stdio: ['ignore', 'pipe', 'ignore']
+    });
+  } catch (_) {
+    return [];
+  }
+
+  const displays = new Set();
+  for (const line of output.split('\n')) {
+    const match = /:(\d+)(?:\.\d+)?\s/.exec(line);
+    if (match) {
+      displays.add(Number(match[1]));
+    }
+  }
+  return [...displays];
+}
+
+// An ssh/tmux shell inherits no DISPLAY even when the same user has a desktop
+// session on this machine. Prefer displays we hold an auth cookie for: dead
+// sessions can leave their /tmp/.X11-unix socket behind.
+function detectLinuxDisplay(candidates = listX11Displays(), authorized = listAuthorizedDisplays()) {
+  const preferred = candidates.filter((display) => authorized.includes(display));
+  const display = (preferred.length > 0 ? preferred : candidates)[0];
+  return display == null ? null : `:${display}`;
+}
+
+function resolveLaunchEnv(env = process.env, platform = process.platform, detect = detectLinuxDisplay) {
+  if (!isHeadlessLinux(env, platform)) {
+    return env;
+  }
+  const display = detect();
+  return display ? { ...env, DISPLAY: display } : env;
+}
+
 function electronArgv(argv) {
   const command = firstPositionalArg(argv);
   let out = argv;
@@ -189,11 +245,16 @@ function resolveElectronBinary() {
   throw new Error('Electron is not installed. Run "npm install" in the poke-agent-safari directory.');
 }
 
-function launchElectron(argv) {
+function launchElectron(argv, env = process.env) {
   const electronBin = resolveElectronBinary();
+  if (env.DISPLAY && env.DISPLAY !== process.env.DISPLAY) {
+    process.stdout.write(`[electron] DISPLAY was unset; using detected X display ${env.DISPLAY}\n`);
+  }
+
   const child = spawn(electronBin, [path.join(__dirname, 'electron', 'main.js'), ...electronArgv(argv)], {
     stdio: 'inherit',
-    windowsHide: false
+    windowsHide: false,
+    env
   });
 
   child.on('error', (error) => {
@@ -425,12 +486,13 @@ async function run() {
     process.stdout.write(`${usage()}\n`);
     return;
   }
-  if (shouldLaunchElectron(argv)) {
-    launchElectron(argv);
+  const launchEnv = resolveLaunchEnv();
+  if (shouldLaunchElectron(argv, launchEnv)) {
+    launchElectron(argv, launchEnv);
     return;
   }
-  if (shouldUseHeadlessWebFallback(argv)) {
-    process.stdout.write('[electron] no DISPLAY/WAYLAND detected; starting web dashboard instead\n');
+  if (shouldUseHeadlessWebFallback(argv, launchEnv)) {
+    process.stdout.write('[electron] no usable DISPLAY/WAYLAND detected; starting web dashboard instead\n');
   }
   await runWeb(argv);
 }
@@ -448,6 +510,9 @@ module.exports = {
   performDashboardHardReset,
   readLiveSessionIds,
   isHeadlessLinux,
+  listX11Displays,
+  detectLinuxDisplay,
+  resolveLaunchEnv,
   shouldUseHeadlessWebFallback,
   shouldLaunchElectron,
   electronArgv,

@@ -104,6 +104,8 @@ poke-as
 
 Use the `+` button in the sticker to expand into the full dashboard.
 
+Over SSH (no `DISPLAY`), `poke-as` attaches to the machine's local X session when it finds one, and falls back to the web dashboard otherwise.
+
 Provider-specific sticker modes:
 
 ```bash
@@ -139,7 +141,7 @@ poke-as web --mock
 Remote Electron viewer over SSH:
 
 ```bash
-# Remote server. On headless Linux, plain `poke-as` falls back to this web mode.
+# Remote server. With no X display available, plain `poke-as` falls back to this web mode.
 poke-as --host 127.0.0.1 --port 8123 --source all
 ```
 
